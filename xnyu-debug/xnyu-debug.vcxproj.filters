@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Quelldateien">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Headerdateien">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Ressourcendateien">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Headerdateien\graphic hooks">
+      <UniqueIdentifier>{51459a7e-5f6e-4805-9d22-351855776159}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\input hooks">
+      <UniqueIdentifier>{c7701882-a7ac-432f-9f6c-d5343819f528}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\libraries">
+      <UniqueIdentifier>{dd5504de-535b-40ed-94e1-66e380e5f4db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\technical">
+      <UniqueIdentifier>{4119d41f-15a8-487f-875d-c3666216de26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\debug mods">
+      <UniqueIdentifier>{73f316e9-d918-46bb-9595-fda82c40cf9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\components">
+      <UniqueIdentifier>{7a77867c-8069-42c0-9311-ab5b78028343}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="framework.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="header\graphic hooks\D3D9-Hook.h">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="header\graphic hooks\D3D10-Hook.h">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="header\graphic hooks\D3D11-Hook.h">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="header\graphic hooks\D3D12-Hook.h">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="header\graphic hooks\Direct3DBase.h">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="header\graphic hooks\DXGI.h">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="header\input hooks\DirectInput8-Hook.h">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="header\input hooks\RawInput-Hook.h">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="header\input hooks\XInput1_4-Hook.h">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="header\libraries\xNyuLibrary.h">
+      <Filter>Headerdateien\libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="header\technical\Exceptions.hpp">
+      <Filter>Headerdateien\technical</Filter>
+    </ClInclude>
+    <ClInclude Include="header\components\DebugMenu.h">
+      <Filter>Headerdateien\components</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Headerdateien\technical</Filter>
+    </ClInclude>
+    <ClInclude Include="xNyuDrawingEssentials.h">
+      <Filter>Headerdateien\libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="InputHookGlobals.h">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="TAS.h">
+      <Filter>Headerdateien\components</Filter>
+    </ClInclude>
+    <ClInclude Include="GetMessageA-Hook.h">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="GetMessageW-Hook.h">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="SendInput-Hook.h">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="TASInputGlobals.h">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugFunctions.h">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugAddresses.h">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugModGlobals.h">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowStayActive.h">
+      <Filter>Headerdateien\components</Filter>
+    </ClInclude>
+    <ClInclude Include="Variables.h">
+      <Filter>Headerdateien\libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="SavefileEditor.h">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
