@@ -137,6 +137,32 @@ bool LoadDebugFunctions()
             }
 
         }
+
+        // Add TAS specific funcitons
+        DebugFunction TASPlayScript = DebugFunction();
+        TASPlayScript.nameChild = "PlayScript";
+        TASPlayScript.nameFull = "TAS.PlayScript";
+        TASPlayScript.nameParent = "TAS";
+        TASPlayScript.parameter.push_back(Variable());
+        TASPlayScript.parameter[0].type = "string";
+        TASPlayScript.parameter[0].value = "none";
+        TASPlayScript.rapid = false;
+
+        DebugFunction TASRecordScript = DebugFunction();
+        TASRecordScript.nameChild = "RecordScript";
+        TASRecordScript.nameFull = "TAS.RecordScript";
+        TASRecordScript.nameParent = "TAS";
+        TASRecordScript.parameter.push_back(Variable());
+        TASRecordScript.parameter[0].type = "string";
+        TASRecordScript.parameter[0].value = "none";
+        TASRecordScript.rapid = false;
+
+        DebugFunctionParent TASParent = DebugFunctionParent();
+        TASParent.nameParent = "TAS";
+        TASParent.functions.push_back(TASPlayScript);
+        TASParent.functions.push_back(TASRecordScript);
+
+        DebugFunctions.push_back(TASParent);
     }
     catch (const std::exception& e)
     {

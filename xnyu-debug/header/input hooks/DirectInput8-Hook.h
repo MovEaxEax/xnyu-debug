@@ -7,6 +7,8 @@
 // Global hook settings
 typedef HRESULT(__stdcall* DirectInput8GetDeviceStateT)(IDirectInputDevice8* pThis, DWORD cbData, LPVOID lpvData);
 DirectInput8GetDeviceStateT pDirectInput8DevicGetState = nullptr;
+typedef void(__stdcall* GetDirectInput8T)(BOOL TAS, GameInput* DST, std::string device);
+GetDirectInput8T pGetDirectInput8 = nullptr;
 
 subhook::Hook DirectInput8SubHook;
 
@@ -15,11 +17,16 @@ void* DirectInput8HookAddress;
 
 bool DirectInput8RetrieveInformation = false;
 bool DirectInput8SendInformation = false;
+bool DirectInput8GetInformation = false;
 bool DirectInput8DisableForGame = false;
 bool DirectInput8TASMode = false;
 
 GameInput DirectInput8GameInputCurrent;
 GameInput DirectInput8GameInputLast;
+GameInput* GetDirectInput8DSTAll;
+GameInput* GetDirectInput8DSTMouse;
+GameInput* GetDirectInput8DSTKeyboard;
+GameInput* GetDirectInput8DSTJoystick;
 
 // Specific settings
 IDirectInput8* pDirectInput_DI8 = nullptr;
@@ -45,55 +52,143 @@ HRESULT __stdcall DirectInput8Hook(IDirectInputDevice8* pDevice, DWORD cbData, L
     // The return value of this function
     HRESULT result = pDirectInput8DevicGetState(pDevice, cbData, lpvData);
 
-    std::memset(&DirectInput8GameInputCurrent, 0x00, sizeof(GameInput));
     std::memset(&DirectInput8JoystickInputState, 0x00, sizeof(DIJOYSTATE));
+    std::memset(&DirectInput8MouseInputState, 0x00, sizeof(DIMOUSESTATE));
+    std::memset(&DirectInput8KeyboardInputState, 0x00, 256);
     if (cbData == sizeof(DIJOYSTATE) || cbData == sizeof(DIJOYSTATE2)) std::memcpy(&DirectInput8JoystickInputState, lpvData, sizeof(DIJOYSTATE));
+    if (cbData == sizeof(DIMOUSESTATE) || cbData == sizeof(DIMOUSESTATE2)) std::memcpy(&DirectInput8MouseInputState, lpvData, sizeof(DIMOUSESTATE));
+    if (cbData == 256) std::memcpy(&DirectInput8KeyboardInputState, lpvData, 256);
+
+    // TAS routine
+    if (GlobalSettings.config_tashook == "directinput8")
+    {
+        pTASRoutine();
+    }
 
     if (DirectInput8SendInformation)
     {
-        if (cbData == sizeof(DIJOYSTATE))
+        bool sent = false;
+
+        if (InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8JoystickSend)
         {
-            result = ERROR_SUCCESS;
-            std::memcpy(lpvData, &DirectInput8JoystickSendState, sizeof(DIJOYSTATE));
+            if (cbData == sizeof(DIJOYSTATE))
+            {
+                result = ERROR_SUCCESS;
+                std::memcpy(lpvData, &DirectInput8JoystickSendState, sizeof(DIJOYSTATE));
+                sent = true;
+                TASSynchronizer.DirectInput8JoystickSend = false;
+            }
+
+            if (cbData == sizeof(DIJOYSTATE2))
+            {
+                result = ERROR_SUCCESS;
+                DIJOYSTATE2 converted = DIJOYSTATE2();
+                std::memset(&converted, 0x00, sizeof(DIJOYSTATE2));
+                converted.rgdwPOV[0] = -1;
+                std::memcpy(&converted, &DirectInput8JoystickSendState, sizeof(DIJOYSTATE));
+                std::memcpy(lpvData, &converted, sizeof(DIJOYSTATE2));
+                sent = true;
+                TASSynchronizer.DirectInput8JoystickSend = false;
+            }
         }
 
-        if (cbData == sizeof(DIJOYSTATE2))
+        if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8MouseSend)
         {
-            result = ERROR_SUCCESS;
-            DIJOYSTATE2 converted = DIJOYSTATE2();
-            std::memcpy(&converted, &DirectInput8JoystickSendState, sizeof(DIJOYSTATE));
-            std::memcpy(lpvData, &converted, sizeof(DIJOYSTATE2));
+            if (cbData == sizeof(DIMOUSESTATE))
+            {
+                result = ERROR_SUCCESS;
+                std::memcpy(lpvData, &DirectInput8MouseSendState, sizeof(DIJOYSTATE));
+                sent = true;
+                TASSynchronizer.DirectInput8MouseSend = false;
+            }
+
+            if (cbData == sizeof(DIMOUSESTATE2))
+            {
+                result = ERROR_SUCCESS;
+                DIMOUSESTATE2 converted = DIMOUSESTATE2();
+                std::memcpy(&converted, &DirectInput8MouseSendState, sizeof(DIMOUSESTATE));
+                std::memcpy(lpvData, &converted, sizeof(DIMOUSESTATE2));
+                sent = true;
+                TASSynchronizer.DirectInput8MouseSend = false;
+            }
         }
 
-        if (cbData == sizeof(DIMOUSESTATE))
+        if (InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8KeyboardSend)
         {
-            result = ERROR_SUCCESS;
-            std::memcpy(lpvData, &DirectInput8MouseSendState, sizeof(DIJOYSTATE));
+            if (cbData == 256)
+            {
+                result = ERROR_SUCCESS;
+                std::memcpy(lpvData, &DirectInput8KeyboardSendState, 256);
+                sent = true;
+                TASSynchronizer.DirectInput8KeyboardSend = false;
+            }
         }
 
-        if (cbData == sizeof(DIMOUSESTATE2))
+        bool canDeactivate = true;
+        if (InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8KeyboardSend) canDeactivate = false;
+        if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8MouseSend) canDeactivate = false;
+        if (InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8JoystickSend) canDeactivate = false;
+
+        if (canDeactivate)
         {
-            result = ERROR_SUCCESS;
-            DIMOUSESTATE2 converted = DIMOUSESTATE2();
-            std::memcpy(&converted, &DirectInput8MouseSendState, sizeof(DIMOUSESTATE));
-            std::memcpy(lpvData, &converted, sizeof(DIMOUSESTATE2));
+            DirectInput8SendInformation = false;
         }
 
-        if (cbData == 256)
+        if (!sent)
         {
-            result = ERROR_SUCCESS;
-            result = ERROR_SUCCESS;
-            std::memcpy(lpvData, &DirectInput8KeyboardSendState, 256);
+            if (cbData == sizeof(DIJOYSTATE) || cbData == sizeof(DIJOYSTATE2))
+            {
+                std::memset(lpvData, 0x00, cbData);
+                ((DIJOYSTATE*)lpvData)->rgdwPOV[0] = -1;
+            }
+            if (cbData == sizeof(DIMOUSESTATE) || cbData == sizeof(DIMOUSESTATE2)) std::memset(lpvData, 0x00, cbData);
+            if (cbData == 256) std::memset(lpvData, 0x00, cbData);
         }
 
-        else
-        {
-            result = pDirectInput8DevicGetState(pDevice, cbData, lpvData);
-        }
     }
     else
     {
-        if (DirectInput8DisableForGame)
+        if (DirectInput8GetInformation)
+        {
+            if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8JoystickGet)
+            {
+                if (cbData == sizeof(DIJOYSTATE) || cbData == sizeof(DIJOYSTATE2))
+                {
+                    pGetDirectInput8(false, GetDirectInput8DSTJoystick, "joystick");
+                    TASSynchronizer.DirectInput8JoystickGet = false;
+                }
+            }
+
+            if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8MouseGet)
+            {
+                if (cbData == sizeof(DIMOUSESTATE) || cbData == sizeof(DIMOUSESTATE2))
+                {
+                    pGetDirectInput8(false, GetDirectInput8DSTMouse, "keyboard");
+                    TASSynchronizer.DirectInput8MouseGet = false;
+                }
+            }
+
+            if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8KeyboardGet)
+            {
+                if (cbData == 256)
+                {
+                    pGetDirectInput8(false, GetDirectInput8DSTKeyboard, "mouse");
+                    TASSynchronizer.DirectInput8KeyboardGet = false;
+                }
+            }
+
+            bool canDeactivate = true;
+            if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8KeyboardGet) canDeactivate = false;
+            if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8MouseGet) canDeactivate = false;
+            if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8 && TASSynchronizer.DirectInput8JoystickGet) canDeactivate = false;
+
+            if (canDeactivate)
+            {
+                DirectInput8GetInformation = false;
+            }
+
+        }
+        else if (DirectInput8DisableForGame)
         {
             if (cbData == sizeof(DIJOYSTATE) || cbData == sizeof(DIJOYSTATE2))
             {
@@ -111,37 +206,6 @@ HRESULT __stdcall DirectInput8Hook(IDirectInputDevice8* pDevice, DWORD cbData, L
     if (sizeof(void*) == 4) DirectInput8SubHook.Install(DirectInput8OriginalAddress, DirectInput8HookAddress);
 
     return result;
-}
-
-BOOL DirectInput8HookInit()
-{
-    // Detect the XInput module handle
-    HMODULE XInputDllHandle = GetModuleHandleA("dinput8.dll");
-    if (XInputDllHandle == NULL) return false;
-
-    if (DirectInput8Create(dllHandle, 0x0800, IID_IDirectInput8, (LPVOID*)&pDirectInput_DI8, NULL) != DI_OK) {
-        DebugConsoleOutput("Error: DirectInput8Create() failed!", false, "red");
-        return false;
-    }
-
-    if (pDirectInput_DI8->CreateDevice(GUID_SysMouse, &DirectInput8DeviceJoystick, NULL) != DI_OK) {
-        DebugConsoleOutput("Error: CreateDeviceDirectInput8() failed!", false, "red");
-        pDirectInput_DI8->Release();
-        return false;
-    }
-
-    uintptr_t avTable = Internal::Memory::read<uintptr_t>(DirectInput8DeviceJoystick);
-    uintptr_t pFunction = avTable + 9 * sizeof(uintptr_t);
-
-    // Set the hook addresses
-    DirectInput8OriginalAddress = Internal::Memory::read<void*>(pFunction);
-    DirectInput8HookAddress = (void*)DirectInput8Hook;
-    pDirectInput8DevicGetState = (DirectInput8GetDeviceStateT)DirectInput8OriginalAddress;
-
-    if (sizeof(void*) == 8) DirectInput8SubHook.Install(DirectInput8OriginalAddress, DirectInput8HookAddress, subhook::HookFlags::HookFlag64BitOffset);
-    if (sizeof(void*) == 4) DirectInput8SubHook.Install(DirectInput8OriginalAddress, DirectInput8HookAddress);
-
-    return true;
 }
 
 BOOL DirectInput8HookUninit()
@@ -184,9 +248,22 @@ void UninitRecordDirectInput8TAS()
 
 
 
-GameInput GetDirectInput8(BOOL TAS)
+void __stdcall GetDirectInput8(BOOL TAS, GameInput* DST, std::string device)
 {
-    if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8)
+    if (device == "all") GetDirectInput8DSTAll = DST;
+    else if (device == "mouse") GetDirectInput8DSTMouse = DST;
+    else if (device == "keyboard") GetDirectInput8DSTKeyboard = DST;
+    else if (device == "joystick") GetDirectInput8DSTJoystick = DST;
+
+    if (TAS)
+    {
+        DirectInput8GetInformation = true;
+        return;
+    }
+
+    std::memset(&DirectInput8GameInputCurrent, 0x00, sizeof(GameInput));
+
+    if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8 && (device == "all" || device == "mouse"))
     {
         // Mouse input
         int mouseDX = static_cast<int>(DirectInput8MouseInputState.lX);
@@ -204,7 +281,7 @@ GameInput GetDirectInput8(BOOL TAS)
         DirectInput8GameInputCurrent.WHEEL = mouseDZ;
     }
 
-    if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8)
+    if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8 && (device == "all" || device == "keyboard"))
     {
         // Keyboard input
         for (int i = 0; i < 256; i++) {
@@ -293,7 +370,7 @@ GameInput GetDirectInput8(BOOL TAS)
         }
     }
 
-    if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8)
+    if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8 && (device == "all" || device == "joystick"))
     {
         // Joystick input
         int LT = static_cast<int>(DirectInput8JoystickInputState.rglSlider[0]);
@@ -303,16 +380,16 @@ GameInput GetDirectInput8(BOOL TAS)
         int RAXISX = static_cast<int>(DirectInput8JoystickInputState.lRx);
         int RAXISY = static_cast<int>(DirectInput8JoystickInputState.lRy);
 
-        if (DirectInput8JoystickInputState.rgbButtons[0] & 0x80) DirectInput8GameInputCurrent.JOYA = true;
-        if (DirectInput8JoystickInputState.rgbButtons[1] & 0x80) DirectInput8GameInputCurrent.JOYB = true;
-        if (DirectInput8JoystickInputState.rgbButtons[2] & 0x80) DirectInput8GameInputCurrent.JOYX = true;
-        if (DirectInput8JoystickInputState.rgbButtons[3] & 0x80) DirectInput8GameInputCurrent.JOYY = true;
-        if (DirectInput8JoystickInputState.rgbButtons[4] & 0x80) DirectInput8GameInputCurrent.JOYLB = true;
-        if (DirectInput8JoystickInputState.rgbButtons[5] & 0x80) DirectInput8GameInputCurrent.JOYRB = true;
-        if (DirectInput8JoystickInputState.rgbButtons[6] & 0x80) DirectInput8GameInputCurrent.JOYSELECT = true;
-        if (DirectInput8JoystickInputState.rgbButtons[7] & 0x80) DirectInput8GameInputCurrent.JOYSTART = true;
-        if (DirectInput8JoystickInputState.rgbButtons[8] & 0x80) DirectInput8GameInputCurrent.JOYLS = true;
-        if (DirectInput8JoystickInputState.rgbButtons[9] & 0x80) DirectInput8GameInputCurrent.JOYRS = true;
+        if (DirectInput8JoystickInputState.rgbButtons[0] == 0x80) DirectInput8GameInputCurrent.JOYA = true;
+        if (DirectInput8JoystickInputState.rgbButtons[1] == 0x80) DirectInput8GameInputCurrent.JOYB = true;
+        if (DirectInput8JoystickInputState.rgbButtons[2] == 0x80) DirectInput8GameInputCurrent.JOYX = true;
+        if (DirectInput8JoystickInputState.rgbButtons[3] == 0x80) DirectInput8GameInputCurrent.JOYY = true;
+        if (DirectInput8JoystickInputState.rgbButtons[4] == 0x80) DirectInput8GameInputCurrent.JOYLB = true;
+        if (DirectInput8JoystickInputState.rgbButtons[5] == 0x80) DirectInput8GameInputCurrent.JOYRB = true;
+        if (DirectInput8JoystickInputState.rgbButtons[6] == 0x80) DirectInput8GameInputCurrent.JOYSELECT = true;
+        if (DirectInput8JoystickInputState.rgbButtons[7] == 0x80) DirectInput8GameInputCurrent.JOYSTART = true;
+        if (DirectInput8JoystickInputState.rgbButtons[8] == 0x80) DirectInput8GameInputCurrent.JOYLS = true;
+        if (DirectInput8JoystickInputState.rgbButtons[9] == 0x80) DirectInput8GameInputCurrent.JOYRS = true;
         if (DirectInput8JoystickInputState.rgdwPOV[0] == 0 || DirectInput8JoystickInputState.rgdwPOV[0] == 4500 || DirectInput8JoystickInputState.rgdwPOV[0] == 31500) DirectInput8GameInputCurrent.JOYUP = true;
         if (DirectInput8JoystickInputState.rgdwPOV[0] == 4500 || DirectInput8JoystickInputState.rgdwPOV[0] == 9000 || DirectInput8JoystickInputState.rgdwPOV[0] == 13500) DirectInput8GameInputCurrent.JOYRIGHT = true;
         if (DirectInput8JoystickInputState.rgdwPOV[0] == 13500 || DirectInput8JoystickInputState.rgdwPOV[0] == 18000 || DirectInput8JoystickInputState.rgdwPOV[0] == 22500) DirectInput8GameInputCurrent.JOYDOWN = true;
@@ -325,7 +402,10 @@ GameInput GetDirectInput8(BOOL TAS)
         if (RAXISY > 99 || RAXISY < -99) DirectInput8GameInputCurrent.JOYRAXISY = RAXISY;
     }
 
-    return DirectInput8GameInputCurrent;
+    if (device == "all") std::memcpy(GetDirectInput8DSTAll, &DirectInput8GameInputCurrent, sizeof(GameInput));
+    else if (device == "mouse") std::memcpy(GetDirectInput8DSTMouse, &DirectInput8GameInputCurrent, sizeof(GameInput));
+    else if (device == "keyboard") std::memcpy(GetDirectInput8DSTKeyboard, &DirectInput8GameInputCurrent, sizeof(GameInput));
+    else if (device == "joystick") std::memcpy(GetDirectInput8DSTJoystick, &DirectInput8GameInputCurrent, sizeof(GameInput));
 }
 
 void SetDirectInput8(GameInput DirectInput8GameInput, BOOL TAS)
@@ -475,5 +555,39 @@ void SetDirectInput8(GameInput DirectInput8GameInput, BOOL TAS)
         DirectInput8JoystickSendState.lRx = RAXISX;
         DirectInput8JoystickSendState.lRy = RAXISY;
     }
+
+    DirectInput8SendInformation = true;
 }
 
+BOOL DirectInput8HookInit()
+{
+    // Detect the XInput module handle
+    HMODULE XInputDllHandle = GetModuleHandleA("dinput8.dll");
+    if (XInputDllHandle == NULL) return false;
+
+    if (DirectInput8Create(dllHandle, 0x0800, IID_IDirectInput8, (LPVOID*)&pDirectInput_DI8, NULL) != DI_OK) {
+        DebugConsoleOutput("Error: DirectInput8Create() failed!", false, "red");
+        return false;
+    }
+
+    if (pDirectInput_DI8->CreateDevice(GUID_SysMouse, &DirectInput8DeviceJoystick, NULL) != DI_OK) {
+        DebugConsoleOutput("Error: CreateDeviceDirectInput8() failed!", false, "red");
+        pDirectInput_DI8->Release();
+        return false;
+    }
+
+    pGetDirectInput8 = (GetDirectInput8T)GetDirectInput8;
+
+    uintptr_t avTable = Internal::Memory::read<uintptr_t>(DirectInput8DeviceJoystick);
+    uintptr_t pFunction = avTable + 9 * sizeof(uintptr_t);
+
+    // Set the hook addresses
+    DirectInput8OriginalAddress = Internal::Memory::read<void*>(pFunction);
+    DirectInput8HookAddress = (void*)DirectInput8Hook;
+    pDirectInput8DevicGetState = (DirectInput8GetDeviceStateT)DirectInput8OriginalAddress;
+
+    if (sizeof(void*) == 8) DirectInput8SubHook.Install(DirectInput8OriginalAddress, DirectInput8HookAddress, subhook::HookFlags::HookFlag64BitOffset);
+    if (sizeof(void*) == 4) DirectInput8SubHook.Install(DirectInput8OriginalAddress, DirectInput8HookAddress);
+
+    return true;
+}

@@ -786,14 +786,10 @@ HRESULT D3D11_Present_Hook(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT F
     // Remove hook
     D3D11_Subhook.Remove();
 
-    // Check frameskip
-    GlobalFrameSkipCurrent++;
-    if (GlobalFrameSkipCurrent >= GlobalSettings.config_frame_skip)
+    // TAS routine
+    if (GlobalSettings.config_tashook == "graphics")
     {
-        // TAS
-        PlayScriptRoutine();
-        RecordScriptRoutine();
-        GlobalFrameSkipCurrent = 0;
+        pTASRoutine();
     }
 
     // Debug Menu
@@ -807,8 +803,6 @@ HRESULT D3D11_Present_Hook(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT F
     if (sizeof(void*) == 4) D3D11_Subhook.Install(D3D11_Present_Original_Address, D3D11_Present_Hook_Address);
 
     return Trampoline;
-
-    return 0;
 }
 
 

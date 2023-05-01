@@ -3,6 +3,8 @@
 // Global hook settings
 typedef UINT(__stdcall* GetRawInputDataT)(HRAWINPUT hRawInput, UINT uiCommand, LPVOID pData, PUINT pcbSize, UINT cbSizeHeader);
 GetRawInputDataT pGetRawInputData = nullptr;
+typedef void(__stdcall* GetRawInputT)(BOOL TAS, GameInput* DST, std::string device);
+GetRawInputT pGetRawInput = nullptr;
 
 subhook::Hook RawInputSubhook;
 
@@ -11,11 +13,16 @@ void* RawInputHookAddress;
 
 bool GetRawInputRetrieveInformation = false;
 bool GetRawInputSendInformation = false;
+bool GetRawInputGetInformation = false;
 bool RawInputDisableForGame = false;
 bool GetRawInputTASMode = false;
 
 GameInput RawInputGameInputCurrent;
 GameInput RawInputGameInputLast;
+GameInput* GetRawInputDSTAll = nullptr;
+GameInput* GetRawInputDSTMouse = nullptr;
+GameInput* GetRawInputDSTKeyboard = nullptr;
+GameInput* GetRawInputDSTJoystick = nullptr;
 
 // Specific settings
 BYTE* RawInputBuffer = (BYTE*)malloc(65000);
@@ -37,6 +44,7 @@ UINT __stdcall GetRawInputData_Hook(HRAWINPUT hRawInput, UINT uiCommand, LPVOID 
 
     if (GetRawInputSendInformation)
     {
+
         if (pData != NULL)
         {
             RawInputSendHeaderBytesNeeded = sizeof(RAWINPUTHEADER) * RawInputSendPacketAmount;
@@ -65,6 +73,11 @@ UINT __stdcall GetRawInputData_Hook(HRAWINPUT hRawInput, UINT uiCommand, LPVOID 
                 if (offset > 0) std::memset(RawInputSendBuffer, 0x00, offset);
                 if (RawInputSendBufferBytesNeeded > 0 && offset > 0) std::memcpy(RawInputSendBuffer, RawInputSendBuffer + offset, RawInputSendBufferBytesNeeded);
                 result = offset;
+
+                GetRawInputSendInformation = false;
+                TASSynchronizer.RawInputKeyboardSend = false;
+                TASSynchronizer.RawInputMouseSend = false;
+                TASSynchronizer.RawInputJoystickSend = false;
             }
         }
         else
@@ -78,7 +91,6 @@ UINT __stdcall GetRawInputData_Hook(HRAWINPUT hRawInput, UINT uiCommand, LPVOID 
         result = pGetRawInputData(hRawInput, uiCommand, pData, pcbSize, cbSizeHeader);
         if (pData != NULL && result > 0 && result < 65000)
         {
-
             // Set and copy old states
             std::memcpy(&RawInputGameInputLast, &RawInputGameInputCurrent, sizeof(GameInput));
 
@@ -95,15 +107,38 @@ UINT __stdcall GetRawInputData_Hook(HRAWINPUT hRawInput, UINT uiCommand, LPVOID 
             }
         }
 
-        if (RawInputDisableForGame)
+        bool demand = false;
+        if (!GlobalSettings.config_rawinput_demand)
         {
-            result = -1;
+            if (GetRawInputGetInformation)
+            {
+                demand = true;
+                if (InputDriverMouseGet == InputDriverz::RAW1NPUT)
+                {
+                    pGetRawInput(false, GetRawInputDSTMouse, "mouse");
+                }
+                if (InputDriverKeyboardGet == InputDriverz::RAW1NPUT)
+                {
+                    pGetRawInput(false, GetRawInputDSTKeyboard, "keyboard");
+                }
+                if (InputDriverJoystickGet == InputDriverz::RAW1NPUT)
+                {
+                    pGetRawInput(false, GetRawInputDSTJoystick, "joystick");
+                }
+
+                GetRawInputGetInformation = false;
+            }
+        }
+
+        if (RawInputDisableForGame && !demand)
+        {
+            result = 0;
             UINT fakeSize = 0;
             if (!pData == NULL)
             {
                 // Probably handling for valid buffer?
             }
-            std::memcpy(pcbSize, &fakeSize, sizeof(UINT));
+            //std::memcpy(pcbSize, &fakeSize, sizeof(UINT));
         }
     }
 
@@ -111,23 +146,6 @@ UINT __stdcall GetRawInputData_Hook(HRAWINPUT hRawInput, UINT uiCommand, LPVOID 
     if (sizeof(void*) == 4) RawInputSubhook.Install(RawInputOriginalAddress, RawInputHookAddress);
 
     return result;
-}
-
-BOOL RawInputHookInit()
-{
-    HMODULE RawInputDllHandle = GetModuleHandleA("User32.dll");
-    if (RawInputDllHandle == NULL) return false;
-
-    RawInputOriginalAddress = (void*)GetProcAddress(RawInputDllHandle, "GetRawInputData");
-    RawInputHookAddress = (void*)GetRawInputData_Hook;
-    pGetRawInputData = (GetRawInputDataT)RawInputOriginalAddress;
-
-    std::memset(RawInputBuffer, 0x00, 65000);
-
-    if (sizeof(void*) == 8) RawInputSubhook.Install(RawInputOriginalAddress, RawInputHookAddress, subhook::HookFlags::HookFlag64BitOffset);
-    if (sizeof(void*) == 4) RawInputSubhook.Install(RawInputOriginalAddress, RawInputHookAddress);
-
-    return true;
 }
 
 BOOL RawInputHookUninit()
@@ -190,8 +208,22 @@ void UninitRecordRawInputTAS()
     std::memset(RawInputSendBuffer, 0x00, 65000);
 }
 
-GameInput GetRawInput(BOOL TAS)
+void __stdcall GetRawInput(BOOL TAS, GameInput* DST, std::string device)
 {
+    if (!GlobalSettings.config_rawinput_demand)
+    {
+        if (TAS)
+        {
+            if (device == "all") GetRawInputDSTAll = DST;
+            else if (device == "mouse") GetRawInputDSTMouse = DST;
+            else if (device == "keyboard") GetRawInputDSTKeyboard = DST;
+            else if (device == "joystick") GetRawInputDSTJoystick = DST;
+
+            GetRawInputGetInformation = true;
+            return;
+        }
+    }
+
     if (InputDriverMouseGet == InputDriverz::RAW1NPUT)
     {
         RawInputGameInputCurrent.MOUSEX = 0;
@@ -200,9 +232,12 @@ GameInput GetRawInput(BOOL TAS)
     }
     if (RawInputBytesNeededBuffer > 0)
     {
+        BYTE* restPackets = (BYTE*)malloc(3000);
+        int restpacketsOffsets = 0;
         RAWINPUT* packet = (RAWINPUT*)RawInputBuffer;
         UINT offset = 0;
         int index = 0;
+
         while (RawInputBytesNeededBuffer > 20)
         {
             UINT packetSize = packet->header.dwSize;
@@ -210,208 +245,228 @@ GameInput GetRawInput(BOOL TAS)
             if (packetSize <= 0 || packetSize >= 4096) break;
             offset += packetSize;
             RawInputBytesNeededBuffer -= packetSize;
-            if (InputDriverMouseGet == InputDriverz::RAW1NPUT)
+            // Mouse input
+            if (packet->header.dwType == RIM_TYPEMOUSE)
             {
-                // Mouse input
-                if (packet->header.dwType == RIM_TYPEMOUSE)
+                if (InputDriverMouseGet == InputDriverz::RAW1NPUT)
                 {
-                    USHORT buttonFlag = packet->data.mouse.usButtonFlags;
-                    RAWMOUSE mouse = packet->data.mouse;
-                    if (buttonFlag & RI_MOUSE_LEFT_BUTTON_DOWN) RawInputGameInputCurrent.LMB = true;
-                    if (buttonFlag & RI_MOUSE_LEFT_BUTTON_UP) RawInputGameInputCurrent.LMB = false;
-                    if (buttonFlag & RI_MOUSE_RIGHT_BUTTON_DOWN) RawInputGameInputCurrent.RMB = true;
-                    if (buttonFlag & RI_MOUSE_RIGHT_BUTTON_UP) RawInputGameInputCurrent.RMB = false;
-                    if (buttonFlag & RI_MOUSE_MIDDLE_BUTTON_DOWN) RawInputGameInputCurrent.MB = true;
-                    if (buttonFlag & RI_MOUSE_MIDDLE_BUTTON_UP) RawInputGameInputCurrent.MB = false;
-                    if (buttonFlag & RI_MOUSE_BUTTON_4_DOWN)  RawInputGameInputCurrent.ME1 = true;
-                    if (buttonFlag & RI_MOUSE_BUTTON_4_UP)  RawInputGameInputCurrent.ME1 = false;
-                    if (buttonFlag & RI_MOUSE_BUTTON_5_DOWN) RawInputGameInputCurrent.ME2 = true;
-                    if (buttonFlag & RI_MOUSE_BUTTON_5_UP) RawInputGameInputCurrent.ME2 = false;
-                    if (buttonFlag & RI_MOUSE_WHEEL)
+                    if (device == "all" || device == "mouse")
                     {
-                        if (mouse.usButtonData > (int)(USHRT_MAX / 2)) RawInputGameInputCurrent.WHEEL += -(int)(USHRT_MAX - mouse.usButtonData);
-                        if (mouse.usButtonData < 0) RawInputGameInputCurrent.WHEEL += (int)mouse.usButtonData;
+                        USHORT buttonFlag = packet->data.mouse.usButtonFlags;
+                        RAWMOUSE mouse = packet->data.mouse;
+                        if (buttonFlag & RI_MOUSE_LEFT_BUTTON_DOWN) RawInputGameInputCurrent.LMB = true;
+                        if (buttonFlag & RI_MOUSE_LEFT_BUTTON_UP) RawInputGameInputCurrent.LMB = false;
+                        if (buttonFlag & RI_MOUSE_RIGHT_BUTTON_DOWN) RawInputGameInputCurrent.RMB = true;
+                        if (buttonFlag & RI_MOUSE_RIGHT_BUTTON_UP) RawInputGameInputCurrent.RMB = false;
+                        if (buttonFlag & RI_MOUSE_MIDDLE_BUTTON_DOWN) RawInputGameInputCurrent.MB = true;
+                        if (buttonFlag & RI_MOUSE_MIDDLE_BUTTON_UP) RawInputGameInputCurrent.MB = false;
+                        if (buttonFlag & RI_MOUSE_BUTTON_4_DOWN)  RawInputGameInputCurrent.ME1 = true;
+                        if (buttonFlag & RI_MOUSE_BUTTON_4_UP)  RawInputGameInputCurrent.ME1 = false;
+                        if (buttonFlag & RI_MOUSE_BUTTON_5_DOWN) RawInputGameInputCurrent.ME2 = true;
+                        if (buttonFlag & RI_MOUSE_BUTTON_5_UP) RawInputGameInputCurrent.ME2 = false;
+                        if (buttonFlag & RI_MOUSE_WHEEL)
+                        {
+                            if (mouse.usButtonData > (int)(USHRT_MAX / 2)) RawInputGameInputCurrent.WHEEL += -(int)(USHRT_MAX - mouse.usButtonData);
+                            if (mouse.usButtonData < 0) RawInputGameInputCurrent.WHEEL += (int)mouse.usButtonData;
+                        }
+                        RawInputGameInputCurrent.MOUSEX += mouse.lLastX;
+                        RawInputGameInputCurrent.MOUSEY += mouse.lLastY;
                     }
-                    RawInputGameInputCurrent.MOUSEX += mouse.lLastX;
-                    RawInputGameInputCurrent.MOUSEY += mouse.lLastY;
+                    else
+                    {
+                        std::memcpy(restPackets + restpacketsOffsets, packet, packetSize);
+                        restpacketsOffsets += packetSize;
+                    }
                 }
             }
 
-            if (InputDriverKeyboardGet == InputDriverz::RAW1NPUT)
+            // Keyboard input
+            if (packet->header.dwType == RIM_TYPEKEYBOARD)
             {
-                // Keyboard input
-                if (packet->header.dwType == RIM_TYPEKEYBOARD)
+                if (InputDriverKeyboardGet == InputDriverz::RAW1NPUT)
                 {
-                    if (!(packet->data.keyboard.Flags & RI_KEY_BREAK))
+                    if (device == "all" || device == "keyboard")
                     {
-                        USHORT virtualKey = packet->data.keyboard.VKey;
-                        if (virtualKey == VK_ESCAPE) RawInputGameInputCurrent.ESC = true;
-                        if (virtualKey == VK_TAB) RawInputGameInputCurrent.TAB = true;
-                        if (virtualKey == VK_LSHIFT) RawInputGameInputCurrent.LSHIFT = true;
-                        if (virtualKey == VK_RSHIFT) RawInputGameInputCurrent.RSHIFT = true;
-                        if (virtualKey == VK_CONTROL) RawInputGameInputCurrent.CTRL = true;
-                        if (virtualKey == VK_MENU) RawInputGameInputCurrent.ALT = true;
-                        if (virtualKey == VK_BACK) RawInputGameInputCurrent.BACK = true;
-                        if (virtualKey == VK_RETURN) RawInputGameInputCurrent.RETURN = true;
-                        if (virtualKey == VK_SPACE) RawInputGameInputCurrent.SPACE = true;
-                        if (virtualKey == VK_UP) RawInputGameInputCurrent.AUP = true;
-                        if (virtualKey == VK_RIGHT) RawInputGameInputCurrent.ARIGHT = true;
-                        if (virtualKey == VK_DOWN) RawInputGameInputCurrent.ADOWN = true;
-                        if (virtualKey == VK_LEFT) RawInputGameInputCurrent.ALEFT = true;
-                        if (virtualKey == 0x30) RawInputGameInputCurrent.D0 = true;
-                        if (virtualKey == 0x31) RawInputGameInputCurrent.D1 = true;
-                        if (virtualKey == 0x32) RawInputGameInputCurrent.D2 = true;
-                        if (virtualKey == 0x33) RawInputGameInputCurrent.D3 = true;
-                        if (virtualKey == 0x34) RawInputGameInputCurrent.D4 = true;
-                        if (virtualKey == 0x35) RawInputGameInputCurrent.D5 = true;
-                        if (virtualKey == 0x36) RawInputGameInputCurrent.D6 = true;
-                        if (virtualKey == 0x37) RawInputGameInputCurrent.D7 = true;
-                        if (virtualKey == 0x38) RawInputGameInputCurrent.D8 = true;
-                        if (virtualKey == 0x39) RawInputGameInputCurrent.D9 = true;
-                        if (virtualKey == 0x41) RawInputGameInputCurrent.A = true;
-                        if (virtualKey == 0x42) RawInputGameInputCurrent.B = true;
-                        if (virtualKey == 0x43) RawInputGameInputCurrent.C = true;
-                        if (virtualKey == 0x44) RawInputGameInputCurrent.D = true;
-                        if (virtualKey == 0x45) RawInputGameInputCurrent.E = true;
-                        if (virtualKey == 0x46) RawInputGameInputCurrent.F = true;
-                        if (virtualKey == 0x47) RawInputGameInputCurrent.G = true;
-                        if (virtualKey == 0x48) RawInputGameInputCurrent.H = true;
-                        if (virtualKey == 0x49) RawInputGameInputCurrent.I = true;
-                        if (virtualKey == 0x4A) RawInputGameInputCurrent.J = true;
-                        if (virtualKey == 0x4B) RawInputGameInputCurrent.K = true;
-                        if (virtualKey == 0x4C) RawInputGameInputCurrent.L = true;
-                        if (virtualKey == 0x4D) RawInputGameInputCurrent.M = true;
-                        if (virtualKey == 0x4E) RawInputGameInputCurrent.N = true;
-                        if (virtualKey == 0x4F) RawInputGameInputCurrent.O = true;
-                        if (virtualKey == 0x50) RawInputGameInputCurrent.P = true;
-                        if (virtualKey == 0x51) RawInputGameInputCurrent.Q = true;
-                        if (virtualKey == 0x52) RawInputGameInputCurrent.R = true;
-                        if (virtualKey == 0x53) RawInputGameInputCurrent.S = true;
-                        if (virtualKey == 0x54) RawInputGameInputCurrent.T = true;
-                        if (virtualKey == 0x55) RawInputGameInputCurrent.U = true;
-                        if (virtualKey == 0x56) RawInputGameInputCurrent.V = true;
-                        if (virtualKey == 0x57) RawInputGameInputCurrent.W = true;
-                        if (virtualKey == 0x58) RawInputGameInputCurrent.X = true;
-                        if (virtualKey == 0x59) RawInputGameInputCurrent.Y = true;
-                        if (virtualKey == 0x5A) RawInputGameInputCurrent.Z = true;
-                        if (virtualKey == VK_NUMPAD0)RawInputGameInputCurrent.NUM0 = true;
-                        if (virtualKey == VK_NUMPAD1) RawInputGameInputCurrent.NUM1 = true;
-                        if (virtualKey == VK_NUMPAD2) RawInputGameInputCurrent.NUM2 = true;
-                        if (virtualKey == VK_NUMPAD3) RawInputGameInputCurrent.NUM3 = true;
-                        if (virtualKey == VK_NUMPAD4) RawInputGameInputCurrent.NUM4 = true;
-                        if (virtualKey == VK_NUMPAD5) RawInputGameInputCurrent.NUM5 = true;
-                        if (virtualKey == VK_NUMPAD6) RawInputGameInputCurrent.NUM6 = true;
-                        if (virtualKey == VK_NUMPAD7) RawInputGameInputCurrent.NUM7 = true;
-                        if (virtualKey == VK_NUMPAD8) RawInputGameInputCurrent.NUM8 = true;
-                        if (virtualKey == VK_NUMPAD9) RawInputGameInputCurrent.NUM9 = true;
-                        if (virtualKey == VK_DIVIDE) RawInputGameInputCurrent.NUMDIV = true;
-                        if (virtualKey == VK_MULTIPLY) RawInputGameInputCurrent.NUMMUL = true;
-                        if (virtualKey == VK_SUBTRACT) RawInputGameInputCurrent.NUMMIN = true;
-                        if (virtualKey == VK_ADD) RawInputGameInputCurrent.NUMPLU = true;
-                        if (virtualKey == VK_RETURN) RawInputGameInputCurrent.NUMRET = true;
-                        if (virtualKey == VK_DELETE) RawInputGameInputCurrent.NUMDEL = true;
-                        if (virtualKey == VK_F1) RawInputGameInputCurrent.F1 = true;
-                        if (virtualKey == VK_F2) RawInputGameInputCurrent.F2 = true;
-                        if (virtualKey == VK_F3) RawInputGameInputCurrent.F3 = true;
-                        if (virtualKey == VK_F4) RawInputGameInputCurrent.F4 = true;
-                        if (virtualKey == VK_F5) RawInputGameInputCurrent.F5 = true;
-                        if (virtualKey == VK_F6) RawInputGameInputCurrent.F6 = true;
-                        if (virtualKey == VK_F7) RawInputGameInputCurrent.F7 = true;
-                        if (virtualKey == VK_F8) RawInputGameInputCurrent.F8 = true;
-                        if (virtualKey == VK_F9) RawInputGameInputCurrent.F9 = true;
-                        if (virtualKey == VK_F10) RawInputGameInputCurrent.F10 = true;
-                        if (virtualKey == VK_F11) RawInputGameInputCurrent.F11 = true;
-                        if (virtualKey == VK_F12) RawInputGameInputCurrent.F12 = true;
-                        if (virtualKey == VK_OEM_COMMA) RawInputGameInputCurrent.COMMA = true;
-                        if (virtualKey == VK_OEM_PERIOD) RawInputGameInputCurrent.DOT = true;
-                        if (virtualKey == VK_OEM_PLUS) RawInputGameInputCurrent.PLUS = true;
-                        if (virtualKey == VK_OEM_MINUS) RawInputGameInputCurrent.MINUS = true;
-                    }
+                        if (!(packet->data.keyboard.Flags & RI_KEY_BREAK))
+                        {
+                            USHORT virtualKey = packet->data.keyboard.VKey;
+                            bool isExtendedShift = (packet->data.keyboard.Flags & RI_KEY_E0) || (packet->data.keyboard.Flags & RI_KEY_E1);
 
-                    if (packet->data.keyboard.Flags & RI_KEY_BREAK)
+                            if (virtualKey == VK_ESCAPE) RawInputGameInputCurrent.ESC = true;
+                            if (virtualKey == VK_TAB) RawInputGameInputCurrent.TAB = true;
+                            if (virtualKey == VK_LSHIFT && isExtendedShift) RawInputGameInputCurrent.LSHIFT = true;
+                            if (virtualKey == VK_RSHIFT && isExtendedShift) RawInputGameInputCurrent.RSHIFT = true;
+                            if (virtualKey == VK_CONTROL) RawInputGameInputCurrent.CTRL = true;
+                            if (virtualKey == VK_MENU) RawInputGameInputCurrent.ALT = true;
+                            if (virtualKey == VK_BACK) RawInputGameInputCurrent.BACK = true;
+                            if (virtualKey == VK_RETURN) RawInputGameInputCurrent.RETURN = true;
+                            if (virtualKey == VK_SPACE) RawInputGameInputCurrent.SPACE = true;
+                            if (virtualKey == VK_UP) RawInputGameInputCurrent.AUP = true;
+                            if (virtualKey == VK_RIGHT) RawInputGameInputCurrent.ARIGHT = true;
+                            if (virtualKey == VK_DOWN) RawInputGameInputCurrent.ADOWN = true;
+                            if (virtualKey == VK_LEFT) RawInputGameInputCurrent.ALEFT = true;
+                            if (virtualKey == 0x30) RawInputGameInputCurrent.D0 = true;
+                            if (virtualKey == 0x31) RawInputGameInputCurrent.D1 = true;
+                            if (virtualKey == 0x32) RawInputGameInputCurrent.D2 = true;
+                            if (virtualKey == 0x33) RawInputGameInputCurrent.D3 = true;
+                            if (virtualKey == 0x34) RawInputGameInputCurrent.D4 = true;
+                            if (virtualKey == 0x35) RawInputGameInputCurrent.D5 = true;
+                            if (virtualKey == 0x36) RawInputGameInputCurrent.D6 = true;
+                            if (virtualKey == 0x37) RawInputGameInputCurrent.D7 = true;
+                            if (virtualKey == 0x38) RawInputGameInputCurrent.D8 = true;
+                            if (virtualKey == 0x39) RawInputGameInputCurrent.D9 = true;
+                            if (virtualKey == 0x41) RawInputGameInputCurrent.A = true;
+                            if (virtualKey == 0x42) RawInputGameInputCurrent.B = true;
+                            if (virtualKey == 0x43) RawInputGameInputCurrent.C = true;
+                            if (virtualKey == 0x44) RawInputGameInputCurrent.D = true;
+                            if (virtualKey == 0x45) RawInputGameInputCurrent.E = true;
+                            if (virtualKey == 0x46) RawInputGameInputCurrent.F = true;
+                            if (virtualKey == 0x47) RawInputGameInputCurrent.G = true;
+                            if (virtualKey == 0x48) RawInputGameInputCurrent.H = true;
+                            if (virtualKey == 0x49) RawInputGameInputCurrent.I = true;
+                            if (virtualKey == 0x4A) RawInputGameInputCurrent.J = true;
+                            if (virtualKey == 0x4B) RawInputGameInputCurrent.K = true;
+                            if (virtualKey == 0x4C) RawInputGameInputCurrent.L = true;
+                            if (virtualKey == 0x4D) RawInputGameInputCurrent.M = true;
+                            if (virtualKey == 0x4E) RawInputGameInputCurrent.N = true;
+                            if (virtualKey == 0x4F) RawInputGameInputCurrent.O = true;
+                            if (virtualKey == 0x50) RawInputGameInputCurrent.P = true;
+                            if (virtualKey == 0x51) RawInputGameInputCurrent.Q = true;
+                            if (virtualKey == 0x52) RawInputGameInputCurrent.R = true;
+                            if (virtualKey == 0x53) RawInputGameInputCurrent.S = true;
+                            if (virtualKey == 0x54) RawInputGameInputCurrent.T = true;
+                            if (virtualKey == 0x55) RawInputGameInputCurrent.U = true;
+                            if (virtualKey == 0x56) RawInputGameInputCurrent.V = true;
+                            if (virtualKey == 0x57) RawInputGameInputCurrent.W = true;
+                            if (virtualKey == 0x58) RawInputGameInputCurrent.X = true;
+                            if (virtualKey == 0x59) RawInputGameInputCurrent.Y = true;
+                            if (virtualKey == 0x5A) RawInputGameInputCurrent.Z = true;
+                            if (virtualKey == VK_NUMPAD0)RawInputGameInputCurrent.NUM0 = true;
+                            if (virtualKey == VK_NUMPAD1) RawInputGameInputCurrent.NUM1 = true;
+                            if (virtualKey == VK_NUMPAD2) RawInputGameInputCurrent.NUM2 = true;
+                            if (virtualKey == VK_NUMPAD3) RawInputGameInputCurrent.NUM3 = true;
+                            if (virtualKey == VK_NUMPAD4) RawInputGameInputCurrent.NUM4 = true;
+                            if (virtualKey == VK_NUMPAD5) RawInputGameInputCurrent.NUM5 = true;
+                            if (virtualKey == VK_NUMPAD6) RawInputGameInputCurrent.NUM6 = true;
+                            if (virtualKey == VK_NUMPAD7) RawInputGameInputCurrent.NUM7 = true;
+                            if (virtualKey == VK_NUMPAD8) RawInputGameInputCurrent.NUM8 = true;
+                            if (virtualKey == VK_NUMPAD9) RawInputGameInputCurrent.NUM9 = true;
+                            if (virtualKey == VK_DIVIDE) RawInputGameInputCurrent.NUMDIV = true;
+                            if (virtualKey == VK_MULTIPLY) RawInputGameInputCurrent.NUMMUL = true;
+                            if (virtualKey == VK_SUBTRACT) RawInputGameInputCurrent.NUMMIN = true;
+                            if (virtualKey == VK_ADD) RawInputGameInputCurrent.NUMPLU = true;
+                            if (virtualKey == VK_RETURN) RawInputGameInputCurrent.NUMRET = true;
+                            if (virtualKey == VK_DELETE) RawInputGameInputCurrent.NUMDEL = true;
+                            if (virtualKey == VK_F1) RawInputGameInputCurrent.F1 = true;
+                            if (virtualKey == VK_F2) RawInputGameInputCurrent.F2 = true;
+                            if (virtualKey == VK_F3) RawInputGameInputCurrent.F3 = true;
+                            if (virtualKey == VK_F4) RawInputGameInputCurrent.F4 = true;
+                            if (virtualKey == VK_F5) RawInputGameInputCurrent.F5 = true;
+                            if (virtualKey == VK_F6) RawInputGameInputCurrent.F6 = true;
+                            if (virtualKey == VK_F7) RawInputGameInputCurrent.F7 = true;
+                            if (virtualKey == VK_F8) RawInputGameInputCurrent.F8 = true;
+                            if (virtualKey == VK_F9) RawInputGameInputCurrent.F9 = true;
+                            if (virtualKey == VK_F10) RawInputGameInputCurrent.F10 = true;
+                            if (virtualKey == VK_F11) RawInputGameInputCurrent.F11 = true;
+                            if (virtualKey == VK_F12) RawInputGameInputCurrent.F12 = true;
+                            if (virtualKey == VK_OEM_COMMA) RawInputGameInputCurrent.COMMA = true;
+                            if (virtualKey == VK_OEM_PERIOD) RawInputGameInputCurrent.DOT = true;
+                            if (virtualKey == VK_OEM_PLUS) RawInputGameInputCurrent.PLUS = true;
+                            if (virtualKey == VK_OEM_MINUS) RawInputGameInputCurrent.MINUS = true;
+                        }
+
+                        if (packet->data.keyboard.Flags & RI_KEY_BREAK)
+                        {
+                            USHORT virtualKey = packet->data.keyboard.VKey;
+                            bool isExtendedShift = (packet->data.keyboard.Flags & RI_KEY_E0) || (packet->data.keyboard.Flags & RI_KEY_E1);
+
+                            if (virtualKey == VK_ESCAPE) RawInputGameInputCurrent.ESC = false;
+                            if (virtualKey == VK_TAB) RawInputGameInputCurrent.TAB = false;
+                            if (virtualKey == VK_LSHIFT && isExtendedShift) RawInputGameInputCurrent.LSHIFT = false;
+                            if (virtualKey == VK_RSHIFT && isExtendedShift) RawInputGameInputCurrent.RSHIFT = false;
+                            if (virtualKey == VK_CONTROL) RawInputGameInputCurrent.CTRL = false;
+                            if (virtualKey == VK_MENU) RawInputGameInputCurrent.ALT = false;
+                            if (virtualKey == VK_BACK) RawInputGameInputCurrent.BACK = false;
+                            if (virtualKey == VK_RETURN) RawInputGameInputCurrent.RETURN = false;
+                            if (virtualKey == VK_SPACE) RawInputGameInputCurrent.SPACE = false;
+                            if (virtualKey == VK_UP) RawInputGameInputCurrent.AUP = false;
+                            if (virtualKey == VK_RIGHT) RawInputGameInputCurrent.ARIGHT = false;
+                            if (virtualKey == VK_DOWN) RawInputGameInputCurrent.ADOWN = false;
+                            if (virtualKey == VK_LEFT) RawInputGameInputCurrent.ALEFT = false;
+                            if (virtualKey == 0x30) RawInputGameInputCurrent.D0 = false;
+                            if (virtualKey == 0x31) RawInputGameInputCurrent.D1 = false;
+                            if (virtualKey == 0x32) RawInputGameInputCurrent.D2 = false;
+                            if (virtualKey == 0x33) RawInputGameInputCurrent.D3 = false;
+                            if (virtualKey == 0x34) RawInputGameInputCurrent.D4 = false;
+                            if (virtualKey == 0x35) RawInputGameInputCurrent.D5 = false;
+                            if (virtualKey == 0x36) RawInputGameInputCurrent.D6 = false;
+                            if (virtualKey == 0x37) RawInputGameInputCurrent.D7 = false;
+                            if (virtualKey == 0x38) RawInputGameInputCurrent.D8 = false;
+                            if (virtualKey == 0x39) RawInputGameInputCurrent.D9 = false;
+                            if (virtualKey == 0x41) RawInputGameInputCurrent.A = false;
+                            if (virtualKey == 0x42) RawInputGameInputCurrent.B = false;
+                            if (virtualKey == 0x43) RawInputGameInputCurrent.C = false;
+                            if (virtualKey == 0x44) RawInputGameInputCurrent.D = false;
+                            if (virtualKey == 0x45) RawInputGameInputCurrent.E = false;
+                            if (virtualKey == 0x46) RawInputGameInputCurrent.F = false;
+                            if (virtualKey == 0x47) RawInputGameInputCurrent.G = false;
+                            if (virtualKey == 0x48) RawInputGameInputCurrent.H = false;
+                            if (virtualKey == 0x49) RawInputGameInputCurrent.I = false;
+                            if (virtualKey == 0x4A) RawInputGameInputCurrent.J = false;
+                            if (virtualKey == 0x4B) RawInputGameInputCurrent.K = false;
+                            if (virtualKey == 0x4C) RawInputGameInputCurrent.L = false;
+                            if (virtualKey == 0x4D) RawInputGameInputCurrent.M = false;
+                            if (virtualKey == 0x4E) RawInputGameInputCurrent.N = false;
+                            if (virtualKey == 0x4F) RawInputGameInputCurrent.O = false;
+                            if (virtualKey == 0x50) RawInputGameInputCurrent.P = false;
+                            if (virtualKey == 0x51) RawInputGameInputCurrent.Q = false;
+                            if (virtualKey == 0x52) RawInputGameInputCurrent.R = false;
+                            if (virtualKey == 0x53) RawInputGameInputCurrent.S = false;
+                            if (virtualKey == 0x54) RawInputGameInputCurrent.T = false;
+                            if (virtualKey == 0x55) RawInputGameInputCurrent.U = false;
+                            if (virtualKey == 0x56) RawInputGameInputCurrent.V = false;
+                            if (virtualKey == 0x57) RawInputGameInputCurrent.W = false;
+                            if (virtualKey == 0x58) RawInputGameInputCurrent.X = false;
+                            if (virtualKey == 0x59) RawInputGameInputCurrent.Y = false;
+                            if (virtualKey == 0x5A) RawInputGameInputCurrent.Z = false;
+                            if (virtualKey == VK_NUMPAD0) RawInputGameInputCurrent.NUM0 = false;
+                            if (virtualKey == VK_NUMPAD1) RawInputGameInputCurrent.NUM1 = false;
+                            if (virtualKey == VK_NUMPAD2) RawInputGameInputCurrent.NUM2 = false;
+                            if (virtualKey == VK_NUMPAD3) RawInputGameInputCurrent.NUM3 = false;
+                            if (virtualKey == VK_NUMPAD4) RawInputGameInputCurrent.NUM4 = false;
+                            if (virtualKey == VK_NUMPAD5) RawInputGameInputCurrent.NUM5 = false;
+                            if (virtualKey == VK_NUMPAD6) RawInputGameInputCurrent.NUM6 = false;
+                            if (virtualKey == VK_NUMPAD7) RawInputGameInputCurrent.NUM7 = false;
+                            if (virtualKey == VK_NUMPAD8) RawInputGameInputCurrent.NUM8 = false;
+                            if (virtualKey == VK_NUMPAD9) RawInputGameInputCurrent.NUM9 = false;
+                            if (virtualKey == VK_DIVIDE) RawInputGameInputCurrent.NUMDIV = false;
+                            if (virtualKey == VK_MULTIPLY) RawInputGameInputCurrent.NUMMUL = false;
+                            if (virtualKey == VK_SUBTRACT) RawInputGameInputCurrent.NUMMIN = false;
+                            if (virtualKey == VK_ADD) RawInputGameInputCurrent.NUMPLU = false;
+                            if (virtualKey == VK_RETURN) RawInputGameInputCurrent.NUMRET = false;
+                            if (virtualKey == VK_DELETE) RawInputGameInputCurrent.NUMDEL = false;
+                            if (virtualKey == VK_F1) RawInputGameInputCurrent.F1 = false;
+                            if (virtualKey == VK_F2) RawInputGameInputCurrent.F2 = false;
+                            if (virtualKey == VK_F3) RawInputGameInputCurrent.F3 = false;
+                            if (virtualKey == VK_F4) RawInputGameInputCurrent.F4 = false;
+                            if (virtualKey == VK_F5) RawInputGameInputCurrent.F5 = false;
+                            if (virtualKey == VK_F6) RawInputGameInputCurrent.F6 = false;
+                            if (virtualKey == VK_F7) RawInputGameInputCurrent.F7 = false;
+                            if (virtualKey == VK_F8) RawInputGameInputCurrent.F8 = false;
+                            if (virtualKey == VK_F9) RawInputGameInputCurrent.F9 = false;
+                            if (virtualKey == VK_F10) RawInputGameInputCurrent.F10 = false;
+                            if (virtualKey == VK_F11) RawInputGameInputCurrent.F11 = false;
+                            if (virtualKey == VK_F12) RawInputGameInputCurrent.F12 = false;
+                            if (virtualKey == VK_OEM_COMMA) RawInputGameInputCurrent.COMMA = false;
+                            if (virtualKey == VK_OEM_PERIOD) RawInputGameInputCurrent.DOT = false;
+                            if (virtualKey == VK_OEM_PLUS) RawInputGameInputCurrent.PLUS = false;
+                            if (virtualKey == VK_OEM_MINUS) RawInputGameInputCurrent.MINUS = false;
+                        }
+                    }
+                    else
                     {
-                        USHORT virtualKey = packet->data.keyboard.VKey;
-                        if (virtualKey == VK_ESCAPE) RawInputGameInputCurrent.ESC = false;
-                        if (virtualKey == VK_TAB) RawInputGameInputCurrent.TAB = false;
-                        if (virtualKey == VK_LSHIFT) RawInputGameInputCurrent.LSHIFT = false;
-                        if (virtualKey == VK_RSHIFT) RawInputGameInputCurrent.RSHIFT = false;
-                        if (virtualKey == VK_CONTROL) RawInputGameInputCurrent.CTRL = false;
-                        if (virtualKey == VK_MENU) RawInputGameInputCurrent.ALT = false;
-                        if (virtualKey == VK_BACK) RawInputGameInputCurrent.BACK = false;
-                        if (virtualKey == VK_RETURN) RawInputGameInputCurrent.RETURN = false;
-                        if (virtualKey == VK_SPACE) RawInputGameInputCurrent.SPACE = false;
-                        if (virtualKey == VK_UP) RawInputGameInputCurrent.AUP = false;
-                        if (virtualKey == VK_RIGHT) RawInputGameInputCurrent.ARIGHT = false;
-                        if (virtualKey == VK_DOWN) RawInputGameInputCurrent.ADOWN = false;
-                        if (virtualKey == VK_LEFT) RawInputGameInputCurrent.ALEFT = false;
-                        if (virtualKey == 0x30) RawInputGameInputCurrent.D0 = false;
-                        if (virtualKey == 0x31) RawInputGameInputCurrent.D1 = false;
-                        if (virtualKey == 0x32) RawInputGameInputCurrent.D2 = false;
-                        if (virtualKey == 0x33) RawInputGameInputCurrent.D3 = false;
-                        if (virtualKey == 0x34) RawInputGameInputCurrent.D4 = false;
-                        if (virtualKey == 0x35) RawInputGameInputCurrent.D5 = false;
-                        if (virtualKey == 0x36) RawInputGameInputCurrent.D6 = false;
-                        if (virtualKey == 0x37) RawInputGameInputCurrent.D7 = false;
-                        if (virtualKey == 0x38) RawInputGameInputCurrent.D8 = false;
-                        if (virtualKey == 0x39) RawInputGameInputCurrent.D9 = false;
-                        if (virtualKey == 0x41) RawInputGameInputCurrent.A = false;
-                        if (virtualKey == 0x42) RawInputGameInputCurrent.B = false;
-                        if (virtualKey == 0x43) RawInputGameInputCurrent.C = false;
-                        if (virtualKey == 0x44) RawInputGameInputCurrent.D = false;
-                        if (virtualKey == 0x45) RawInputGameInputCurrent.E = false;
-                        if (virtualKey == 0x46) RawInputGameInputCurrent.F = false;
-                        if (virtualKey == 0x47) RawInputGameInputCurrent.G = false;
-                        if (virtualKey == 0x48) RawInputGameInputCurrent.H = false;
-                        if (virtualKey == 0x49) RawInputGameInputCurrent.I = false;
-                        if (virtualKey == 0x4A) RawInputGameInputCurrent.J = false;
-                        if (virtualKey == 0x4B) RawInputGameInputCurrent.K = false;
-                        if (virtualKey == 0x4C) RawInputGameInputCurrent.L = false;
-                        if (virtualKey == 0x4D) RawInputGameInputCurrent.M = false;
-                        if (virtualKey == 0x4E) RawInputGameInputCurrent.N = false;
-                        if (virtualKey == 0x4F) RawInputGameInputCurrent.O = false;
-                        if (virtualKey == 0x50) RawInputGameInputCurrent.P = false;
-                        if (virtualKey == 0x51) RawInputGameInputCurrent.Q = false;
-                        if (virtualKey == 0x52) RawInputGameInputCurrent.R = false;
-                        if (virtualKey == 0x53) RawInputGameInputCurrent.S = false;
-                        if (virtualKey == 0x54) RawInputGameInputCurrent.T = false;
-                        if (virtualKey == 0x55) RawInputGameInputCurrent.U = false;
-                        if (virtualKey == 0x56) RawInputGameInputCurrent.V = false;
-                        if (virtualKey == 0x57) RawInputGameInputCurrent.W = false;
-                        if (virtualKey == 0x58) RawInputGameInputCurrent.X = false;
-                        if (virtualKey == 0x59) RawInputGameInputCurrent.Y = false;
-                        if (virtualKey == 0x5A) RawInputGameInputCurrent.Z = false;
-                        if (virtualKey == VK_NUMPAD0) RawInputGameInputCurrent.NUM0 = false;
-                        if (virtualKey == VK_NUMPAD1) RawInputGameInputCurrent.NUM1 = false;
-                        if (virtualKey == VK_NUMPAD2) RawInputGameInputCurrent.NUM2 = false;
-                        if (virtualKey == VK_NUMPAD3) RawInputGameInputCurrent.NUM3 = false;
-                        if (virtualKey == VK_NUMPAD4) RawInputGameInputCurrent.NUM4 = false;
-                        if (virtualKey == VK_NUMPAD5) RawInputGameInputCurrent.NUM5 = false;
-                        if (virtualKey == VK_NUMPAD6) RawInputGameInputCurrent.NUM6 = false;
-                        if (virtualKey == VK_NUMPAD7) RawInputGameInputCurrent.NUM7 = false;
-                        if (virtualKey == VK_NUMPAD8) RawInputGameInputCurrent.NUM8 = false;
-                        if (virtualKey == VK_NUMPAD9) RawInputGameInputCurrent.NUM9 = false;
-                        if (virtualKey == VK_DIVIDE) RawInputGameInputCurrent.NUMDIV = false;
-                        if (virtualKey == VK_MULTIPLY) RawInputGameInputCurrent.NUMMUL = false;
-                        if (virtualKey == VK_SUBTRACT) RawInputGameInputCurrent.NUMMIN = false;
-                        if (virtualKey == VK_ADD) RawInputGameInputCurrent.NUMPLU = false;
-                        if (virtualKey == VK_RETURN) RawInputGameInputCurrent.NUMRET = false;
-                        if (virtualKey == VK_DELETE) RawInputGameInputCurrent.NUMDEL = false;
-                        if (virtualKey == VK_F1) RawInputGameInputCurrent.F1 = false;
-                        if (virtualKey == VK_F2) RawInputGameInputCurrent.F2 = false;
-                        if (virtualKey == VK_F3) RawInputGameInputCurrent.F3 = false;
-                        if (virtualKey == VK_F4) RawInputGameInputCurrent.F4 = false;
-                        if (virtualKey == VK_F5) RawInputGameInputCurrent.F5 = false;
-                        if (virtualKey == VK_F6) RawInputGameInputCurrent.F6 = false;
-                        if (virtualKey == VK_F7) RawInputGameInputCurrent.F7 = false;
-                        if (virtualKey == VK_F8) RawInputGameInputCurrent.F8 = false;
-                        if (virtualKey == VK_F9) RawInputGameInputCurrent.F9 = false;
-                        if (virtualKey == VK_F10) RawInputGameInputCurrent.F10 = false;
-                        if (virtualKey == VK_F11) RawInputGameInputCurrent.F11 = false;
-                        if (virtualKey == VK_F12) RawInputGameInputCurrent.F12 = false;
-                        if (virtualKey == VK_OEM_COMMA) RawInputGameInputCurrent.COMMA = false;
-                        if (virtualKey == VK_OEM_PERIOD) RawInputGameInputCurrent.DOT = false;
-                        if (virtualKey == VK_OEM_PLUS) RawInputGameInputCurrent.PLUS = false;
-                        if (virtualKey == VK_OEM_MINUS) RawInputGameInputCurrent.MINUS = false;
+                        std::memcpy(restPackets + restpacketsOffsets, packet, packetSize);
+                        restpacketsOffsets += packetSize;
                     }
                 }
 
@@ -421,15 +476,43 @@ GameInput GetRawInput(BOOL TAS)
         }
 
         std::memset(RawInputBuffer, 0x00, offset);
-
         RawInputBytesNeededBuffer = 0;
+
+        if (restpacketsOffsets > 0)
+        {
+            RawInputBytesNeededBuffer = restpacketsOffsets;
+            std::memcpy(RawInputBuffer, restPackets, restpacketsOffsets);
+        }
     }
 
-    return RawInputGameInputCurrent;
+    if (!GlobalSettings.config_rawinput_demand)
+    {
+        if (device == "all") std::memcpy(GetRawInputDSTAll, &RawInputGameInputCurrent, sizeof(GameInput));
+        else if (device == "mouse") std::memcpy(GetRawInputDSTMouse, &RawInputGameInputCurrent, sizeof(GameInput));
+        else if (device == "keyboard") std::memcpy(GetRawInputDSTKeyboard, &RawInputGameInputCurrent, sizeof(GameInput));
+        else if (device == "joystick") std::memcpy(GetRawInputDSTJoystick, &RawInputGameInputCurrent, sizeof(GameInput));
+    }
+    else
+    {
+        std::memcpy(DST, &RawInputGameInputCurrent, sizeof(GameInput));
+        GetRawInputGetInformation = false;
+    }
+
+    if (device == "all")
+    {
+        TASSynchronizer.RawInputMouseGet = false;
+        TASSynchronizer.RawInputKeyboardGet = false;
+        TASSynchronizer.RawInputJoystickGet = false;
+    }
+    else if (device == "mouse") TASSynchronizer.RawInputMouseGet = false;
+    else if (device == "keyboard") TASSynchronizer.RawInputKeyboardGet = false;
+    else if (device == "joystick") TASSynchronizer.RawInputJoystickGet = false;
 }
 
 void SetRawInput(GameInput RawInputGameInput, BOOL TAS)
 {
+    GetRawInputSendInformation = true;
+
     if (RawInputSendBufferBytesNeeded > 60000)
     {
         std::memset(RawInputSendBuffer, 0x00, 65000);
@@ -542,6 +625,7 @@ void SetRawInput(GameInput RawInputGameInput, BOOL TAS)
         packet = RAWINPUT();
         if (RawInputGameInput.LSHIFT || RawInputGameInputLast.LSHIFT)
         {
+            packet.data.keyboard.Flags |= RI_KEY_E0;
             packet.header.dwType = RIM_TYPEKEYBOARD;
             packet.data.keyboard.Flags |= (RawInputGameInput.LSHIFT ? RI_KEY_MAKE : RI_KEY_BREAK);
             packet.data.keyboard.VKey = VK_LSHIFT;
@@ -552,6 +636,7 @@ void SetRawInput(GameInput RawInputGameInput, BOOL TAS)
         packet = RAWINPUT();
         if (RawInputGameInput.RSHIFT || RawInputGameInputLast.RSHIFT)
         {
+            packet.data.keyboard.Flags |= RI_KEY_E1;
             packet.header.dwType = RIM_TYPEKEYBOARD;
             packet.data.keyboard.Flags |= (RawInputGameInput.RSHIFT ? RI_KEY_MAKE : RI_KEY_BREAK);
             packet.data.keyboard.VKey = VK_RSHIFT;
@@ -1015,3 +1100,21 @@ void SetRawInput(GameInput RawInputGameInput, BOOL TAS)
 }
 
 
+BOOL RawInputHookInit()
+{
+    HMODULE RawInputDllHandle = GetModuleHandleA("User32.dll");
+    if (RawInputDllHandle == NULL) return false;
+
+    pGetRawInput = (GetRawInputT)GetRawInput;
+
+    RawInputOriginalAddress = (void*)GetProcAddress(RawInputDllHandle, "GetRawInputData");
+    RawInputHookAddress = (void*)GetRawInputData_Hook;
+    pGetRawInputData = (GetRawInputDataT)RawInputOriginalAddress;
+
+    std::memset(RawInputBuffer, 0x00, 65000);
+
+    if (sizeof(void*) == 8) RawInputSubhook.Install(RawInputOriginalAddress, RawInputHookAddress, subhook::HookFlags::HookFlag64BitOffset);
+    if (sizeof(void*) == 4) RawInputSubhook.Install(RawInputOriginalAddress, RawInputHookAddress);
+
+    return true;
+}

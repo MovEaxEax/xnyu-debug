@@ -19,7 +19,7 @@ DWORD __stdcall EjectDebug(LPVOID lpParameter) {
     return 0;
 }
 
-EXTERN_DLL_EXPORT int ejectDebugger(char* parameterRaw)
+EXTERN_DLL_EXPORT int EjectDebugger(char* parameterRaw)
 {
     try
     {
@@ -58,6 +58,121 @@ EXTERN_DLL_EXPORT int ejectDebugger(char* parameterRaw)
     return 1;
 }
 
+EXTERN_DLL_EXPORT int playScriptTAS(char* parameterRaw)
+{
+    try
+    {
+        if (!DebugMenuOpened)
+        {
+            std::string parameterString(parameterRaw);
+
+            // Split the message
+            std::vector<std::string> params;
+            splitStringVector(params, parameterString, ";");
+
+            if (!TASPlayScript)
+            {
+                // Path to the script
+                TASScript = GlobalSettings.config_script_directory + params[0];
+
+                if (std::filesystem::exists(TASScript) && !params[0].empty() && params[0].find(".nts") != std::string::npos) {
+                    // File exists
+                    TASSynchronizerCanSend = false;
+                    TASSynchronizerFinishedCurrent = 0;
+
+                    // Start playing the script
+                    TASPlayScriptInit = true;
+                    TASPlayScript = true;
+                    TASPlayScriptUninit = false;
+                    TASPlayScriptDone = false;
+
+                    TASPlayStartedSignal = true;
+                }
+                else {
+                    DebugConsoleOutput("A script named \"" + TASScript + "\" doesn't exist!", false, "red");
+                }
+            }
+            else
+            {
+                // Stop playing the script
+                TASPlayScriptInit = false;
+                TASPlayScript = false;
+                TASPlayScriptUninit = true;
+            }
+        }
+        else
+        {
+            DebugConsoleOutput("You have to close the debug menu first!", false, "red");
+        }
+    }
+    catch (const std::exception e)
+    {
+        DebugConsoleOutput("Error in playScriptTAS()", false, "red");
+        return 0;
+    }
+    return 1;
+}
+
+EXTERN_DLL_EXPORT int recordScriptTAS(char* parameterRaw)
+{
+    try
+    {
+        if (!DebugMenuOpened)
+        {
+            std::string parameterString(parameterRaw);
+
+            // Split the message
+            std::vector<std::string> params;
+            splitStringVector(params, parameterString, ";");
+
+            if (!TASRecordScript)
+            {
+                if (params[0].empty())
+                {
+                    params[0] = "Script_" + GetCurrentDateTime() + ".nts";
+                }
+                else if (params[0].length() > 3) {
+                    if (params[0].substr(params[0].length() - 4, 4) != ".nts") {
+                        params[0] += ".nts";
+                    }
+                }
+                else
+                {
+                    params[0] += ".nts";
+                }
+
+                // Path to the script
+                TASScript = GlobalSettings.config_script_directory + params[0];
+
+                // Start recording the script
+                TASRecordScriptInit = true;
+                TASRecordScript = true;
+                TASRecordScriptUninit = false;
+                TASRecordScriptDone = false;
+                if (!TASRecordFrameByFrame) TASRecordStartedSignal = true;
+                else TASPlayStartedSignal = true;
+            }
+            else
+            {
+                // Stop recording the script
+                TASRecordScriptInit = false;
+                TASRecordScript = false;
+                TASRecordScriptUninit = true;
+            }
+        }
+        else
+        {
+            DebugConsoleOutput("You have to close the debug menu first!", false, "red");
+        }
+    }
+    catch (const std::exception e)
+    {
+        DebugConsoleOutput("Error in recordScriptTAS()", false, "red");
+        return 0;
+    }
+    return 1;
+}
+
 EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
 {
     try
@@ -90,13 +205,17 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         GlobalSettings.config_joystickdriver_set = params[15];
         GlobalSettings.config_joystickdriver_get = params[16];
         GlobalSettings.config_graphicdriver = params[17];
+        GlobalSettings.config_d3d9_hook = params[18];
+        GlobalSettings.config_rawinput_demand = params[19] == "true";
+        
+        GlobalSettings.config_modname = params[20];
+        GlobalSettings.config_processname = params[21];
+        GlobalSettings.config_version = params[22];
 
-        GlobalSettings.config_modname = params[18];
-        GlobalSettings.config_processname = params[19];
-        GlobalSettings.config_version = params[20];
+        GlobalSettings.config_tashook = params[23];
 
-        GlobalSettings.config_frame_skip = std::stoi(params[21]);
-        GlobalSettings.config_tas_delay = std::stoi(params[22]);
+        GlobalSettings.config_frame_skip = std::stoi(params[24]);
+        GlobalSettings.config_tas_delay = std::stoi(params[25]);
 
         if (GlobalSettings.config_mousedriver_set == "rawinput") InputDriverMouseSet = InputDriverz::RAW1NPUT;
         if (GlobalSettings.config_mousedriver_set == "directinput8") InputDriverMouseSet = InputDriverz::DIRECT1NPUT8;
@@ -127,6 +246,47 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         if (GlobalSettings.config_joystickdriver_get == "rawinput") InputDriverJoystickGet = InputDriverz::RAW1NPUT;
         if (GlobalSettings.config_joystickdriver_get == "directinput8") InputDriverJoystickGet = InputDriverz::DIRECT1NPUT8;
         if (GlobalSettings.config_joystickdriver_get == "xinput1_4") InputDriverJoystickGet = InputDriverz::X1NPUT1_4;
+
+        // Detect the maximum hooks
+        std::vector<std::string> _allHooks;
+        _allHooks.push_back(GlobalSettings.config_mousedriver_set);
+        _allHooks.push_back(GlobalSettings.config_keyboarddriver_set);
+        _allHooks.push_back(GlobalSettings.config_joystickdriver_set);
+        bool increase = true;
+        if (GlobalSettings.config_mousedriver_set != "")
+        {
+            for (int i = 0; i < _allHooks.size(); i++) if (GlobalSettings.config_mousedriver_set == _allHooks[i]) increase = false;
+            if (increase)
+            {
+                _allHooks.push_back(GlobalSettings.config_mousedriver_set);
+                TASSynchronizerFinishedMax++;
+            }
+        }
+        if (GlobalSettings.config_keyboarddriver_set != "")
+        {
+            increase = true;
+            for (int i = 0; i < _allHooks.size(); i++) if (GlobalSettings.config_keyboarddriver_set == _allHooks[i]) increase = false;
+            if (increase)
+            {
+                _allHooks.push_back(GlobalSettings.config_keyboarddriver_set);
+                TASSynchronizerFinishedMax++;
+            }
+        }
+        if (GlobalSettings.config_joystickdriver_set != "")
+        {
+            increase = true;
+            for (int i = 0; i < _allHooks.size(); i++) if (GlobalSettings.config_joystickdriver_set == _allHooks[i]) increase = false;
+            if (increase)
+            {
+                _allHooks.push_back(GlobalSettings.config_joystickdriver_set);
+                TASSynchronizerFinishedMax++;
+            }
+        }
+
+        // TAS functions for routine hooks
+        pTASRoutine = (TASRoutineT)TASRoutine;
+        pTASPlayScript = (TASCommandT)playScriptTAS;
+        pTASRecordScript = (TASCommandT)recordScriptTAS;
 
         // Init the debug mod
         InitDebugMod(_DebugDrawRectangle, _DebugDrawText);
@@ -181,7 +341,7 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         if (!already_hooked)
         {
             // Graphics hook failed
-            ejectDebugger(nullptr);
+            EjectDebugger(nullptr);
             return 2;
         }
 
@@ -199,98 +359,10 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         DebugConsoleOutput("Error in initDebugger()", false, "red");
 
         // Unknown hook failed
-        ejectDebugger(nullptr);
+        EjectDebugger(nullptr);
         return 1;
     }
     return 0;
-}
-
-EXTERN_DLL_EXPORT int playScriptTAS(char* parameterRaw)
-{
-    try
-    {
-        if (!DebugMenuOpened)
-        {
-            std::string parameterString(parameterRaw);
-
-            // Split the message
-            std::vector<std::string> params;
-            splitStringVector(params, parameterString, ";");
-
-            if (!TASPlayScript)
-            {
-                // Path to the script
-                TASScript = GlobalSettings.config_script_directory + params[0];
-
-                // Start playing the script
-                TASPlayScriptInit = true;
-                TASPlayScript = true;
-                TASPlayScriptUninit = false;
-                TASPlayScriptDone = false;
-            }
-            else
-            {
-                // Stop playing the script
-                TASPlayScriptInit = false;
-                TASPlayScript = false;
-                TASPlayScriptUninit = true;
-            }
-        }
-        else
-        {
-            DebugConsoleOutput("You have to close the debug menu first!", false, "red");
-        }
-    }
-    catch (const std::exception e)
-    {
-        DebugConsoleOutput("Error in playScriptTAS()", false, "red");
-        return 0;
-    }
-    return 1;
-}
-
-EXTERN_DLL_EXPORT int recordScriptTAS(char* parameterRaw)
-{
-    try
-    {
-        if (!DebugMenuOpened)
-        {
-            std::string parameterString(parameterRaw);
-
-            // Split the message
-            std::vector<std::string> params;
-            splitStringVector(params, parameterString, ";");
-
-            if (!TASRecordScript)
-            {
-                // Path to the script
-                TASScript = GlobalSettings.config_script_directory + params[0];
-
-                // Start recording the script
-                TASRecordScriptInit = true;
-                TASRecordScript = true;
-                TASRecordScriptUninit = false;
-                TASRecordScriptDone = false;
-            }
-            else
-            {
-                // Stop recording the script
-                TASRecordScriptInit = false;
-                TASRecordScript = false;
-                TASRecordScriptUninit = true;
-            }
-        }
-        else
-        {
-            DebugConsoleOutput("You have to close the debug menu first!", false, "red");
-        }
-    }
-    catch (const std::exception e)
-    {
-        DebugConsoleOutput("Error in recordScriptTAS()", false, "red");
-        return 0;
-    }
-    return 1;
 }
 
 EXTERN_DLL_EXPORT int checkIfPlayScriptIsDoneTAS(char* parameterRaw)
@@ -301,6 +373,11 @@ EXTERN_DLL_EXPORT int checkIfPlayScriptIsDoneTAS(char* parameterRaw)
         {
             TASPlayScriptDone = false;
             return 666;
+        }
+        else if (TASPlayStartedSignal)
+        {
+            TASPlayStartedSignal = false;
+            return 13;
         }
     }
     catch (const std::exception e)
@@ -465,7 +542,7 @@ EXTERN_DLL_EXPORT int toggleDevMode(char* parameterRaw)
 
 DWORD MainThread()
 {
-    if (GetProcessName().find("xNyu") == std::string::npos)
+    if (GetProcessName().find("xnyu") == std::string::npos)
     {
         // Probably needed...
         std::string tmp = ";";

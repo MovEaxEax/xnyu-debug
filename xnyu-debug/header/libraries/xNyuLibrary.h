@@ -20,6 +20,7 @@
 #include <memorys.h>
 #include <atlimage.h>
 #include <thread>
+#include <mutex>
 
 #include <objidl.h>
 #include <gdiplus.h>
@@ -44,6 +45,7 @@ struct DebugSettings {
     std::string config_modname;
     std::string config_processname;
     std::string config_version;
+    std::string config_tashook;
     std::string config_mousedriver_set;
     std::string config_mousedriver_get;
     std::string config_keyboarddriver_set;
@@ -51,6 +53,8 @@ struct DebugSettings {
     std::string config_joystickdriver_set;
     std::string config_joystickdriver_get;
     std::string config_graphicdriver;
+    std::string config_d3d9_hook;
+    bool config_rawinput_demand;
     std::string config_root_directory;
     std::string config_settings_directory;
     std::string config_script_directory;
@@ -104,7 +108,7 @@ BOOL MainWindowActive = false;
 DebugSettings GlobalSettings;
 int GlobalFrameSkipCurrent = 0;
 
-void DebugConsoleOutput(std::string text, bool dev, std::string color = "white")
+void __cdecl DebugConsoleOutput(std::string text, bool dev, std::string color = "white")
 {
     if (!ConsoleEnabled) return;
     if (dev && !DevMode) return;
@@ -194,18 +198,6 @@ LPARAM GetProcessParam()
     return param;
 }
 
-// Thx Rake <3
-uintptr_t FindDMAAddy(HANDLE hProc, uintptr_t ptr, std::vector<uintptr_t> offsets)
-{
-    uintptr_t addr = ptr;
-    for (unsigned int i = 0; i < offsets.size(); ++i)
-    {
-        ReadProcessMemory(hProc, (BYTE*)addr, &addr, sizeof(addr), 0);
-        addr += offsets[i];
-    }
-    return addr;
-}
-
 DWORD GetProcId(const wchar_t* procName)
 {
     DWORD procId = 0;
@@ -267,6 +259,57 @@ uintptr_t GetModuleBaseAddress(DWORD procId, const wchar_t* modName)
     return modBaseAddr;
 }
 
+void SuspendOtherThreads() {
+    DWORD currentThreadId = GetCurrentThreadId();
+    HANDLE hThreadSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (hThreadSnapshot == INVALID_HANDLE_VALUE) {
+        return;
+    }
+
+    THREADENTRY32 threadEntry;
+    threadEntry.dwSize = sizeof(THREADENTRY32);
+
+    if (Thread32First(hThreadSnapshot, &threadEntry)) {
+        do {
+            if (threadEntry.th32OwnerProcessID == GetCurrentProcessId() &&
+                threadEntry.th32ThreadID != currentThreadId) {
+                HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadEntry.th32ThreadID);
+                if (hThread != NULL) {
+                    SuspendThread(hThread);
+                    CloseHandle(hThread);
+                }
+            }
+        } while (Thread32Next(hThreadSnapshot, &threadEntry));
+    }
+
+    CloseHandle(hThreadSnapshot);
+}
+
+void ResumeOtherThreads() {
+    DWORD currentThreadId = GetCurrentThreadId();
+    HANDLE hThreadSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    if (hThreadSnapshot == INVALID_HANDLE_VALUE) {
+        return;
+    }
+
+    THREADENTRY32 threadEntry;
+    threadEntry.dwSize = sizeof(THREADENTRY32);
+
+    if (Thread32First(hThreadSnapshot, &threadEntry)) {
+        do {
+            if (threadEntry.th32OwnerProcessID == GetCurrentProcessId() &&
+                threadEntry.th32ThreadID != currentThreadId) {
+                HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadEntry.th32ThreadID);
+                if (hThread != NULL) {
+                    ResumeThread(hThread);
+                    CloseHandle(hThread);
+                }
+            }
+        } while (Thread32Next(hThreadSnapshot, &threadEntry));
+    }
+
+    CloseHandle(hThreadSnapshot);
+}
 
 
 //
@@ -384,6 +427,7 @@ struct GameInput
     int JOYLAXISY;
     bool JOYRS;
     bool JOYLS;
+    bool SETMOUSE;
 };
 
 struct GameInputLayout
@@ -621,7 +665,8 @@ void LoadGameInputLayout(GameInputLayout* DST, std::string fileName)
         std::getline(file, line);
 
         std::transform(line.begin(), line.end(), line.begin(), [](unsigned char c) { return std::tolower(c); });
-        while(line.find(" ") != std::string::npos) line.replace(line.find(" "), 1, "");
+        while (line.find(" ") != std::string::npos) line.replace(line.find(" "), 1, "");
+        while (line.find(";") != std::string::npos) line.replace(line.find(";"), 1, "");
 
         if (line.length() > 0) {
             if (line.find("=") != std::string::npos) {
@@ -875,7 +920,13 @@ int Axis2XInput(double value)
     return (int)floor((value + 1) / 32.76);
 }
 
-
+std::string GetCurrentDateTime() {
+    std::stringstream ss;
+    auto now = std::chrono::system_clock::now();
+    std::time_t time = std::chrono::system_clock::to_time_t(now);
+    ss << std::put_time(std::localtime(&time), "%Y-%m-%d %H-%M-%S");
+    return ss.str();
+}
 
 // Special
 #include "WindowStayActive.h"

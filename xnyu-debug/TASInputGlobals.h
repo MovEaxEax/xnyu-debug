@@ -1,4 +1,7 @@
 #pragma once
+GameInput TASInputMouse;
+GameInput TASInputKeyboard;
+GameInput TASInputJoystick;
 
 bool InitTASPlayers()
 {
@@ -140,38 +143,29 @@ bool UninitTASRecorders()
     return true;
 }
 
-bool GetTASInput(GameInput* FinalTASInput)
+bool GetTASInput()
 {
     try
     {
-        GameInput TASInputMouse; GameInput TASInputKeyboard; GameInput TASInputJoystick;
-        if (RawInputSubhook.IsInstalled())
-        {
-            if (InputDriverMouseGet == InputDriverz::RAW1NPUT) TASInputMouse = GetRawInput(true);
-            if (InputDriverKeyboardGet == InputDriverz::RAW1NPUT) TASInputKeyboard = GetRawInput(true);
-            if (InputDriverJoystickGet == InputDriverz::RAW1NPUT) TASInputJoystick = GetRawInput(true);
-        }
-        if (DirectInput8SubHook.IsInstalled())
-        {
-            if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8) TASInputMouse = GetDirectInput8(true);
-            if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8) TASInputKeyboard = GetDirectInput8(true);
-            if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8) TASInputJoystick = GetDirectInput8(true);
-        }
-        if (XInput1_4SubHook.IsInstalled())
-        {
-            if (InputDriverJoystickGet == InputDriverz::X1NPUT1_4) TASInputJoystick = GetXInput1_4(true);
-        }
-        if (GetMessageASubhook.IsInstalled())
-        {
-            if (InputDriverMouseGet == InputDriverz::G3TM3SSAGEA) TASInputMouse = GetMessageAInput(true);
-            if (InputDriverKeyboardGet == InputDriverz::G3TM3SSAGEA) TASInputKeyboard = GetMessageAInput(true);
-        }
-        if (GetMessageWSubhook.IsInstalled())
-        {
-            if (InputDriverMouseGet == InputDriverz::G3TM3SSAGEW) TASInputMouse = GetMessageWInput(true);
-            if (InputDriverKeyboardGet == InputDriverz::G3TM3SSAGEW) TASInputKeyboard = GetMessageWInput(true);
-        }
-        MergeGameInputs(FinalTASInput, &TASInputMouse, &TASInputKeyboard, &TASInputJoystick);
+        std::memset(&TASInputMouse, 0x00, sizeof(GameInput));
+        std::memset(&TASInputKeyboard, 0x00, sizeof(GameInput));
+        std::memset(&TASInputJoystick, 0x00, sizeof(GameInput));
+
+        if (InputDriverMouseGet == InputDriverz::RAW1NPUT) GetRawInput(true, &TASInputMouse, "mouse");
+        if (InputDriverKeyboardGet == InputDriverz::RAW1NPUT) GetRawInput(true, &TASInputKeyboard, "keyboard");
+        if (InputDriverJoystickGet == InputDriverz::RAW1NPUT) GetRawInput(true, &TASInputJoystick, "joystick");
+
+        if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8) GetDirectInput8(true, &TASInputMouse, "mouse");
+        if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8) GetDirectInput8(true, &TASInputKeyboard, "keyboard");
+        if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8) GetDirectInput8(true, &TASInputJoystick, "joystick");
+
+        if (InputDriverJoystickGet == InputDriverz::X1NPUT1_4) GetXInput1_4(true, &TASInputJoystick, "joystick");
+
+        //if (InputDriverMouseGet == InputDriverz::G3TM3SSAGEA) GetMessageAInput(true, &TASInputMouse, "mouse");
+        //if (InputDriverKeyboardGet == InputDriverz::G3TM3SSAGEA) GetMessageAInput(true, &TASInputKeyboard, "keyboard");
+
+        //if (InputDriverMouseGet == InputDriverz::G3TM3SSAGEW) GetMessageWInput(true, &TASInputMouse, "mouse");
+        //if (InputDriverKeyboardGet == InputDriverz::G3TM3SSAGEW) GetMessageWInput(true, &TASInputKeyboard, "keyboard");
     }
     catch (std::exception e)
     {
@@ -186,26 +180,11 @@ bool SetTASInput(GameInput FinalTASInput)
 {
     try
     {
-        if (RawInputSubhook.IsInstalled())
-        {
-            if (InputDriverMouseSet == InputDriverz::RAW1NPUT || InputDriverKeyboardSet == InputDriverz::RAW1NPUT || InputDriverJoystickSet == InputDriverz::RAW1NPUT) SetRawInput(FinalTASInput, true);
-        }
-        if (DirectInput8SubHook.IsInstalled())
-        {
-            if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 || InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 || InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8) SetDirectInput8(FinalTASInput, true);
-        }
-        if (XInput1_4SubHook.IsInstalled())
-        {
-            if (InputDriverJoystickSet == InputDriverz::X1NPUT1_4) SetXInput1_4(FinalTASInput, true);
-        }
-        if (GetMessageASubhook.IsInstalled())
-        {
-            if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEA || InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEA) SetMessageAInput(FinalTASInput, true);
-        }
-        if (GetMessageWSubhook.IsInstalled())
-        {
-            if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEW || InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEW) SetMessageWInput(FinalTASInput, true);
-        }
+        if (InputDriverMouseSet == InputDriverz::RAW1NPUT || InputDriverKeyboardSet == InputDriverz::RAW1NPUT || InputDriverJoystickSet == InputDriverz::RAW1NPUT) SetRawInput(FinalTASInput, true);
+        if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 || InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 || InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8) SetDirectInput8(FinalTASInput, true);
+        if (InputDriverJoystickSet == InputDriverz::X1NPUT1_4) SetXInput1_4(FinalTASInput, true);
+        if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEA || InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEA) SetMessageAInput(FinalTASInput, true);
+        if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEW || InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEW) SetMessageWInput(FinalTASInput, true);
         if (InputDriverMouseSet == InputDriverz::S3ND1NPUT || InputDriverKeyboardSet == InputDriverz::S3ND1NPUT) SetSendInput(FinalTASInput, true);
     }
     catch (std::exception e)

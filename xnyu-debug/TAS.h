@@ -6,6 +6,8 @@ bool TASPlayScriptDone = false;
 bool TASPlayScriptInit = false;
 bool TASPlayScriptUninit = false;
 bool TASPlayScriptThenRecord = false;
+bool TASPlayStartedSignal = false;
+bool TASPlaySkipFirstSync = false;
 std::ifstream TASPlayScriptStream;
 
 bool TASRecordScript = false;
@@ -14,15 +16,12 @@ bool TASRecordScriptInit = false;
 bool TASRecordScriptUninit = false;
 bool TASRecordFrameByFrame = false;
 bool TASRecordStartedSignal = false;
+bool TASRecordSkipFirstSync = false;
 std::string TASRecordFrameReceived;
 std::ofstream TASRecordScriptStream;
 
 GameInput TASInputCurrent;
 GameInput TASInputLast;
-
-GameInput TASInputMouse;
-GameInput TASInputKeyboard;
-GameInput TASInputJoystick;
 
 std::string TASLastError = "";
 
@@ -666,7 +665,7 @@ std::string GameInputToFrame(GameInput* SRC)
     return frame;
 }
 
-void GameInputSetFrame(GameInput* SRC, std::string key, std::string parameter)
+void GameInputSetFrame(GameInput* SRC, std::string key, std::vector<std::string> parameter)
 {
     if (key == TASInputLayout.ESC) SRC->ESC = true;
     if (key == TASInputLayout.TAB) SRC->TAB = true;
@@ -754,9 +753,9 @@ void GameInputSetFrame(GameInput* SRC, std::string key, std::string parameter)
     if (key == TASInputLayout.MB) SRC->MB = true;
     if (key == TASInputLayout.ME1) SRC->ME1 = true;
     if (key == TASInputLayout.ME2) SRC->ME2 = true;
-    if (key == TASInputLayout.WHEEL != 0) SRC->WHEEL = std::stoi(parameter);
-    if (key == TASInputLayout.MOUSEX != 0) SRC->MOUSEX = std::stoi(parameter);
-    if (key == TASInputLayout.MOUSEY != 0) SRC->MOUSEY = std::stoi(parameter);
+    if (key == TASInputLayout.WHEEL && parameter[0] != "0") SRC->WHEEL = std::stoi(parameter[0]);
+    if (key == TASInputLayout.MOUSEX && parameter[0] != "0") SRC->MOUSEX = std::stoi(parameter[0]);
+    if (key == TASInputLayout.MOUSEY && parameter[0] != "0") SRC->MOUSEY = std::stoi(parameter[0]);
     if (key == TASInputLayout.JOYA) SRC->JOYA = true;
     if (key == TASInputLayout.JOYB) SRC->JOYB = true;
     if (key == TASInputLayout.JOYX) SRC->JOYX = true;
@@ -769,14 +768,21 @@ void GameInputSetFrame(GameInput* SRC, std::string key, std::string parameter)
     if (key == TASInputLayout.JOYDOWN) SRC->JOYDOWN = true;
     if (key == TASInputLayout.JOYRIGHT) SRC->JOYRIGHT = true;
     if (key == TASInputLayout.JOYLEFT) SRC->JOYLEFT = true;
-    if (key == TASInputLayout.JOYRT) SRC->JOYRT = std::stoi(parameter);
-    if (key == TASInputLayout.JOYLT) SRC->JOYLT = std::stoi(parameter);
-    if (key == TASInputLayout.JOYRAXISX != 0) SRC->JOYRAXISX = std::stoi(parameter);
-    if (key == TASInputLayout.JOYRAXISY != 0) SRC->JOYRAXISY = std::stoi(parameter);
-    if (key == TASInputLayout.JOYLAXISX != 0) SRC->JOYLAXISX = std::stoi(parameter);
-    if (key == TASInputLayout.JOYLAXISY != 0) SRC->JOYLAXISY = std::stoi(parameter);
-    if (key == TASInputLayout.JOYRS != 0) SRC->JOYRS = true;
-    if (key == TASInputLayout.JOYLS != 0) SRC->JOYLS = true;
+    if (key == TASInputLayout.JOYRT && parameter[0] != "0") SRC->JOYRT = std::stoi(parameter[0]);
+    if (key == TASInputLayout.JOYLT && parameter[0] != "0") SRC->JOYLT = std::stoi(parameter[0]);
+    if (key == TASInputLayout.JOYRAXISX && parameter[0] != "0") SRC->JOYRAXISX = std::stoi(parameter[0]);
+    if (key == TASInputLayout.JOYRAXISY && parameter[0] != "0") SRC->JOYRAXISY = std::stoi(parameter[0]);
+    if (key == TASInputLayout.JOYLAXISX && parameter[0] != "0") SRC->JOYLAXISX = std::stoi(parameter[0]);
+    if (key == TASInputLayout.JOYLAXISY && parameter[0] != "0") SRC->JOYLAXISY = std::stoi(parameter[0]);
+    if (key == TASInputLayout.JOYRS) SRC->JOYRS = true;
+    if (key == TASInputLayout.JOYLS) SRC->JOYLS = true;
+    if (parameter.size() > 1)
+    {
+        if (parameter[1] == "set")
+        {
+            SRC->SETMOUSE = true;
+        }
+    }
 }
 
 bool VariableCondition(std::string condition)
@@ -1140,14 +1146,15 @@ int PlayInstruction(Instruction instruction)
     {
         for (int i = 0; i < instruction.parameter.size(); i++)
         {
-            if (instruction.parameter[i].find(",") == std::string::npos)
+            std::string key = instruction.parameter[i];
+            std::vector<std::string> params;
+            if (instruction.parameter[i].find(",") != std::string::npos)
             {
-                GameInputSetFrame(&TASInputCurrent, instruction.parameter[i], "");
+                key = instruction.parameter[i].substr(0, instruction.parameter[i].find(","));
+                std::string allParams = instruction.parameter[i].substr(instruction.parameter[i].find(",") + 1, instruction.parameter[i].length() - (instruction.parameter[i].find(",") + 1));
+                splitStringVector(params, allParams, ",");
             }
-            else
-            {
-                GameInputSetFrame(&TASInputCurrent, instruction.parameter[i].substr(0, instruction.parameter[i].find(",")), instruction.parameter[i].substr(instruction.parameter[i].find(",") + 1, instruction.parameter[i].length() - (instruction.parameter[i].find(",") + 1)));
-            }
+            GameInputSetFrame(&TASInputCurrent, key, params);
         }
         TASCurrentStack.line++;
         return 1;
@@ -1453,7 +1460,7 @@ int PlayInstruction(Instruction instruction)
     return 0;
 }
 
-bool PlayScriptRoutine() {
+bool __stdcall PlayScriptRoutine() {
     try
     {
         // Play the script
@@ -1493,50 +1500,104 @@ bool PlayScriptRoutine() {
 
             // Disable Init Trigger
             TASPlayScriptInit = false;
+            TASPlaySkipFirstSync = true;
         }
 
         if (TASPlayScript && !TASPlayScriptUninit) {
-            std::memcpy(&TASInputLast, &TASInputCurrent, sizeof(GameInput));
-            std::memset(&TASInputCurrent, 0x00, sizeof(GameInput));
-            std::memset(&TASInputMouse, 0x00, sizeof(GameInput));
-            std::memset(&TASInputKeyboard, 0x00, sizeof(GameInput));
-            std::memset(&TASInputJoystick, 0x00, sizeof(GameInput));
+            bool TASPlayCanExecute = true;
 
-            while (TASPlayScript && !TASPlayScriptUninit)
+            if (InputDriverMouseSet != InputDriverz::N0NE)
             {
-                DebugConsoleOutput("Stack ID: " + std::to_string(TASCurrentStack.id), true, "blue");
-                DebugConsoleOutput("Stack Line: " + std::to_string(TASCurrentStack.line), true, "blue");
-
-                Instruction instruction = TASScriptFunctions[TASCurrentStack.id].instructions[TASCurrentStack.line];
-                int result = PlayInstruction(instruction);
-                if (result == 0)
-                {
-                    // Next instruction
-                }
-                if (result == 1)
-                {
-                    // Frame found
-                    SetTASInput(TASInputCurrent);
-                    break;
-                }
-                if (result == 2)
-                {
-                    // Exit script
-                    TASPlayScriptUninit = true;
-                    break;
-                }
-                if (result == -1)
-                {
-                    // Error in script
-                    DebugConsoleOutput("Error: TASPlayScript()", false, "red");
-                    DebugConsoleOutput(TASLastError, false, "red");
-                    TASPlayScriptUninit = true;
-                    break;
-                }
+                if (InputDriverMouseSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputMouseSend || GetRawInputSendInformation)) TASPlayCanExecute = false;
+                if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8MouseSend || DirectInput8SendInformation)) TASPlayCanExecute = false;
+                if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAMouseSend) TASPlayCanExecute = false;
+                if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWMouseSend) TASPlayCanExecute = false;
+                if (InputDriverMouseSet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputMouseSend) TASPlayCanExecute = false;
+            }
+            if (InputDriverKeyboardSet != InputDriverz::N0NE)
+            {
+                if (InputDriverKeyboardSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputKeyboardSend || GetRawInputSendInformation)) TASPlayCanExecute = false;
+                if (InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8KeyboardSend || DirectInput8SendInformation)) TASPlayCanExecute = false;
+                if (InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAKeyboardSend) TASPlayCanExecute = false;
+                if (InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWKeyboardSend) TASPlayCanExecute = false;
+                if (InputDriverKeyboardSet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputKeyboardSend) TASPlayCanExecute = false;
+            }
+            if (InputDriverJoystickSet != InputDriverz::N0NE)
+            {
+                if (InputDriverJoystickSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputJoystickSend || GetRawInputSendInformation)) TASPlayCanExecute = false;
+                if (InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8JoystickSend || DirectInput8SendInformation)) TASPlayCanExecute = false;
+                if (InputDriverJoystickSet == InputDriverz::X1NPUT1_4 && (TASSynchronizer.XInput1_4JoystickSend || GetXInput1_4SendInformation)) TASPlayCanExecute = false;
             }
 
-            TASFramesPassed++;
-            return true;
+            if (TASPlaySkipFirstSync)
+            {
+                TASPlayCanExecute = true;
+                TASPlaySkipFirstSync = false;
+            }
+
+            if (TASPlayCanExecute)
+            {
+                //std::cout << "FRAME INDEX: " << std::dec << TASFramesPassed << std::endl;
+                std::memcpy(&TASInputLast, &TASInputCurrent, sizeof(GameInput));
+                std::memset(&TASInputCurrent, 0x00, sizeof(GameInput));
+                std::memset(&TASInputMouse, 0x00, sizeof(GameInput));
+                std::memset(&TASInputKeyboard, 0x00, sizeof(GameInput));
+                std::memset(&TASInputJoystick, 0x00, sizeof(GameInput));
+
+                while (TASPlayScript && !TASPlayScriptUninit)
+                {
+                    DebugConsoleOutput("Stack ID: " + std::to_string(TASCurrentStack.id), true, "blue");
+                    DebugConsoleOutput("Stack Line: " + std::to_string(TASCurrentStack.line), true, "blue");
+
+                    Instruction instruction = TASScriptFunctions[TASCurrentStack.id].instructions[TASCurrentStack.line];
+
+                    int result = PlayInstruction(instruction);
+                    if (result == 0)
+                    {
+                        // Next instruction
+                    }
+                    if (result == 1)
+                    {
+                        // Frame found
+                        TASSynchronizer.RawInputKeyboardSend = true;
+                        TASSynchronizer.RawInputMouseSend = true;
+                        TASSynchronizer.RawInputJoystickSend = true;
+                        TASSynchronizer.DirectInput8KeyboardSend = true;
+                        TASSynchronizer.DirectInput8MouseSend = true;
+                        TASSynchronizer.DirectInput8JoystickSend = true;
+                        TASSynchronizer.XInput1_4JoystickSend = true;
+                        TASSynchronizer.GetMessageAKeyboardSend = true;
+                        TASSynchronizer.GetMessageAMouseSend = true;
+                        TASSynchronizer.GetMessageWKeyboardSend = true;
+                        TASSynchronizer.GetMessageWMouseSend = true;
+                        TASSynchronizer.SendInputKeyboardSend = true;
+                        TASSynchronizer.SendInputMouseSend = true;
+
+                        SetTASInput(TASInputCurrent);
+                        Sleep(5);
+
+                        break;
+                    }
+                    if (result == 2)
+                    {
+                        // Exit script
+                        TASPlayScriptUninit = true;
+                        break;
+                    }
+                    if (result == -1)
+                    {
+                        // Error in script
+                        DebugConsoleOutput("Error: TASPlayScript()", false, "red");
+                        DebugConsoleOutput(TASLastError, false, "red");
+                        TASPlayScriptUninit = true;
+                        break;
+                    }
+
+                }
+
+                TASFramesPassed++;
+            }
+            if (!TASPlayScriptUninit) return true;
         }
 
         if (TASPlayScriptUninit) {
@@ -1545,11 +1606,9 @@ bool PlayScriptRoutine() {
 
             // Disable Uninit Trigger
             TASPlayScriptUninit = false;
-
-            // Disable record
             TASPlayScript = false;
-
             TASPlayScriptDone = true;
+            TASPlaySkipFirstSync = false;
 
             if (TASPlayScriptThenRecord)
             {
@@ -1573,6 +1632,7 @@ bool PlayScriptRoutine() {
         TASPlayScriptUninit = false;
         TASPlayScript = false;
         TASPlayScriptDone = true;
+        TASPlaySkipFirstSync = false;
 
         if (TASScriptFunctions.size() > 0) TASScriptFunctions.clear();
         if (TASScriptVariables.size() > 0) TASScriptVariables.clear();
@@ -1585,7 +1645,7 @@ bool PlayScriptRoutine() {
 
 
 
-bool RecordScriptRoutine() {
+bool __stdcall RecordScriptRoutine() {
     try
     {
         // Record the script
@@ -1617,90 +1677,206 @@ bool RecordScriptRoutine() {
 
             // Disable Init Trigger
             TASRecordScriptInit = false;
+            TASRecordSkipFirstSync = true;
         }
 
         if (TASRecordScript && !TASRecordScriptUninit) {
-            std::memcpy(&TASInputLast, &TASInputCurrent, sizeof(GameInput));
-            std::memset(&TASInputCurrent, 0x00, sizeof(GameInput));
-            std::memset(&TASInputMouse, 0x00, sizeof(GameInput));
-            std::memset(&TASInputKeyboard, 0x00, sizeof(GameInput));
-            std::memset(&TASInputJoystick, 0x00, sizeof(GameInput));
 
             if (TASRecordFrameByFrame)
             {
-                while (TASRecordFrameReceived == "" && !TASRecordScriptUninit)
+                bool TASRecordCanExecute = true;
+
+                Sleep(1);
+
+                if (InputDriverMouseSet != InputDriverz::N0NE)
                 {
-                    Sleep(3);
+                    if (InputDriverMouseSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputMouseSend || GetRawInputSendInformation)) TASRecordCanExecute = false;
+                    if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8MouseSend || DirectInput8SendInformation)) TASRecordCanExecute = false;
+                    if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAMouseSend) TASRecordCanExecute = false;
+                    if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWMouseSend) TASRecordCanExecute = false;
+                    if (InputDriverMouseSet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputMouseSend) TASRecordCanExecute = false;
                 }
-                if (!TASRecordScriptUninit)
+                if (InputDriverKeyboardSet != InputDriverz::N0NE)
                 {
-                    TASRecordScriptStream << "Frame " << TASFramesPassed << ": " << std::dec << TASRecordFrameReceived << std::endl;
+                    if (InputDriverKeyboardSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputKeyboardSend || GetRawInputSendInformation)) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8KeyboardSend || DirectInput8SendInformation)) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAKeyboardSend) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWKeyboardSend) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardSet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputKeyboardSend) TASRecordCanExecute = false;
+                }
+                if (InputDriverJoystickSet != InputDriverz::N0NE)
+                {
+                    if (InputDriverJoystickSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputJoystickSend || GetRawInputSendInformation)) TASRecordCanExecute = false;
+                    if (InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8JoystickSend || DirectInput8SendInformation)) TASRecordCanExecute = false;
+                    if (InputDriverJoystickSet == InputDriverz::X1NPUT1_4 && (TASSynchronizer.XInput1_4JoystickSend || GetXInput1_4SendInformation)) TASRecordCanExecute = false;
+                }
 
-                    DebugConsoleOutput(TASRecordFrameReceived, true, "green");
+                if (TASPlaySkipFirstSync)
+                {
+                    TASRecordCanExecute = true;
+                    TASPlaySkipFirstSync = false;
+                }
 
-                    std::transform(TASRecordFrameReceived.begin(), TASRecordFrameReceived.end(), TASRecordFrameReceived.begin(), [](unsigned char c) { return std::tolower(c); });
-
-                    TASRecordFrameReceived.replace(TASRecordFrameReceived.find("}"), 1, "");
-                    TASRecordFrameReceived = TASRecordFrameReceived.substr(TASRecordFrameReceived.find("{") + 1, TASRecordFrameReceived.length() - (TASRecordFrameReceived.find("{") + 1));
-                    if (TASRecordFrameReceived.find(" ") != std::string::npos) {
-                        bool inside_quotes = false;
-                        for (int i = 0; i < TASRecordFrameReceived.size(); i++) {
-                            if (TASRecordFrameReceived[i] == '\"' || TASRecordFrameReceived[i] == '\'') {
-                                inside_quotes = !inside_quotes;
-                            }
-                            else if (TASRecordFrameReceived[i] == ' ' && !inside_quotes) {
-                                TASRecordFrameReceived.erase(i, 1);
-                                i--;
-                            }
-                        }
-                    }
-
-                    if (TASRecordFrameReceived.find(";") != std::string::npos)
+                if (TASRecordCanExecute)
+                {
+                    while (TASRecordFrameReceived == "" && !TASRecordScriptUninit)
                     {
-                        std::vector<std::string> instructions;
-                        std::vector<std::string> parameter;
-                        splitStringVector(instructions, TASRecordFrameReceived, ";");
-                        int index = 0;
-                        while (index < instructions.size())
-                        {
-                            if (instructions[index].find("("))
-                            {
-                                parameter.push_back(instructions[index].substr(instructions[index].find("(") + 1, instructions[index].find(")") - (instructions[index].find("(") + 1)));
-                                instructions[index] = instructions[index].substr(0, instructions[index].find("("));
-                                index++;
-                            }
-                            else
-                            {
-                                instructions.erase(instructions.begin() + index);
+                        Sleep(3);
+                    }
+                    if (!TASRecordScriptUninit)
+                    {
+                        TASRecordScriptStream << TASRecordFrameReceived << std::endl;
+
+                        DebugConsoleOutput(TASRecordFrameReceived, true, "green");
+
+                        std::transform(TASRecordFrameReceived.begin(), TASRecordFrameReceived.end(), TASRecordFrameReceived.begin(), [](unsigned char c) { return std::tolower(c); });
+
+                        TASRecordFrameReceived.replace(TASRecordFrameReceived.find("}"), 1, "");
+                        TASRecordFrameReceived = TASRecordFrameReceived.substr(TASRecordFrameReceived.find("{") + 1, TASRecordFrameReceived.length() - (TASRecordFrameReceived.find("{") + 1));
+                        if (TASRecordFrameReceived.find(" ") != std::string::npos) {
+                            bool inside_quotes = false;
+                            for (int i = 0; i < TASRecordFrameReceived.size(); i++) {
+                                if (TASRecordFrameReceived[i] == '\"' || TASRecordFrameReceived[i] == '\'') {
+                                    inside_quotes = !inside_quotes;
+                                }
+                                else if (TASRecordFrameReceived[i] == ' ' && !inside_quotes) {
+                                    TASRecordFrameReceived.erase(i, 1);
+                                    i--;
+                                }
                             }
                         }
-                        for (int i = 0; i < instructions.size(); i++)
+
+                        std::memcpy(&TASInputLast, &TASInputCurrent, sizeof(GameInput));
+                        std::memset(&TASInputCurrent, 0x00, sizeof(GameInput));
+
+                        if (TASRecordFrameReceived.find(";") != std::string::npos)
                         {
-                            if (instructions[i].find(",") == std::string::npos)
+                            std::vector<std::string> instructions;
+                            std::vector<std::vector<std::string>> parameter;
+                            splitStringVector(instructions, TASRecordFrameReceived, ";");
+                            int index = 0;
+                            while (index < instructions.size())
+                            {
+                                if (instructions[index].find("("))
+                                {
+                                    std::vector<std::string> subParameter;
+                                    splitStringVector(subParameter, instructions[index].substr(instructions[index].find("(") + 1, instructions[index].find(")") - (instructions[index].find("(") + 1)), ",");
+                                    parameter.push_back(subParameter);
+                                    instructions[index] = instructions[index].substr(0, instructions[index].find("("));
+                                    index++;
+                                }
+                                else
+                                {
+                                    instructions.erase(instructions.begin() + index);
+                                }
+                            }
+                            for (int i = 0; i < instructions.size(); i++)
                             {
                                 GameInputSetFrame(&TASInputCurrent, instructions[i], parameter[i]);
                             }
-                            else
-                            {
-                                GameInputSetFrame(&TASInputCurrent, instructions[i].substr(0, instructions[i].find(",")), instructions[i].substr(instructions[i].find(",") + 1, instructions[i].length() - (instructions[i].find(",") + 1)));
-                            }
                         }
-                    }
-                    SetTASInput(TASInputCurrent);
 
-                    TASRecordFrameReceived = "";
+                        if (TASRecordSkipFirstSync)
+                        {
+                            TASRecordSkipFirstSync = false;
+                        }
+                        else
+                        {
+                            while (TASSynchronizerFinishedCurrent < TASSynchronizerFinishedMax) Sleep(1);
+                        }
+
+                        TASSynchronizer.RawInputKeyboardSend = true;
+                        TASSynchronizer.RawInputMouseSend = true;
+                        TASSynchronizer.RawInputJoystickSend = true;
+                        TASSynchronizer.DirectInput8KeyboardSend = true;
+                        TASSynchronizer.DirectInput8MouseSend = true;
+                        TASSynchronizer.DirectInput8JoystickSend = true;
+                        TASSynchronizer.XInput1_4JoystickSend = true;
+                        TASSynchronizer.GetMessageAKeyboardSend = true;
+                        TASSynchronizer.GetMessageAMouseSend = true;
+                        TASSynchronizer.GetMessageWKeyboardSend = true;
+                        TASSynchronizer.GetMessageWMouseSend = true;
+                        TASSynchronizer.SendInputKeyboardSend = true;
+                        TASSynchronizer.SendInputMouseSend = true;
+
+                        SetTASInput(TASInputCurrent);
+                        Sleep(5);
+
+                        // Synchronize with the drivers
+                        TASSynchronizerFinishedCurrent = 0;
+
+                        TASRecordFrameReceived = "";
+                        TASFramesPassed++;
+                    }
                 }
             }
             else
             {
-                GetTASInput(&TASInputCurrent);
+                bool TASRecordCanExecute = true;
 
-                std::string RecordFrame = GameInputToFrame(&TASInputCurrent);
-                TASRecordScriptStream << RecordFrame << std::endl;
+                if (InputDriverMouseGet != InputDriverz::N0NE)
+                {
+                    if (InputDriverMouseGet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputMouseGet || GetRawInputGetInformation)) TASRecordCanExecute = false;
+                    if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8MouseGet || DirectInput8GetInformation)) TASRecordCanExecute = false;
+                    if (InputDriverMouseGet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAMouseGet) TASRecordCanExecute = false;
+                    if (InputDriverMouseGet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWMouseGet) TASRecordCanExecute = false;
+                    if (InputDriverMouseGet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputMouseGet) TASRecordCanExecute = false;
+                }
+                if (InputDriverKeyboardGet != InputDriverz::N0NE)
+                {
+                    if (InputDriverKeyboardGet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputKeyboardGet || GetRawInputGetInformation)) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8KeyboardGet || DirectInput8GetInformation)) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardGet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAKeyboardGet) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardGet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWKeyboardGet) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardGet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputKeyboardGet) TASRecordCanExecute = false;
+                }
+                if (InputDriverJoystickGet != InputDriverz::N0NE)
+                {
+                    if (InputDriverJoystickGet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputJoystickGet || GetRawInputGetInformation)) TASRecordCanExecute = false;
+                    if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8JoystickGet || DirectInput8GetInformation)) TASRecordCanExecute = false;
+                    if (InputDriverJoystickGet == InputDriverz::X1NPUT1_4 && (TASSynchronizer.XInput1_4JoystickSend || XInput1_4GetInformation)) TASRecordCanExecute = false;
+                }
+
+                if (TASPlaySkipFirstSync)
+                {
+                    TASRecordCanExecute = true;
+                    TASPlaySkipFirstSync = false;
+                }
+                else
+                {
+                    if (TASRecordCanExecute)
+                    {
+                        std::memcpy(&TASInputLast, &TASInputCurrent, sizeof(GameInput));
+                        std::memset(&TASInputCurrent, 0x00, sizeof(GameInput));
+                        MergeGameInputs(&TASInputCurrent, &TASInputMouse, &TASInputKeyboard, &TASInputJoystick);
+                        std::string RecordFrame = GameInputToFrame(&TASInputCurrent);
+                        TASRecordScriptStream << RecordFrame << std::endl;
+                        TASFramesPassed++;
+                    }
+                }
+
+                if (TASRecordCanExecute)
+                {
+                    TASSynchronizer.RawInputKeyboardGet = true;
+                    TASSynchronizer.RawInputMouseGet = true;
+                    TASSynchronizer.RawInputJoystickGet = true;
+                    TASSynchronizer.DirectInput8KeyboardGet = true;
+                    TASSynchronizer.DirectInput8MouseGet = true;
+                    TASSynchronizer.DirectInput8JoystickGet = true;
+                    TASSynchronizer.XInput1_4JoystickGet = true;
+                    TASSynchronizer.GetMessageAKeyboardGet = true;
+                    TASSynchronizer.GetMessageAMouseGet = true;
+                    TASSynchronizer.GetMessageWKeyboardGet = true;
+                    TASSynchronizer.GetMessageWMouseGet = true;
+                    TASSynchronizer.SendInputKeyboardGet = true;
+                    TASSynchronizer.SendInputMouseGet = true;
+
+                    GetTASInput();
+                    Sleep(5);
+                }
             }
 
-            TASFramesPassed++;
-            return true;
+            if (!TASRecordScriptUninit) return true;
         }
 
         if (TASRecordScriptUninit) {
@@ -1715,7 +1891,7 @@ bool RecordScriptRoutine() {
 
             // Disable Uninit Trigger
             TASRecordScriptUninit = false;
-
+            TASRecordSkipFirstSync = false;
             TASRecordScriptDone = true;
 
             UninitTASRecorders();
@@ -1734,10 +1910,22 @@ bool RecordScriptRoutine() {
         TASRecordScriptUninit = false;
         TASRecordScript = false;
         TASRecordScriptDone = true;
+        TASRecordSkipFirstSync = false;
 
         UninitTASRecorders();
     }
     return false;
 }
 
-
+void __stdcall TASRoutine()
+{
+    // Check frameskip
+    GlobalFrameSkipCurrent++;
+    if (GlobalFrameSkipCurrent >= GlobalSettings.config_frame_skip)
+    {
+        // TAS
+        PlayScriptRoutine();
+        RecordScriptRoutine();
+        GlobalFrameSkipCurrent = 0;
+    }
+}

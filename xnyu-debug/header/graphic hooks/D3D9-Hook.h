@@ -238,13 +238,15 @@ Direct3D9Hooking::Direct3D9::~Direct3D9()
 // Definitions ---------------------------------------------------------------------
 //
 
-// EndScene() Function Pointer
+// Hook Function Pointer
+typedef HRESULT(__stdcall* PresentT)(IDirect3DDevice9* pDevice, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion);
+PresentT pD3D9_Present = nullptr;
 typedef HRESULT(__stdcall* EndSceneT)(IDirect3DDevice9* pDevice);
 EndSceneT pD3D9_Endscene = nullptr;
 
 // Addresses
-void* D3D9_Endscene_Original_Address = 0;
-void* D3D9_Endscene_Hook_Address = 0;
+void* D3D9_Graphics_Original_Address = 0;
+void* D3D9_Graphics_Hook_Address = 0;
 
 // Subhooks
 subhook::Hook D3D9_Subhook;
@@ -300,6 +302,7 @@ LPDIRECT3DPIXELSHADER9 pD3D9_BackupPixelShader;
 LPDIRECT3DPIXELSHADER9 pD3D9_PixelShader;
 LPDIRECT3DTEXTURE9 pD3D9_SurfaceTexture = nullptr;
 
+/*
 void BackUpOldStates_D3D9()
 {
     pD3D9_Device->GetVertexShader(&pD3D9_BackupVertexShader);
@@ -314,16 +317,87 @@ void RestoreOldStates_D3D9()
     if (pD3D9_BackupPixelShader != nullptr) pD3D9_BackupPixelShader->Release();
 }
 
-void ClearOldStates_D3D9()
+void ClearStates_D3D9()
 {
     pD3D9_Device->SetVertexShader(nullptr);
     pD3D9_Device->SetPixelShader(nullptr);
 }
+*/
+
+struct D3D9RenderStatesBackup
+{
+    IDirect3DVertexShader9* vertexShader;
+    IDirect3DPixelShader9* pixelShader;
+    DWORD renderStates[D3DRS_POINTSIZE_MAX];
+    DWORD samplerStates[2][D3DSAMP_DMAPOFFSET + 1];
+};
+
+void BackUpOldStates_D3D9(D3D9RenderStatesBackup& backup)
+{
+    pD3D9_Device->GetVertexShader(&backup.vertexShader);
+    pD3D9_Device->GetPixelShader(&backup.pixelShader);
+
+    for (DWORD state = D3DRS_ZENABLE; state <= D3DRS_POINTSIZE_MAX; ++state)
+    {
+        pD3D9_Device->GetRenderState(static_cast<D3DRENDERSTATETYPE>(state), &backup.renderStates[state]);
+    }
+
+    for (DWORD state = D3DSAMP_ADDRESSU; state <= D3DSAMP_DMAPOFFSET; ++state)
+    {
+        pD3D9_Device->GetSamplerState(0, static_cast<D3DSAMPLERSTATETYPE>(state), &backup.samplerStates[0][state]);
+        pD3D9_Device->GetSamplerState(1, static_cast<D3DSAMPLERSTATETYPE>(state), &backup.samplerStates[1][state]);
+    }
+}
+
+void RestoreOldStates_D3D9(const D3D9RenderStatesBackup& backup)
+{
+    pD3D9_Device->SetVertexShader(backup.vertexShader);
+    pD3D9_Device->SetPixelShader(backup.pixelShader);
+
+    if (backup.vertexShader != nullptr) backup.vertexShader->Release();
+    if (backup.pixelShader != nullptr) backup.pixelShader->Release();
+
+    for (DWORD state = D3DRS_ZENABLE; state <= D3DRS_POINTSIZE_MAX; ++state)
+    {
+        pD3D9_Device->SetRenderState(static_cast<D3DRENDERSTATETYPE>(state), backup.renderStates[state]);
+    }
+
+    for (DWORD state = D3DSAMP_ADDRESSU; state <= D3DSAMP_DMAPOFFSET; ++state)
+    {
+        pD3D9_Device->SetSamplerState(0, static_cast<D3DSAMPLERSTATETYPE>(state), backup.samplerStates[0][state]);
+        pD3D9_Device->SetSamplerState(1, static_cast<D3DSAMPLERSTATETYPE>(state), backup.samplerStates[1][state]);
+    }
+}
+
+void ClearStates_D3D9()
+{
+    pD3D9_Device->SetVertexShader(nullptr);
+    pD3D9_Device->SetPixelShader(nullptr);
+    pD3D9_Device->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    pD3D9_Device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+    pD3D9_Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+    pD3D9_Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+    pD3D9_Device->SetRenderState(D3DRS_ZENABLE, FALSE);
+    pD3D9_Device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+    pD3D9_Device->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
+    pD3D9_Device->SetRenderState(D3DRS_STENCILENABLE, FALSE);
+    pD3D9_Device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    pD3D9_Device->SetRenderState(D3DRS_LIGHTING, FALSE);
+    pD3D9_Device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+    pD3D9_Device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+    pD3D9_Device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+    pD3D9_Device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+    pD3D9_Device->SetRenderState(D3DRS_FOGENABLE, FALSE);
+    pD3D9_Device->SetRenderState(D3DRS_POINTSPRITEENABLE, FALSE);
+    pD3D9_Device->SetRenderState(D3DRS_POINTSCALEENABLE, FALSE);
+    pD3D9_Device->SetRenderState(D3DRS_CLIPPLANEENABLE, 0);
+}
 
 void Draw_D3D9()
 {
-    BackUpOldStates_D3D9();
-    ClearOldStates_D3D9();
+    D3D9RenderStatesBackup RenderStatesBackup_D3D9 = D3D9RenderStatesBackup();
+    BackUpOldStates_D3D9(RenderStatesBackup_D3D9);
+    ClearStates_D3D9();
 
     HRESULT hr = 0;
 
@@ -351,16 +425,11 @@ void Draw_D3D9()
 
     pD3D9_Device->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
     pD3D9_Device->SetPixelShader(pD3D9_PixelShader);
-    pD3D9_Device->SetRenderState(D3DRS_ALPHABLENDENABLE, true);
-    pD3D9_Device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-    pD3D9_Device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-    pD3D9_Device->SetRenderState(D3DRS_ZENABLE, FALSE);
-    pD3D9_Device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
     pD3D9_Device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, vertices, sizeof(VertexD3D9));
-    pD3D9_Device->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-    pD3D9_Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+    //pD3D9_Device->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+    //pD3D9_Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
     
-    ClearOldStates_D3D9();
+    RestoreOldStates_D3D9(RenderStatesBackup_D3D9);
 }
 
 
@@ -377,15 +446,15 @@ void Draw_D3D9()
 //
 // Hook Routine ---------------------------------------------------------------------
 //
-HRESULT APIENTRY D3D9_Endscene_Hook(IDirect3DDevice9* pDevice)
+HRESULT APIENTRY D3D9_Present_Hook(IDirect3DDevice9* pDevice, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion)
 {
     if (DebugMenuInit)
     {
-        // Set the device for the globals
         pD3D9_Device = pDevice;
 
         HRESULT hr = 0;
 
+        // Error buffer
         LPD3DXBUFFER pShaderBuffer = NULL;
         LPD3DXBUFFER pErrorBuffer = NULL;
 
@@ -393,7 +462,7 @@ HRESULT APIENTRY D3D9_Endscene_Hook(IDirect3DDevice9* pDevice)
         hr = D3DXCreateTexture(pD3D9_Device, SurfaceTextureWidth, SurfaceTextureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8B8G8R8, D3DPOOL_DEFAULT, &pD3D9_SurfaceTexture);
         if (FAILED(hr)) { DebugConsoleOutput("Error: D3DXCreateTexture()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
 
-        // Compile the shader code
+        // Compile shader code
         hr = D3DXCompileShader(pD3D9_TextureShader, strlen(pD3D9_TextureShader), NULL, NULL, "main", "ps_2_0", 0, &pShaderBuffer, &pErrorBuffer, NULL);
         if (FAILED(hr)) { DebugConsoleOutput("Error: CompilePixelShader()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
         hr = pD3D9_Device->CreatePixelShader(reinterpret_cast<DWORD*>(pShaderBuffer->GetBufferPointer()), &pD3D9_PixelShader);
@@ -410,30 +479,76 @@ HRESULT APIENTRY D3D9_Endscene_Hook(IDirect3DDevice9* pDevice)
     // Remove hook
     D3D9_Subhook.Remove();
 
-    // Trampoline
-    HRESULT Trampoline = pD3D9_Endscene(pDevice);
-
-    // Reinstall Hook
-    if (sizeof(void*) == 8) D3D9_Subhook.Install(D3D9_Endscene_Original_Address, D3D9_Endscene_Hook_Address, subhook::HookFlags::HookFlag64BitOffset);
-    if (sizeof(void*) == 4) D3D9_Subhook.Install(D3D9_Endscene_Original_Address, D3D9_Endscene_Hook_Address);
-
-    // Check frameskip
-    GlobalFrameSkipCurrent++;
-    if (GlobalFrameSkipCurrent >= GlobalSettings.config_frame_skip)
+    // TAS routine
+    if (GlobalSettings.config_tashook == "graphics")
     {
-        // TAS
-        PlayScriptRoutine();
-        RecordScriptRoutine();
-        GlobalFrameSkipCurrent = 0;
+        pTASRoutine();
     }
 
     // Debug Menu
     DebugMenuMainRoutine();
 
+    // Trampoline
+    HRESULT Trampoline = pD3D9_Present(pDevice, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
+
+    // Reinstall Hook
+    if (sizeof(void*) == 8) D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address, subhook::HookFlags::HookFlag64BitOffset);
+    if (sizeof(void*) == 4) D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address);
+
     return Trampoline;
 }
 
+HRESULT APIENTRY D3D9_Endscene_Hook(IDirect3DDevice9* pDevice)
+{
+    if (DebugMenuInit)
+    {
+        pD3D9_Device = pDevice;
 
+        HRESULT hr = 0;
+
+        // Error buffer
+        LPD3DXBUFFER pShaderBuffer = NULL;
+        LPD3DXBUFFER pErrorBuffer = NULL;
+
+        // Create Texture
+        hr = D3DXCreateTexture(pD3D9_Device, SurfaceTextureWidth, SurfaceTextureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8B8G8R8, D3DPOOL_DEFAULT, &pD3D9_SurfaceTexture);
+        if (FAILED(hr)) { DebugConsoleOutput("Error: D3DXCreateTexture()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
+
+        // Compile shader code
+        hr = D3DXCompileShader(pD3D9_TextureShader, strlen(pD3D9_TextureShader), NULL, NULL, "main", "ps_2_0", 0, &pShaderBuffer, &pErrorBuffer, NULL);
+        if (FAILED(hr)) { DebugConsoleOutput("Error: CompilePixelShader()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
+        hr = pD3D9_Device->CreatePixelShader(reinterpret_cast<DWORD*>(pShaderBuffer->GetBufferPointer()), &pD3D9_PixelShader);
+        if (FAILED(hr)) { DebugConsoleOutput("Error: CreatePixelShader()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
+
+        // Set DebugMenu function
+        DebugDraw = (DebugDrawT)Draw_D3D9;
+
+        // Deactivate DebugMenu
+        DebugMenuInit = false;
+        DebugConsoleOutput("DirectX 9 init success!", false, "green");
+    }
+
+    // Remove hook
+    D3D9_Subhook.Remove();
+
+    // TAS routine
+    if (GlobalSettings.config_tashook == "graphics")
+    {
+        pTASRoutine();
+    }
+
+    // Trampoline
+    HRESULT Trampoline = pD3D9_Endscene(pDevice);
+
+    // Debug Menu
+    DebugMenuMainRoutine();
+
+    // Reinstall Hook
+    if (sizeof(void*) == 8) D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address, subhook::HookFlags::HookFlag64BitOffset);
+    if (sizeof(void*) == 4) D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address);
+
+    return Trampoline;
+}
 
 //
 // Init function --------------------------------------------------------------------
@@ -451,13 +566,22 @@ BOOL D3D9HookInit()
         std::vector<uintptr_t> vTable = D3D9Hookah.vtable();
 
         // Set addresses
-        D3D9_Endscene_Original_Address = (void*)vTable[42];
-        D3D9_Endscene_Hook_Address = D3D9_Endscene_Hook;
-        pD3D9_Endscene = (EndSceneT)D3D9_Endscene_Original_Address;
+        if (GlobalSettings.config_d3d9_hook == "present")
+        {
+            D3D9_Graphics_Original_Address = (void*)vTable[17];
+            D3D9_Graphics_Hook_Address = D3D9_Present_Hook;
+            pD3D9_Present = (PresentT)D3D9_Graphics_Original_Address;
+        }
+        else if (GlobalSettings.config_d3d9_hook == "endscene")
+        {
+            D3D9_Graphics_Original_Address = (void*)vTable[42];
+            D3D9_Graphics_Hook_Address = D3D9_Endscene_Hook;
+            pD3D9_Endscene = (EndSceneT)D3D9_Graphics_Original_Address;
+        }
 
         // Install the Hook
-        if (sizeof(void*) == 8) return D3D9_Subhook.Install(D3D9_Endscene_Original_Address, D3D9_Endscene_Hook_Address, subhook::HookFlags::HookFlag64BitOffset);
-        if (sizeof(void*) == 4) return D3D9_Subhook.Install(D3D9_Endscene_Original_Address, D3D9_Endscene_Hook_Address);
+        if (sizeof(void*) == 8) return D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address, subhook::HookFlags::HookFlag64BitOffset);
+        if (sizeof(void*) == 4) return D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address);
 
         return false;
     }

@@ -5,6 +5,8 @@
 // Global hook settings
 typedef DWORD(__stdcall* XInput1_4GetStateT)(DWORD dwUserIndex, XINPUT_STATE* pState);
 XInput1_4GetStateT pXInput1_4GetState = nullptr;
+typedef void(__stdcall* GetXInput1_4T)(BOOL TAS, GameInput* DST, std::string device);
+GetXInput1_4T pGetXInput1_4 = nullptr;
 
 subhook::Hook XInput1_4SubHook;
 
@@ -13,11 +15,14 @@ void* XInput1_4HookAddress;
 
 bool GetXInput1_4RetrieveInformation = false;
 bool GetXInput1_4SendInformation = false;
+bool XInput1_4GetInformation = false;
 bool XInput1_4DisableForGame = false;
 bool GetXInput1_4TASMode = false;
+bool XInput1_4SendSync = true;
 
 GameInput XInput1_4GameInputCurrent;
 GameInput XInput1_4GameInputLast;
+GameInput* GetXInput1_4DST = nullptr;
 
 // Specific settings
 XINPUT_STATE XInput1_4SendState;
@@ -45,21 +50,32 @@ DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
 
     if (GetXInput1_4SendInformation)
     {
+
         if(dwUserIndex == 0)
         {
             result = ERROR_SUCCESS;
             XInput1_4SendState.dwPacketNumber = pState->dwPacketNumber;
             std::memset(pState, 0x00, sizeof(XINPUT_STATE));
             std::memcpy(pState , &XInput1_4SendState, sizeof(XINPUT_STATE));
+
+            GetXInput1_4SendInformation = false;
+            TASSynchronizer.XInput1_4JoystickSend = false;
         }
         else
         {
             result = pXInput1_4GetState(dwUserIndex, pState);
         }
+
     }
     else
     {
-        if (XInput1_4DisableForGame)
+        if (XInput1_4GetInformation)
+        {
+            pGetXInput1_4(false, GetXInput1_4DST, "joystick");
+            TASSynchronizer.XInput1_4JoystickGet = false;
+            XInput1_4GetInformation = false;
+        }
+        else if (XInput1_4DisableForGame)
         {
             std::memset(pState, 0x00, sizeof(XINPUT_STATE));
             result = ERROR_INVALID_PARAMETER;
@@ -74,23 +90,6 @@ DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
 }
 
 
-
-BOOL XInput1_4HookInit()
-{
-    // Detect the XInput module handle
-    HMODULE XInputDllHandle = GetModuleHandleA("xinput1_4.dll");
-    if (XInputDllHandle == NULL) return false;
-
-    // Set the hook addresses
-    XInput1_4OriginalAddress = (void*)GetProcAddress(XInputDllHandle, "XInputGetState");
-    XInput1_4HookAddress = (void*)XInput1_4Hook;
-    pXInput1_4GetState = (XInput1_4GetStateT)XInput1_4OriginalAddress;
-
-    if (sizeof(void*) == 8) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress, subhook::HookFlags::HookFlag64BitOffset);
-    if (sizeof(void*) == 4) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress);
-
-    return true;
-}
 
 BOOL XInput1_4HookUninit()
 {
@@ -138,8 +137,16 @@ void UninitRecordXInput1_4TAS()
 
 
 
-GameInput GetXInput1_4(BOOL TAS)
+void __stdcall GetXInput1_4(BOOL TAS, GameInput* DST, std::string device)
 {
+    GetXInput1_4DST = DST;
+
+    if (TAS)
+    {
+        XInput1_4GetInformation = true;
+        return;
+    }
+
     std::memset(&XInput1_4GameInputCurrent, 0x00, sizeof(GameInput));
 
     if (InputDriverJoystickGet == InputDriverz::X1NPUT1_4)
@@ -172,12 +179,13 @@ GameInput GetXInput1_4(BOOL TAS)
         if (LAXISY > 99 || LAXISY < -99) XInput1_4GameInputCurrent.JOYLAXISY = LAXISY;
     }
 
-    return XInput1_4GameInputCurrent;
+    std::memcpy(GetXInput1_4DST, &XInput1_4GameInputCurrent, sizeof(GameInput));
 }
 
 void SetXInput1_4(GameInput XInput1_4GameInput, BOOL TAS)
 {
     GetXInput1_4TASMode = TAS;
+    GetXInput1_4SendInformation = true;
 
     if (InputDriverJoystickSet == InputDriverz::X1NPUT1_4)
     {
@@ -209,6 +217,25 @@ void SetXInput1_4(GameInput XInput1_4GameInput, BOOL TAS)
         XInput1_4SendState.Gamepad.sThumbLX = LAXISX;
         XInput1_4SendState.Gamepad.sThumbLY = LAXISY;
     }
+}
+
+BOOL XInput1_4HookInit()
+{
+    // Detect the XInput module handle
+    HMODULE XInputDllHandle = GetModuleHandleA("xinput1_4.dll");
+    if (XInputDllHandle == NULL) return false;
+
+    pGetXInput1_4 = (GetXInput1_4T)GetXInput1_4;
+
+    // Set the hook addresses
+    XInput1_4OriginalAddress = (void*)GetProcAddress(XInputDllHandle, "XInputGetState");
+    XInput1_4HookAddress = (void*)XInput1_4Hook;
+    pXInput1_4GetState = (XInput1_4GetStateT)XInput1_4OriginalAddress;
+
+    if (sizeof(void*) == 8) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress, subhook::HookFlags::HookFlag64BitOffset);
+    if (sizeof(void*) == 4) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress);
+
+    return true;
 }
 
 
