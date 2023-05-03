@@ -149,7 +149,7 @@ EXTERN_DLL_EXPORT int recordScriptTAS(char* parameterRaw)
                 TASRecordScript = true;
                 TASRecordScriptUninit = false;
                 TASRecordScriptDone = false;
-                if (!TASRecordFrameByFrame) TASRecordStartedSignal = true;
+                if (!TASPlayScriptThenRecord) TASRecordStartedSignal = true;
                 else TASPlayStartedSignal = true;
             }
             else

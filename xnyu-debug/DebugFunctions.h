@@ -138,7 +138,7 @@ bool LoadDebugFunctions()
 
         }
 
-        // Add TAS specific funcitons
+        // Add TAS specific functions
         DebugFunction TASPlayScript = DebugFunction();
         TASPlayScript.nameChild = "PlayScript";
         TASPlayScript.nameFull = "TAS.PlayScript";
@@ -161,9 +161,74 @@ bool LoadDebugFunctions()
         TASParent.nameParent = "TAS";
         TASParent.functions.push_back(TASPlayScript);
         TASParent.functions.push_back(TASRecordScript);
-
         DebugFunctions.push_back(TASParent);
-    }
+
+        // Add DebugMenu specific functions
+        DebugFunction DBGSetHotkeySlot = DebugFunction();
+        DBGSetHotkeySlot.nameChild = "SetHotkeySlot";
+        DBGSetHotkeySlot.nameFull = "DebugMenu.SetHotkeySlot";
+        DBGSetHotkeySlot.nameParent = "DebugMenu";
+        DBGSetHotkeySlot.parameter.push_back(Variable());
+        DBGSetHotkeySlot.parameter[0].type = "int32";
+        DBGSetHotkeySlot.parameter[0].value = "none";
+        DBGSetHotkeySlot.rapid = false;
+
+        DebugFunction DBGChangeHotkeySlot = DebugFunction();
+        DBGChangeHotkeySlot.nameChild = "ChangeHotkeySlot";
+        DBGChangeHotkeySlot.nameFull = "DebugMenu.ChangeHotkeySlot";
+        DBGChangeHotkeySlot.nameParent = "DebugMenu";
+        DBGChangeHotkeySlot.parameter.push_back(Variable());
+        DBGChangeHotkeySlot.parameter[0].type = "int32";
+        DBGChangeHotkeySlot.parameter[0].value = "none";
+        DBGChangeHotkeySlot.rapid = false;
+
+        DebugFunction DBGEnablePerformancemode = DebugFunction();
+        DBGEnablePerformancemode.nameChild = "EnablePerformancemode";
+        DBGEnablePerformancemode.nameFull = "DebugMenu.EnablePerformancemode";
+        DBGEnablePerformancemode.nameParent = "DebugMenu";
+        DBGEnablePerformancemode.parameter.push_back(Variable());
+        DBGEnablePerformancemode.parameter[0].type = "bool";
+        DBGEnablePerformancemode.parameter[0].value = "none";
+        DBGEnablePerformancemode.rapid = false;
+
+        DebugFunction DBGEnableDebugValues = DebugFunction();
+        DBGEnableDebugValues.nameChild = "EnableDebugValues";
+        DBGEnableDebugValues.nameFull = "DebugMenu.EnableDebugValues";
+        DBGEnableDebugValues.nameParent = "DebugMenu";
+        DBGEnableDebugValues.parameter.push_back(Variable());
+        DBGEnableDebugValues.parameter[0].type = "bool";
+        DBGEnableDebugValues.parameter[0].value = "none";
+        DBGEnableDebugValues.rapid = false;
+
+        DebugFunction DBGEnableCursorPosition = DebugFunction();
+        DBGEnableCursorPosition.nameChild = "EnableCursorPosition";
+        DBGEnableCursorPosition.nameFull = "DebugMenu.EnableCursorPosition";
+        DBGEnableCursorPosition.nameParent = "DebugMenu";
+        DBGEnableCursorPosition.parameter.push_back(Variable());
+        DBGEnableCursorPosition.parameter[0].type = "bool";
+        DBGEnableCursorPosition.parameter[0].value = "none";
+        DBGEnableCursorPosition.rapid = false;
+
+        DebugFunction DBGEnableHotkeyOverlay = DebugFunction();
+        DBGEnableHotkeyOverlay.nameChild = "EnableHotkeyOverlay";
+        DBGEnableHotkeyOverlay.nameFull = "DebugMenu.EnableHotkeyOverlay";
+        DBGEnableHotkeyOverlay.nameParent = "DebugMenu";
+        DBGEnableHotkeyOverlay.parameter.push_back(Variable());
+        DBGEnableHotkeyOverlay.parameter[0].type = "bool";
+        DBGEnableHotkeyOverlay.parameter[0].value = "none";
+        DBGEnableHotkeyOverlay.rapid = false;
+
+        DebugFunctionParent DBGParent = DebugFunctionParent();
+        DBGParent.nameParent = "DebugMenu";
+        DBGParent.functions.push_back(DBGSetHotkeySlot);
+        DBGParent.functions.push_back(DBGChangeHotkeySlot);
+        DBGParent.functions.push_back(DBGEnablePerformancemode);
+        DBGParent.functions.push_back(DBGEnableDebugValues);
+        DBGParent.functions.push_back(DBGEnableCursorPosition);
+        DBGParent.functions.push_back(DBGEnableHotkeyOverlay);
+        DebugFunctions.push_back(DBGParent);
+
+   }
     catch (const std::exception& e)
     {
         DebugConsoleOutput(e.what(), false, "red");

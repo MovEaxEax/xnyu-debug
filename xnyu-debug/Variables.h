@@ -289,7 +289,7 @@ void VariableAdd(Variable* variable, std::string value)
             else val1 = (BYTE)std::stoi(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = (BYTE)std::stoi(value, 0, 16);
             else val2 = (BYTE)std::stoi(value);
-            variable->type = std::to_string(val1 + val2);
+            variable->value = std::to_string(val1 + val2);
             return;
         }
         if (variable->type == "int32")
@@ -300,7 +300,7 @@ void VariableAdd(Variable* variable, std::string value)
             else val1 = std::stoi(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = std::stoi(value, 0, 16);
             else val2 = std::stoi(value);
-            variable->type = std::to_string(val1 + val2);
+            variable->value = std::to_string(val1 + val2);
             return;
         }
         if (variable->type == "int64")
@@ -311,21 +311,21 @@ void VariableAdd(Variable* variable, std::string value)
             else val1 = std::stoll(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = std::stoll(value, 0, 16);
             else val2 = std::stoll(value);
-            variable->type = std::to_string(val1 + val2);
+            variable->value = std::to_string(val1 + val2);
             return;
         }
         if (variable->type == "float")
         {
             float val1 = std::stof(variable->value);
             float val2 = std::stof(value);
-            variable->type = std::to_string(val1 + val2);
+            variable->value = std::to_string(val1 + val2);
             return;
         }
         if (variable->type == "double")
         {
             double val1 = std::stod(variable->value);
             double val2 = std::stod(value);
-            variable->type = std::to_string(val1 + val2);
+            variable->value = std::to_string(val1 + val2);
             return;
         }
         variable->value = "none";
@@ -355,7 +355,7 @@ void VariableAdd(Variable* variableDST, Variable* variableSRC)
             else val1 = (BYTE)std::stoi(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = (BYTE)std::stoi(variableSRC->value, 0, 16);
             else val2 = (BYTE)std::stoi(variableSRC->value);
-            variableDST->type = std::to_string(val1 + val2);
+            variableDST->value = std::to_string(val1 + val2);
             return;
         }
         if (variableDST->type == "int32")
@@ -366,7 +366,7 @@ void VariableAdd(Variable* variableDST, Variable* variableSRC)
             else val1 = std::stoi(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = std::stoi(variableSRC->value, 0, 16);
             else val2 = std::stoi(variableSRC->value);
-            variableDST->type = std::to_string(val1 + val2);
+            variableDST->value = std::to_string(val1 + val2);
             return;
         }
         if (variableDST->type == "int64")
@@ -377,21 +377,21 @@ void VariableAdd(Variable* variableDST, Variable* variableSRC)
             else val1 = std::stoll(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = (BYTE)std::stoll(variableSRC->value, 0, 16);
             else val2 = std::stoll(variableSRC->value);
-            variableDST->type = std::to_string(val1 + val2);
+            variableDST->value = std::to_string(val1 + val2);
             return;
         }
         if (variableDST->type == "float")
         {
             float val1 = std::stof(variableDST->value);
             float val2 = std::stof(variableSRC->value);
-            variableDST->type = std::to_string(val1 + val2);
+            variableDST->value = std::to_string(val1 + val2);
             return;
         }
         if (variableDST->type == "double")
         {
             double val1 = std::stod(variableDST->value);
             double val2 = std::stod(variableSRC->value);
-            variableDST->type = std::to_string(val1 + val2);
+            variableDST->value = std::to_string(val1 + val2);
             return;
         }
         variableDST->value = "none";
@@ -421,7 +421,7 @@ void VariableSubtract(Variable* variable, std::string value)
             else val1 = (BYTE)std::stoi(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = (BYTE)std::stoi(value, 0, 16);
             else val2 = (BYTE)std::stoi(value);
-            variable->type = std::to_string(val1 - val2);
+            variable->value = std::to_string(val1 - val2);
             return;
         }
         if (variable->type == "int32")
@@ -432,7 +432,7 @@ void VariableSubtract(Variable* variable, std::string value)
             else val1 = std::stoi(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = std::stoi(value, 0, 16);
             else val2 = std::stoi(value);
-            variable->type = std::to_string(val1 - val2);
+            variable->value = std::to_string(val1 - val2);
             return;
         }
         if (variable->type == "int64")
@@ -443,21 +443,21 @@ void VariableSubtract(Variable* variable, std::string value)
             else val1 = std::stoll(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = std::stoll(value, 0, 16);
             else val2 = std::stoll(value);
-            variable->type = std::to_string(val1 - val2);
+            variable->value = std::to_string(val1 - val2);
             return;
         }
         if (variable->type == "float")
         {
             float val1 = std::stof(variable->value);
             float val2 = std::stof(value);
-            variable->type = std::to_string(val1 - val2);
+            variable->value = std::to_string(val1 - val2);
             return;
         }
         if (variable->type == "double")
         {
             double val1 = std::stod(variable->value);
             double val2 = std::stod(value);
-            variable->type = std::to_string(val1 - val2);
+            variable->value = std::to_string(val1 - val2);
             return;
         }
         variable->value = "none";
@@ -487,7 +487,7 @@ void VariableSubtract(Variable* variableDST, Variable* variableSRC)
             else val1 = (BYTE)std::stoi(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = (BYTE)std::stoi(variableSRC->value, 0, 16);
             else val2 = (BYTE)std::stoi(variableSRC->value);
-            variableDST->type = std::to_string(val1 - val2);
+            variableDST->value = std::to_string(val1 - val2);
             return;
         }
         if (variableDST->type == "int32")
@@ -498,7 +498,7 @@ void VariableSubtract(Variable* variableDST, Variable* variableSRC)
             else val1 = std::stoi(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = std::stoi(variableSRC->value, 0, 16);
             else val2 = std::stoi(variableSRC->value);
-            variableDST->type = std::to_string(val1 - val2);
+            variableDST->value = std::to_string(val1 - val2);
             return;
         }
         if (variableDST->type == "int64")
@@ -509,21 +509,21 @@ void VariableSubtract(Variable* variableDST, Variable* variableSRC)
             else val1 = std::stoll(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = (BYTE)std::stoll(variableSRC->value, 0, 16);
             else val2 = std::stoll(variableSRC->value);
-            variableDST->type = std::to_string(val1 - val2);
+            variableDST->value = std::to_string(val1 - val2);
             return;
         }
         if (variableDST->type == "float")
         {
             float val1 = std::stof(variableDST->value);
             float val2 = std::stof(variableSRC->value);
-            variableDST->type = std::to_string(val1 - val2);
+            variableDST->value = std::to_string(val1 - val2);
             return;
         }
         if (variableDST->type == "double")
         {
             double val1 = std::stod(variableDST->value);
             double val2 = std::stod(variableSRC->value);
-            variableDST->type = std::to_string(val1 - val2);
+            variableDST->value = std::to_string(val1 - val2);
             return;
         }
         variableDST->value = "none";
@@ -553,7 +553,7 @@ void VariableMultiply(Variable* variable, std::string value)
             else val1 = (BYTE)std::stoi(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = (BYTE)std::stoi(value, 0, 16);
             else val2 = (BYTE)std::stoi(value);
-            variable->type = std::to_string(val1 * val2);
+            variable->value = std::to_string(val1 * val2);
             return;
         }
         if (variable->type == "int32")
@@ -564,7 +564,7 @@ void VariableMultiply(Variable* variable, std::string value)
             else val1 = std::stoi(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = std::stoi(value, 0, 16);
             else val2 = std::stoi(value);
-            variable->type = std::to_string(val1 * val2);
+            variable->value = std::to_string(val1 * val2);
             return;
         }
         if (variable->type == "int64")
@@ -575,21 +575,21 @@ void VariableMultiply(Variable* variable, std::string value)
             else val1 = std::stoll(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = std::stoll(value, 0, 16);
             else val2 = std::stoll(value);
-            variable->type = std::to_string(val1 * val2);
+            variable->value = std::to_string(val1 * val2);
             return;
         }
         if (variable->type == "float")
         {
             float val1 = std::stof(variable->value);
             float val2 = std::stof(value);
-            variable->type = std::to_string(val1 * val2);
+            variable->value = std::to_string(val1 * val2);
             return;
         }
         if (variable->type == "double")
         {
             double val1 = std::stod(variable->value);
             double val2 = std::stod(value);
-            variable->type = std::to_string(val1 * val2);
+            variable->value = std::to_string(val1 * val2);
             return;
         }
         variable->value = "none";
@@ -619,7 +619,7 @@ void VariableMultiply(Variable* variableDST, Variable* variableSRC)
             else val1 = (BYTE)std::stoi(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = (BYTE)std::stoi(variableSRC->value, 0, 16);
             else val2 = (BYTE)std::stoi(variableSRC->value);
-            variableDST->type = std::to_string(val1 * val2);
+            variableDST->value = std::to_string(val1 * val2);
             return;
         }
         if (variableDST->type == "int32")
@@ -630,7 +630,7 @@ void VariableMultiply(Variable* variableDST, Variable* variableSRC)
             else val1 = std::stoi(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = std::stoi(variableSRC->value, 0, 16);
             else val2 = std::stoi(variableSRC->value);
-            variableDST->type = std::to_string(val1 * val2);
+            variableDST->value = std::to_string(val1 * val2);
             return;
         }
         if (variableDST->type == "int64")
@@ -641,21 +641,21 @@ void VariableMultiply(Variable* variableDST, Variable* variableSRC)
             else val1 = std::stoll(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = (BYTE)std::stoll(variableSRC->value, 0, 16);
             else val2 = std::stoll(variableSRC->value);
-            variableDST->type = std::to_string(val1 * val2);
+            variableDST->value = std::to_string(val1 * val2);
             return;
         }
         if (variableDST->type == "float")
         {
             float val1 = std::stof(variableDST->value);
             float val2 = std::stof(variableSRC->value);
-            variableDST->type = std::to_string(val1 * val2);
+            variableDST->value = std::to_string(val1 * val2);
             return;
         }
         if (variableDST->type == "double")
         {
             double val1 = std::stod(variableDST->value);
             double val2 = std::stod(variableSRC->value);
-            variableDST->type = std::to_string(val1 * val2);
+            variableDST->value = std::to_string(val1 * val2);
             return;
         }
         variableDST->value = "none";
@@ -691,7 +691,7 @@ void VariableDivide(Variable* variable, std::string value)
             else val1 = (BYTE)std::stoi(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = (BYTE)std::stoi(value, 0, 16);
             else val2 = (BYTE)std::stoi(value);
-            variable->type = std::to_string(val1 / val2);
+            variable->value = std::to_string(val1 / val2);
             return;
         }
         if (variable->type == "int32")
@@ -702,7 +702,7 @@ void VariableDivide(Variable* variable, std::string value)
             else val1 = std::stoi(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = std::stoi(value, 0, 16);
             else val2 = std::stoi(value);
-            variable->type = std::to_string(val1 / val2);
+            variable->value = std::to_string(val1 / val2);
             return;
         }
         if (variable->type == "int64")
@@ -713,21 +713,21 @@ void VariableDivide(Variable* variable, std::string value)
             else val1 = std::stoll(variable->value);
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = std::stoll(value, 0, 16);
             else val2 = std::stoll(value);
-            variable->type = std::to_string(val1 / val2);
+            variable->value = std::to_string(val1 / val2);
             return;
         }
         if (variable->type == "float")
         {
             float val1 = std::stof(variable->value);
             float val2 = std::stof(value);
-            variable->type = std::to_string(val1 / val2);
+            variable->value = std::to_string(val1 / val2);
             return;
         }
         if (variable->type == "double")
         {
             double val1 = std::stod(variable->value);
             double val2 = std::stod(value);
-            variable->type = std::to_string(val1 / val2);
+            variable->value = std::to_string(val1 / val2);
             return;
         }
         variable->value = "none";
@@ -763,7 +763,7 @@ void VariableDivide(Variable* variableDST, Variable* variableSRC)
             else val1 = (BYTE)std::stoi(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = (BYTE)std::stoi(variableSRC->value, 0, 16);
             else val2 = (BYTE)std::stoi(variableSRC->value);
-            variableDST->type = std::to_string(val1 / val2);
+            variableDST->value = std::to_string(val1 / val2);
             return;
         }
         if (variableDST->type == "int32")
@@ -774,7 +774,7 @@ void VariableDivide(Variable* variableDST, Variable* variableSRC)
             else val1 = std::stoi(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = std::stoi(variableSRC->value, 0, 16);
             else val2 = std::stoi(variableSRC->value);
-            variableDST->type = std::to_string(val1 / val2);
+            variableDST->value = std::to_string(val1 / val2);
             return;
         }
         if (variableDST->type == "int64")
@@ -785,21 +785,21 @@ void VariableDivide(Variable* variableDST, Variable* variableSRC)
             else val1 = std::stoll(variableDST->value);
             if (variableSRC->value[0] == '0' && (variableSRC->value[1] == 'x' || variableSRC->value[1] == 'X')) val2 = (BYTE)std::stoll(variableSRC->value, 0, 16);
             else val2 = std::stoll(variableSRC->value);
-            variableDST->type = std::to_string(val1 / val2);
+            variableDST->value = std::to_string(val1 / val2);
             return;
         }
         if (variableDST->type == "float")
         {
             float val1 = std::stof(variableDST->value);
             float val2 = std::stof(variableSRC->value);
-            variableDST->type = std::to_string(val1 / val2);
+            variableDST->value = std::to_string(val1 / val2);
             return;
         }
         if (variableDST->type == "double")
         {
             double val1 = std::stod(variableDST->value);
             double val2 = std::stod(variableSRC->value);
-            variableDST->type = std::to_string(val1 / val2);
+            variableDST->value = std::to_string(val1 / val2);
             return;
         }
         variableDST->value = "none";

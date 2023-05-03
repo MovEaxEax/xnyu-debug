@@ -222,38 +222,38 @@ int ParseInstructions(std::vector<Instruction> &functions, std::string content)
                 if (instruction.type == "while")
                 {
                     Instruction startInstruction;
-                    startInstruction.type = "ifjmp";
+                    startInstruction.type = "ifnotjmp";
                     startInstruction.parameter.push_back(std::to_string(subInstructions.size() + 2));
                     Instruction endInstruction;
-                    endInstruction.type = "ifnotjmp";
-                    endInstruction.parameter.push_back("-" + std::to_string(subInstructions.size()));
+                    endInstruction.type = "jmp";
+                    endInstruction.parameter.push_back("-" + std::to_string(subInstructions.size() + 1));
                     if (parameter.find("&&") != std::string::npos)
                     {
-                        endInstruction.parameter.push_back("&&");
+                        //endInstruction.parameter.push_back("&&");
                         startInstruction.parameter.push_back("&&");
                         std::vector<std::string> params;
                         splitStringVector(params, parameter, "&&");
                         for (int i = 0; i < params.size(); i++)
                         {
-                            endInstruction.parameter.push_back(params[i]);
+                            //endInstruction.parameter.push_back(params[i]);
                             startInstruction.parameter.push_back(params[i]);
                         }
                     }
                     else if (parameter.find("||") != std::string::npos)
                     {
-                        endInstruction.parameter.push_back("||");
+                        //endInstruction.parameter.push_back("||");
                         startInstruction.parameter.push_back("||");
                         std::vector<std::string> params;
                         splitStringVector(params, parameter, "||");
                         for (int i = 0; i < params.size(); i++)
                         {
-                            endInstruction.parameter.push_back(params[i]);
+                            //endInstruction.parameter.push_back(params[i]);
                             startInstruction.parameter.push_back(params[i]);
                         }
                     }
                     else
                     {
-                        endInstruction.parameter.push_back(parameter);
+                        //endInstruction.parameter.push_back(parameter);
                         startInstruction.parameter.push_back(parameter);
                     }
 
@@ -411,9 +411,49 @@ int ParseInstructions(std::vector<Instruction> &functions, std::string content)
         {
             // Equal
             if (entries[7] == INT32_MAX) return -1;
-            instruction.type = "equal";
-            instruction.parameter.push_back(content.substr(0, entries[index]));
-            instruction.parameter.push_back(content.substr(entries[index] + 1, entries[7] - (entries[index] + 2)));
+
+            if (content.substr(0, 4) == "byte")
+            {
+                instruction.type = "byte";
+                instruction.parameter.push_back(content.substr(4, content.find("=") - 4));
+            }
+            else if (content.substr(0, 4) == "bool")
+            {
+                instruction.type = "bool";
+                instruction.parameter.push_back(content.substr(4, content.find("=") - 4));
+            }
+            if (content.substr(0, 5) == "int32")
+            {
+                instruction.type = "int32";
+                instruction.parameter.push_back(content.substr(5, content.find("=") - 5));
+            }
+            else if (content.substr(0, 5) == "int64")
+            {
+                instruction.type = "int64";
+                instruction.parameter.push_back(content.substr(5, content.find("=") - 5));
+            }
+            else if (content.substr(0, 5) == "float")
+            {
+                instruction.type = "float";
+                instruction.parameter.push_back(content.substr(5, content.find("=") - 5));
+            }
+            else if (content.substr(0, 6) == "double")
+            {
+                instruction.type = "double";
+                instruction.parameter.push_back(content.substr(6, content.find("=") - 6));
+            }
+            else if (content.substr(0, 6) == "string")
+            {
+                instruction.type = "string";
+                instruction.parameter.push_back(content.substr(6, content.find("=") - 6));
+            }
+            else
+            {
+                instruction.type = "equal";
+                instruction.parameter.push_back(content.substr(5, content.find("=") - 5));
+            }
+
+            instruction.parameter.push_back(content.substr(entries[index] + 1, entries[7] - (entries[index] + 1)));
             functions.push_back(instruction);
             content.replace(0, entries[7] + 1, "");
         }
@@ -1002,14 +1042,15 @@ bool VariableCondition(std::string condition)
         else if (paramB == "<")
         {
             if ((typeA == "int32" || typeA == "int64" || typeA == "byte") && (typeC == "int32" || typeC == "int64" || typeC == "byte")) return vallA < vallC;
-            if ((typeA == "float" || typeA == "double") && (typeC == "float" || typeC == "double")) return valdA == valdC;
+            if ((typeA == "float" || typeA == "double") && (typeC == "float" || typeC == "double")) return valdA < valdC;
         }
         else if (paramB == ">")
         {
             if ((typeA == "int32" || typeA == "int64" || typeA == "byte") && (typeC == "int32" || typeC == "int64" || typeC == "byte")) return vallA > vallC;
-            if ((typeA == "float" || typeA == "double") && (typeC == "float" || typeC == "double")) return valdA == valdC;
+            if ((typeA == "float" || typeA == "double") && (typeC == "float" || typeC == "double")) return valdA > valdC;
         }
     }
+
     return false;
 }
 
@@ -1024,7 +1065,11 @@ int PlayInstruction(Instruction instruction)
             // AND conditions
             for (int i = 2; i < instruction.parameter.size(); i++)
             {
-                if (!VariableCondition(instruction.parameter[i])) break;
+                if (!VariableCondition(instruction.parameter[i]))
+                {
+                    condition = false;
+                    break;
+                }
                 condition = true;
             }
         }
@@ -1046,8 +1091,12 @@ int PlayInstruction(Instruction instruction)
             condition = VariableCondition(instruction.parameter[1]);
         }
 
-        if (instruction.type == "ifjmp") if (condition) TASCurrentStack.line++; else TASCurrentStack.line += std::stoi(instruction.parameter[0]);
-        if (instruction.type == "ifnotjmp") if (!condition) TASCurrentStack.line++; else TASCurrentStack.line += std::stoi(instruction.parameter[0]);
+        if (instruction.type == "ifjmp") if (condition) TASCurrentStack.line += std::stoi(instruction.parameter[0]); else TASCurrentStack.line++;
+        if (instruction.type == "ifnotjmp") if (!condition) TASCurrentStack.line += std::stoi(instruction.parameter[0]); else TASCurrentStack.line++;
+    }
+    else if (instruction.type == "jmp")
+    {
+        TASCurrentStack.line += std::stoi(instruction.parameter[0]);
     }
     else if (instruction.type == "return")
     {
@@ -1437,8 +1486,11 @@ int PlayInstruction(Instruction instruction)
                     }
                     SetVariable(&debugFunction.parameter[i], value);
                 }
+                std::cout << "Execute!" << std::endl;
+                std::cout << debugFunction.nameFull << std::endl;
                 pExecuteDebugFunction(&debugFunction);
             }
+            TASCurrentStack.line++;
         }
         else
         {
@@ -1719,10 +1771,12 @@ bool __stdcall RecordScriptRoutine() {
 
                 if (TASRecordCanExecute)
                 {
+                    std::cout << "111" << std::endl;
                     while (TASRecordFrameReceived == "" && !TASRecordScriptUninit)
                     {
                         Sleep(3);
                     }
+                    std::cout << "222" << std::endl;
                     if (!TASRecordScriptUninit)
                     {
                         TASRecordScriptStream << TASRecordFrameReceived << std::endl;

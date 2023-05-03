@@ -767,7 +767,6 @@ void SetSendInput(GameInput SendInputGameInput, BOOL TAS)
 
     if (SendInputAmount > 0)
     {
-        std::cout << "SendInputAmount: " << std::dec << SendInputAmount << std::endl;
         SendInputActive = true;
         while (SendInputActive) Sleep(1);
     }

@@ -579,6 +579,13 @@ BOOL D3D9HookInit()
             pD3D9_Endscene = (EndSceneT)D3D9_Graphics_Original_Address;
         }
 
+        std::cout << "DrawPrimitive: " << std::hex << vTable[81] << std::endl;
+        std::cout << "DrawIndexedPrimitive: " << std::hex << vTable[82] << std::endl;
+        std::cout << "DrawPrimitiveUP: " << std::hex << vTable[83] << std::endl;
+        std::cout << "DrawIndexedPrimitiveUP: " << std::hex << vTable[84] << std::endl;
+        std::cout << "DrawRectPatch: " << std::hex << vTable[115] << std::endl;
+        std::cout << "DrawTriPatch: " << std::hex << vTable[116] << std::endl;
+
         // Install the Hook
         if (sizeof(void*) == 8) return D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address, subhook::HookFlags::HookFlag64BitOffset);
         if (sizeof(void*) == 4) return D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address);

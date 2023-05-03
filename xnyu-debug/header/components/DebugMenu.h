@@ -36,6 +36,8 @@ bool RawInputIsAttached = false;
 bool DebugMenuShowValuesMode = false;
 bool DebugMenuSuperVisionMode = false;
 bool DebugMenuSettingsPerformanceMode = false;
+bool DebugMenuShowCursorMode = false;
+bool DebugMenuHotkeyOverlayMode = false;
 
 
 int DebugMenuShowValuesModeUpdateIntervall = 200;
@@ -43,18 +45,24 @@ std::vector<std::string> DebugMenuShowValuesModeData;
 
 bool DebugMenuInitSwitch = true;
 bool DebugMenuCanDraw = true;
-int DebugMenuGeneralFrameskip = 2;
-int DebugMenuGeneralFrameskipFactor = 2;
-int DebugMenuSettingsPerformanceModeFrameskipFactor = 0;
+int DebugMenuGeneralFrameskip = 0;
+int DebugMenuGeneralFrameskipFactor = 3;
+int DebugMenuSettingsPerformanceModeFrameskipFactor = 7;
 int DebugMenuNotImportantSettingsFrameSkip = 0;
+int DebugHotkeysActiveSlot = 0;
+
+int TextIndexPointerBlinkCounter = 0;
+bool TextIndexPointerBlink = 0;
+int TextIndexPointer = 0;
 
 // Cursor
 POINT DebugMenuCursorPosition;
 
 // Menu Selector
 
-std::vector<DebugFunction> DebugMenuHotkeys;
-std::vector<std::string> DebugMenuParameter;
+std::vector<std::string> DebugMenuSlotName;
+std::vector<std::vector<DebugFunction>> DebugMenuHotkeys;
+std::vector<std::vector<std::string>> DebugMenuParameter;
 int DebugMenuParameterFocus = -1;
 int DebugMenuFunctionFocus = -1;
 
@@ -132,7 +140,19 @@ void DebugMenuInitHoverBoxes()
 	DebugMenuOverviewHoverBoxes.push_back(RECT{ 282, 252, 499, 292 });
 	DebugMenuOverviewHoverBoxes.push_back(RECT{ 58, 364, 274, 404 });
 	DebugMenuOverviewHoverBoxes.push_back(RECT{ 58, 487, 274, 527 });
-	DebugMenuOverviewHoverBoxes.push_back(RECT{ 58, 977, 274, 1018 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 58, 599, 274, 639 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 58, 713, 274, 753 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 58, 835, 274, 875 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1584, 975, 1613, 1003 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1621, 975, 1650, 1003 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1658, 975, 1687, 1003 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1695, 975, 1724, 1003 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1732, 975, 1761, 1003 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1769, 975, 1798, 1003 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1806, 975, 1835, 1003 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1843, 975, 1872, 1003 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1584, 1011, 1872, 1037 });
+
 	for (int i = 0; i < 13; i++)
 	{
 		DebugMenuOverviewHoverBoxes.push_back(RECT{ 1065, 195 + (65 * i), 1435, 195 + (65 * i) + 29});
@@ -227,12 +247,12 @@ void DebugMenuInitHoverBoxes()
 		int crow = 0;
 		std::vector<RECT> childrenRects;
 		childrenRects.push_back(RECT{ 63, 975, 279, 1016 });
-		childrenRects.push_back(RECT{ 710, 975, 926, 1016 });
-		childrenRects.push_back(RECT{ 988, 975, 1024, 1016 });
+		childrenRects.push_back(RECT{ 712, 975, 928, 1016 });
+		childrenRects.push_back(RECT{ 989, 975, 1205, 1016 });
 		for (int k = 0; k < SavefileParents[i].fields.size(); k++)
 		{
-			childrenRects.push_back(RECT{ 60 + (360 * crow), 165 + (60 * ccol), 60 + (360 * crow) + 360, 165 + (60 * ccol) + 30 });
-			childrenRects.push_back(RECT{ 60 + (360 * crow), 165 + (60 * ccol) + 30, 60 + (360 * crow) + 360, 165 + (60 * ccol) + 60 });
+			//childrenRects.push_back(RECT{ 60 + (360 * crow), 165 + (60 * ccol), 60 + (360 * crow) + 360, 165 + (60 * ccol) + 30 });
+			childrenRects.push_back(RECT{ 60 + (360 * crow) - 3, 165 + (60 * ccol) + 30 - 3, 60 + (360 * crow) - 3 + 306, 165 + (60 * ccol) + 60 - 1 });
 			ccol++;
 			if (ccol == 12)
 			{
@@ -253,8 +273,16 @@ void DebugMenuInitHotkeys()
 {
 	DebugFunction tmp;
 	tmp.nameFull = "- EMPTY -";
-	for (int i = 0; i < 25; i++) DebugMenuHotkeys.push_back(tmp);
-	for (int i = 0; i < 25; i++) DebugMenuParameter.push_back("");
+	for (int k = 0; k < 8; k++)
+	{
+		std::vector<DebugFunction> subListFun;
+		std::vector<std::string> subListStr;
+		for (int i = 0; i < 25; i++) subListFun.push_back(tmp);
+		for (int i = 0; i < 25; i++) subListStr.push_back("");
+		DebugMenuHotkeys.push_back(subListFun);
+		DebugMenuParameter.push_back(subListStr);
+		DebugMenuSlotName.push_back("Slot " + std::to_string(k));
+	}
 }
 
 void DebugMenuInitSaveEditor()
@@ -265,138 +293,148 @@ void DebugMenuInitSaveEditor()
 
 void DebugMenuInitSettings()
 {
-	std::ifstream file(GlobalSettings.config_debugconfig_directory + "hotkeys.txt");
-
-	if (file.good())
+	for (int f = 0; f < 8; f++)
 	{
-		std::string script = "";
+		std::ifstream file(GlobalSettings.config_debugconfig_directory + "hotkeys" + std::to_string(f) + ".txt");
 
-		while (!file.eof()) {
+		if (file.good())
+		{
+			std::string script = "";
 
-			// Read line
-			std::string line = "";
-			std::getline(file, line);
+			bool firstSlotName = true;
+			while (!file.eof()) {
 
-			//Declare Substrings
-			std::string substring_instruction = "";
-			std::string substring_iterations = "";
+				// Read line
+				std::string line = "";
+				std::getline(file, line);
 
-			// Check if line contains content
-			if (line.length() > 0) {
-				std::string key = line.substr(0, line.find("="));
-				std::string func = line.substr(line.find("=") + 1, line.find(";") - (line.find("=") + 1));
-				if (func != "")
+				if (firstSlotName)
 				{
-					int index = 0;
-					if (key == "NUM_1") index = 0;
-					if (key == "NUM_2") index = 1;
-					if (key == "NUM_3") index = 2;
-					if (key == "NUM_4") index = 3;
-					if (key == "NUM_5") index = 4;
-					if (key == "NUM_6") index = 5;
-					if (key == "NUM_7") index = 6;
-					if (key == "NUM_8") index = 7;
-					if (key == "NUM_9") index = 8;
-					if (key == "NUM_/") index = 9;
-					if (key == "NUM_*") index = 10;
-					if (key == "NUM_-") index = 11;
-					if (key == "NUM_+") index = 12;
-					if (key == "F1") index = 13;
-					if (key == "F2") index = 14;
-					if (key == "F3") index = 15;
-					if (key == "F4") index = 16;
-					if (key == "F5") index = 17;
-					if (key == "F6") index = 18;
-					if (key == "F7") index = 19;
-					if (key == "F8") index = 20;
-					if (key == "F9") index = 21;
-					if (key == "F10") index = 22;
-					if (key == "F11") index = 23;
-					if (key == "F12") index = 24;
+					DebugMenuSlotName[f] = line;
+					firstSlotName = false;
+					continue;
+				}
 
-					std::string parentName = func.substr(0, func.find("."));
-					std::string childName = func.substr(func.find(".") + 1, func.find("(") - (func.find(".") + 1));
-					std::string paramsAll = func.substr(func.find("(") + 1, func.find(")") - (func.find("(") + 1));
+				//Declare Substrings
+				std::string substring_instruction = "";
+				std::string substring_iterations = "";
 
-					for (int i = 0; i < DebugFunctions.size(); i++)
+				// Check if line contains content
+				if (line.length() > 0) {
+					std::string key = line.substr(0, line.find("="));
+					std::string func = line.substr(line.find("=") + 1, line.find(";") - (line.find("=") + 1));
+					if (func != "")
 					{
-						if (DebugFunctions[i].nameParent == parentName)
+						int index = 0;
+						if (key == "NUM_1") index = 0;
+						if (key == "NUM_2") index = 1;
+						if (key == "NUM_3") index = 2;
+						if (key == "NUM_4") index = 3;
+						if (key == "NUM_5") index = 4;
+						if (key == "NUM_6") index = 5;
+						if (key == "NUM_7") index = 6;
+						if (key == "NUM_8") index = 7;
+						if (key == "NUM_9") index = 8;
+						if (key == "NUM_/") index = 9;
+						if (key == "NUM_*") index = 10;
+						if (key == "NUM_-") index = 11;
+						if (key == "NUM_+") index = 12;
+						if (key == "F1") index = 13;
+						if (key == "F2") index = 14;
+						if (key == "F3") index = 15;
+						if (key == "F4") index = 16;
+						if (key == "F5") index = 17;
+						if (key == "F6") index = 18;
+						if (key == "F7") index = 19;
+						if (key == "F8") index = 20;
+						if (key == "F9") index = 21;
+						if (key == "F10") index = 22;
+						if (key == "F11") index = 23;
+						if (key == "F12") index = 24;
+
+						std::string parentName = func.substr(0, func.find("."));
+						std::string childName = func.substr(func.find(".") + 1, func.find("(") - (func.find(".") + 1));
+						std::string paramsAll = func.substr(func.find("(") + 1, func.find(")") - (func.find("(") + 1));
+
+						for (int i = 0; i < DebugFunctions.size(); i++)
 						{
-							for (int k = 0; k < DebugFunctions[i].functions.size(); k++)
+							if (DebugFunctions[i].nameParent == parentName)
 							{
-								if (DebugFunctions[i].functions[k].nameChild == childName)
+								for (int k = 0; k < DebugFunctions[i].functions.size(); k++)
 								{
-									DebugMenuHotkeys[index] = DebugFunctions[i].functions[k];
-									DebugMenuParameter[index] = paramsAll;
-									break;
+									if (DebugFunctions[i].functions[k].nameChild == childName)
+									{
+										DebugMenuHotkeys[f][index] = DebugFunctions[i].functions[k];
+										DebugMenuParameter[f][index] = paramsAll;
+										break;
+									}
 								}
 							}
 						}
 					}
 				}
+
 			}
 
+			file.close();
 		}
 
-		file.close();
-	}
-
-	// Update debug function parameter
-	for (int i = 0; i < DebugMenuHotkeys.size(); i++)
-	{
-		if (DebugMenuHotkeys[i].nameFull != "- EMPTY -")
+		// Update debug function parameter
+		for (int i = 0; i < DebugMenuHotkeys[f].size(); i++)
 		{
-			if (DebugMenuParameter[i] != "")
+			if (DebugMenuHotkeys[f][i].nameFull != "- EMPTY -")
 			{
-				if (DebugMenuHotkeys[i].parameter.size() > 0)
+				if (DebugMenuParameter[f][i] != "")
 				{
-					std::string paramCopy = DebugMenuParameter[i];
-					int index = 0;
-					bool quote = false;
-					while (index < paramCopy.length())
+					if (DebugMenuHotkeys[f][i].parameter.size() > 0)
 					{
-						if (paramCopy[index] == '\"' || paramCopy[index] == '\'')
+						std::string paramCopy = DebugMenuParameter[f][i];
+						int index = 0;
+						bool quote = false;
+						while (index < paramCopy.length())
 						{
-							quote = !quote;
-							paramCopy.replace(index, 1, "");
-						}
-						if (paramCopy[index] == ' ' && !quote)
-						{
-							paramCopy.replace(index, 1, "");
-						}
-						else
-						{
-							index++;
-						}
-					}
-
-					if (paramCopy == "")
-					{
-						for (int k = 0; k < DebugMenuHotkeys[i].parameter.size(); k++) SetVariable(&DebugMenuHotkeys[i].parameter[k], "none");
-					}
-					else
-					{
-						std::vector<std::string> params;
-						splitStringVector(params, paramCopy, ",");
-						for (int k = 0; k < params.size(); k++)
-						{
-							if (params[k] == "")
+							if (paramCopy[index] == '\"' || paramCopy[index] == '\'')
 							{
-								SetVariable(&DebugMenuHotkeys[i].parameter[k], "none");
+								quote = !quote;
+								paramCopy.replace(index, 1, "");
+							}
+							if (paramCopy[index] == ' ' && !quote)
+							{
+								paramCopy.replace(index, 1, "");
 							}
 							else
 							{
-								if (DebugMenuHotkeys[i].parameter[k].type.find("float") != std::string::npos && params[k].find(".") == std::string::npos) params[k] = params[k] + ".0";
-								SetVariable(&DebugMenuHotkeys[i].parameter[k], params[k]);
+								index++;
 							}
-							if (k + 1 > DebugMenuHotkeys[i].parameter.size()) break;
+						}
+
+						if (paramCopy == "")
+						{
+							for (int k = 0; k < DebugMenuHotkeys[f][i].parameter.size(); k++) SetVariable(&DebugMenuHotkeys[f][i].parameter[k], "none");
+						}
+						else
+						{
+							std::vector<std::string> params;
+							splitStringVector(params, paramCopy, ",");
+							for (int k = 0; k < params.size(); k++)
+							{
+								if (params[k] == "")
+								{
+									SetVariable(&DebugMenuHotkeys[f][i].parameter[k], "none");
+								}
+								else
+								{
+									if (DebugMenuHotkeys[f][i].parameter[k].type.find("float") != std::string::npos && params[k].find(".") == std::string::npos) params[k] = params[k] + ".0";
+									SetVariable(&DebugMenuHotkeys[f][i].parameter[k], params[k]);
+								}
+								if (k + 1 > DebugMenuHotkeys[f][i].parameter.size()) break;
+							}
 						}
 					}
 				}
 			}
 		}
 	}
-
 }
 
 void DebugMenuInitValues()
@@ -521,6 +559,7 @@ BOOL DebugKeyPressed(std::string id, bool rapid = false)
 	if (id == "minus") return DebugInputCurrent.MINUS && (rapid ? true : !DebugInputLast.MINUS);
 	if (id == "lmb") return DebugInputCurrent.LMB && (rapid ? true : !DebugInputLast.LMB);
 	if (id == "rmb") return DebugInputCurrent.RMB && (rapid ? true : !DebugInputLast.RMB);
+	if (id == "rmb") return DebugInputCurrent.RMB && (rapid ? true : !DebugInputLast.RMB);
 	if (id == "mb") return DebugInputCurrent.MB && (rapid ? true : !DebugInputLast.MB);
 
 	return false;
@@ -534,6 +573,8 @@ void DebugMenuHandleClick(int id, bool left)
 		if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW)
 		{
 			DebugMenuParameterFocus = -1;
+			TextIndexPointer = 0;
+
 			if (id == 0) DebugMenuShowValuesMode = !DebugMenuShowValuesMode;
 			if (id == 1)
 			{
@@ -547,16 +588,40 @@ void DebugMenuHandleClick(int id, bool left)
 				DebugMenuSubForm = 0;
 			}
 			if (id == 3) if (GlobalDebugFeatures.supervision) DebugMenuSuperVisionMode = !DebugMenuSuperVisionMode;
-			if (id == 4) DebugMenuSettingsPerformanceMode = !DebugMenuSettingsPerformanceMode;
+			if (id == 4) DebugMenuShowCursorMode = !DebugMenuShowCursorMode;
+			if (id == 5) DebugMenuSettingsPerformanceMode = !DebugMenuSettingsPerformanceMode;
+			if (id == 6) DebugMenuHotkeyOverlayMode = !DebugMenuHotkeyOverlayMode;
 
-			if (id - 5 >= 0 && (id - 5) % 2 == 0)
+			if (id > 6 && id < 15)
 			{
-				DebugMenuFunctionFocus = (id - 5) / 2; // Debug function focus
+				for (int i = 0; i < 8; i++)
+				{
+					if (id == 7 + i)
+					{
+						DebugHotkeysActiveSlot = i;
+						if (DebugMenuParameterFocus == -2) TextIndexPointer = DebugMenuSlotName[DebugHotkeysActiveSlot].length();
+					}
+				}
+			}
+
+			if (id == 15)
+			{
+				DebugMenuParameterFocus = -2;
+				TextIndexPointer = DebugMenuSlotName[DebugHotkeysActiveSlot].length();
+			}
+
+			if (id - 16 >= 0 && (id - 16) % 2 == 0)
+			{
+				DebugMenuFunctionFocus = (id - 16) / 2; // Debug function focus
 				DebugMenuMainForm = DEBUGMENUFORM::FORM_DEBUGFUNCTIONS;
 				DebugMenuSubForm = 0;
 				DebugMenuDebugFunctionsParentFocus = -1;
 			}
-			if (id - 6 >= 0 && (id - 6) % 2 == 0) DebugMenuParameterFocus = (id - 6) / 2; // Debug function parameter focus
+			if (id - 17 >= 0 && (id - 17) % 2 == 0)
+			{
+				DebugMenuParameterFocus = (id - 17) / 2; // Debug function parameter focus
+				TextIndexPointer = DebugMenuParameter[DebugHotkeysActiveSlot][DebugMenuParameterFocus].length();
+			}
 		}
 		else if (DebugMenuMainForm == DEBUGMENUFORM::FORM_DEBUGVALUES)
 		{
@@ -623,15 +688,15 @@ void DebugMenuHandleClick(int id, bool left)
 				{
 					bool select = true;
 					DebugFunction focusAddress = DebugFunctions[DebugMenuDebugFunctionsParentFocus].functions[id - 1];
-					if (focusAddress.nameFull == DebugMenuHotkeys[DebugMenuFunctionFocus].nameFull)
+					if (focusAddress.nameFull == DebugMenuHotkeys[DebugHotkeysActiveSlot][DebugMenuFunctionFocus].nameFull)
 					{
 						DebugFunction tmp;
 						tmp.nameFull = "- EMPTY -";
-						DebugMenuHotkeys[DebugMenuFunctionFocus] = tmp;
+						DebugMenuHotkeys[DebugHotkeysActiveSlot][DebugMenuFunctionFocus] = tmp;
 					}
 					else
 					{
-						DebugMenuHotkeys[DebugMenuFunctionFocus] = focusAddress;
+						DebugMenuHotkeys[DebugHotkeysActiveSlot][DebugMenuFunctionFocus] = focusAddress;
 					}
 				}
 			}
@@ -688,7 +753,11 @@ void DebugMenuHandleClick(int id, bool left)
 
 				if (id > 2)
 				{
-					if (id - 3 >= 0 && (id - 3) % 2 == 1) SavefileFielFocus = (id - 4) / 2;
+					if (id - 3 >= 0)
+					{
+						SavefileFielFocus = id - 3;
+						TextIndexPointer = SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value.length();
+					}
 				}
 			}
 
@@ -715,13 +784,13 @@ void DebugMenuHandleClick(int id, bool left)
 			if (id == 3) if (GlobalDebugFeatures.supervision) DebugMenuSuperVisionMode = !DebugMenuSuperVisionMode;
 			if (id == 4) DebugMenuSettingsPerformanceMode = !DebugMenuSettingsPerformanceMode;
 
-			if (id - 5 >= 0 && (id - 5) % 2 == 0)
+			if (id - 16 >= 0 && (id - 16) % 2 == 0)
 			{
 				DebugFunction tmp;
 				tmp.nameFull = "- EMPTY -";
-				DebugMenuHotkeys[(id - 5) / 2] = tmp;
+				DebugMenuHotkeys[DebugHotkeysActiveSlot][(id - 16) / 2] = tmp;
 			}
-			if (id - 6 >= 0 && (id - 6) % 2 == 0) DebugMenuParameter[(id - 6) / 2] = "";
+			if (id - 17 >= 0 && (id - 17) % 2 == 0) DebugMenuParameter[DebugHotkeysActiveSlot][(id - 17) / 2] = "";
 		}
 	}
 
@@ -730,55 +799,69 @@ void DebugMenuHandleClick(int id, bool left)
 	std::vector<DebugAddress> DebugMenuDebugAddressShowValues;
 }
 
-void _DrawHoverBoxes()
+std::vector<RECT> HoverBoxesTarget;
+void _DetectHoverBoxesTarget()
 {
-	std::vector<RECT> boxesTarget;
-	if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW) boxesTarget = DebugMenuOverviewHoverBoxes;
+	if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW) HoverBoxesTarget = DebugMenuOverviewHoverBoxes;
 	else if (DebugMenuMainForm == DEBUGMENUFORM::FORM_DEBUGVALUES)
 	{
 		if (DebugMenuSubForm == 0)
 		{
-			boxesTarget = DebugMenuDebugAddressesParentsHoverBoxes;
+			HoverBoxesTarget = DebugMenuDebugAddressesParentsHoverBoxes;
 		}
 		if (DebugMenuSubForm == 1)
 		{
-			boxesTarget = DebugMenuDebugAddressesChildsHoverBoxes[DebugMenuDebugAddressesParentFocus];
+			HoverBoxesTarget = DebugMenuDebugAddressesChildsHoverBoxes[DebugMenuDebugAddressesParentFocus];
 		}
 	}
 	else if (DebugMenuMainForm == DEBUGMENUFORM::FORM_DEBUGFUNCTIONS)
 	{
 		if (DebugMenuSubForm == 0)
 		{
-			boxesTarget = DebugMenuDebugFunctionsParentsHoverBoxes;
+			HoverBoxesTarget = DebugMenuDebugFunctionsParentsHoverBoxes;
 		}
 		if (DebugMenuSubForm == 1)
 		{
-			boxesTarget = DebugMenuDebugFunctionsChildsHoverBoxes[DebugMenuDebugFunctionsParentFocus];
+			HoverBoxesTarget = DebugMenuDebugFunctionsChildsHoverBoxes[DebugMenuDebugFunctionsParentFocus];
 		}
 	}
 	else if (DebugMenuMainForm == DEBUGMENUFORM::FORM_SAVEFILEEDITOR)
 	{
 		if (DebugMenuSubForm == 0)
 		{
-			boxesTarget = DebugMenuSavefileEditorFilesHoverBoxes;
+			HoverBoxesTarget = DebugMenuSavefileEditorFilesHoverBoxes;
 		}
 		if (DebugMenuSubForm == 1)
 		{
-			boxesTarget = DebugMenuSavefileEditorParentsHoverBoxes;
+			HoverBoxesTarget = DebugMenuSavefileEditorParentsHoverBoxes;
 		}
 		if (DebugMenuSubForm == 2)
 		{
-			boxesTarget = DebugMenuSavefileEditorChildsHoverBoxes[SavefileParentFocus];
+			HoverBoxesTarget = DebugMenuSavefileEditorChildsHoverBoxes[SavefileParentFocus];
 		}
 	}
+}
 
-	for (int i = 0; i < boxesTarget.size(); i++)
+void _DrawHoverBoxes()
+{
+	for (int i = 0; i < HoverBoxesTarget.size(); i++)
 	{
-		if (DebugMenuCursorPosition.x > boxesTarget[i].left && DebugMenuCursorPosition.x < boxesTarget[i].right && DebugMenuCursorPosition.y > boxesTarget[i].top && DebugMenuCursorPosition.y < boxesTarget[i].bottom)
+		if (DebugMenuCursorPosition.x > HoverBoxesTarget[i].left && DebugMenuCursorPosition.x < HoverBoxesTarget[i].right && DebugMenuCursorPosition.y > HoverBoxesTarget[i].top && DebugMenuCursorPosition.y < HoverBoxesTarget[i].bottom)
+		{
+			_DebugDrawRectangle(HoverBoxesTarget[i].left, HoverBoxesTarget[i].top, HoverBoxesTarget[i].right - HoverBoxesTarget[i].left, HoverBoxesTarget[i].bottom - HoverBoxesTarget[i].top, ColorYellow, 0.7f);
+			break;
+		}
+	}
+}
+
+void _CheckHoverBoxes()
+{
+	for (int i = 0; i < HoverBoxesTarget.size(); i++)
+	{
+		if (DebugMenuCursorPosition.x > HoverBoxesTarget[i].left && DebugMenuCursorPosition.x < HoverBoxesTarget[i].right && DebugMenuCursorPosition.y > HoverBoxesTarget[i].top && DebugMenuCursorPosition.y < HoverBoxesTarget[i].bottom)
 		{
 			if (DebugKeyPressed("lmb") || DebugKeyPressed("mb")) DebugMenuHandleClick(i, true);
 			if (DebugKeyPressed("rmb")) DebugMenuHandleClick(i, false);
-			_DebugDrawRectangle(boxesTarget[i].left, boxesTarget[i].top, boxesTarget[i].right - boxesTarget[i].left, boxesTarget[i].bottom - boxesTarget[i].top, ColorYellow, 0.7f);
 			break;
 		}
 	}
@@ -796,137 +879,209 @@ void DebugMenuShowValuesModeCalculateSize()
 
 void DebugMenuExecuteHotkey(int id)
 {
-	if (DebugMenuHotkeys[id].nameFull == "TAS.PlayScript")
+	if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameParent == "TAS")
 	{
-		std::string _script = "";
-		if (DebugMenuHotkeys[id].parameter[0].value != "none" && !DebugMenuHotkeys[id].parameter[0].value.empty()) _script = GetVariableString(&DebugMenuHotkeys[id].parameter[0]);
-		_script = _script + ";";
-		pTASPlayScript((char*)_script.c_str());
+		if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "PlayScript")
+		{
+			std::string _script = "";
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty()) _script = GetVariableString(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+			_script = _script + ";";
+			pTASPlayScript((char*)_script.c_str());
+		}
+		else if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "RecordScript")
+		{
+			std::string _script = "";
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty()) _script = GetVariableString(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+			_script = _script + ";";
+			pTASRecordScript((char*)_script.c_str());
+		}
 	}
-	else if (DebugMenuHotkeys[id].nameFull == "TAS.RecordScript")
+	else if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameParent == "DebugMenu")
 	{
-		std::string _script = "";
-		if (DebugMenuHotkeys[id].parameter[0].value != "none" && !DebugMenuHotkeys[id].parameter[0].value.empty()) _script = GetVariableString(&DebugMenuHotkeys[id].parameter[0]);
-		_script = _script + ";";
-		pTASRecordScript((char*)_script.c_str());
+		if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "SetHotkeySlot")
+		{
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty())
+			{
+				int index = GetVariableInt32(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+				if (index > 0 && index < 9) DebugHotkeysActiveSlot = index - 1;
+			}
+		}
+		else if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "ChangeHotkeySlot")
+		{
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty())
+			{
+				int index = GetVariableInt32(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+				DebugHotkeysActiveSlot += index;
+				if (DebugHotkeysActiveSlot < 0) DebugHotkeysActiveSlot = 7;
+				if (DebugHotkeysActiveSlot > 7) DebugHotkeysActiveSlot = 0;
+			}
+		}
+		else if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "EnablePerformancemode")
+		{
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty())
+			{
+				DebugMenuSettingsPerformanceMode = GetVariableBool(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+			}
+			else DebugMenuSettingsPerformanceMode = !DebugMenuSettingsPerformanceMode;
+		}
+		else if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "EnableDebugValues")
+		{
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty())
+			{
+				DebugMenuShowValuesMode = GetVariableBool(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+			}
+			else DebugMenuShowValuesMode = !DebugMenuShowValuesMode;
+		}
+		else if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "EnableCursorPosition")
+		{
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty())
+			{
+				DebugMenuShowCursorMode = GetVariableBool(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+			}
+			else DebugMenuShowCursorMode = !DebugMenuShowCursorMode;
+		}
+		else if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "EnableHotkeyOverlay")
+		{
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty())
+			{
+				DebugMenuHotkeyOverlayMode = GetVariableBool(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+			}
+			else DebugMenuHotkeyOverlayMode = !DebugMenuHotkeyOverlayMode;
+		}
 	}
 	else
 	{
-		pExecuteDebugFunction(&DebugMenuHotkeys[id]);
+		pExecuteDebugFunction(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id]);
 	}
 }
 
 std::string DebugMenuHotkeyDisplayName(int id)
 {
-	return DebugMenuHotkeys[id].nameFull;
+	return DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameFull;
 }
 
 std::string DebugMenuHotkeyDisplayParameter(int id)
 {
-	return "Parameter: " + DebugMenuParameter[id];
+	return "Parameter: " + DebugMenuParameter[DebugHotkeysActiveSlot][id];
 }
 
-void DebugMenuCheckParameterInput(int id)
+int DebugMenuCheckTextInput(std::string* text, int indexPointer)
 {
-	if (DebugKeyPressed("a")) DebugMenuParameter[id] += "a";
-	if (DebugKeyPressed("b")) DebugMenuParameter[id] += "b";
-	if (DebugKeyPressed("c")) DebugMenuParameter[id] += "c";
-	if (DebugKeyPressed("d")) DebugMenuParameter[id] += "d";
-	if (DebugKeyPressed("e")) DebugMenuParameter[id] += "e";
-	if (DebugKeyPressed("f")) DebugMenuParameter[id] += "f";
-	if (DebugKeyPressed("g")) DebugMenuParameter[id] += "g";
-	if (DebugKeyPressed("h")) DebugMenuParameter[id] += "h";
-	if (DebugKeyPressed("i")) DebugMenuParameter[id] += "i";
-	if (DebugKeyPressed("j")) DebugMenuParameter[id] += "j";
-	if (DebugKeyPressed("k")) DebugMenuParameter[id] += "k";
-	if (DebugKeyPressed("l")) DebugMenuParameter[id] += "l";
-	if (DebugKeyPressed("m")) DebugMenuParameter[id] += "m";
-	if (DebugKeyPressed("n")) DebugMenuParameter[id] += "n";
-	if (DebugKeyPressed("o")) DebugMenuParameter[id] += "o";
-	if (DebugKeyPressed("p")) DebugMenuParameter[id] += "p";
-	if (DebugKeyPressed("q")) DebugMenuParameter[id] += "q";
-	if (DebugKeyPressed("r")) DebugMenuParameter[id] += "r";
-	if (DebugKeyPressed("s")) DebugMenuParameter[id] += "s";
-	if (DebugKeyPressed("t")) DebugMenuParameter[id] += "t";
-	if (DebugKeyPressed("u")) DebugMenuParameter[id] += "u";
-	if (DebugKeyPressed("v")) DebugMenuParameter[id] += "v";
-	if (DebugKeyPressed("w")) DebugMenuParameter[id] += "w";
-	if (DebugKeyPressed("x")) DebugMenuParameter[id] += "x";
-	if (DebugKeyPressed("y")) DebugMenuParameter[id] += "y";
-	if (DebugKeyPressed("z")) DebugMenuParameter[id] += "z";
-	if (DebugKeyPressed("d0")) DebugMenuParameter[id] += "0";
-	if (DebugKeyPressed("d1")) DebugMenuParameter[id] += "1";
-	if (DebugKeyPressed("d2"))
+	int oldLength = text->length();
+	int indexPointerOld = indexPointer;
+
+	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000 || GetAsyncKeyState(VK_RSHIFT) & 0x8000)
 	{
-		if (GetAsyncKeyState(VK_LSHIFT) & 0x8000 || GetAsyncKeyState(VK_RSHIFT) & 0x8000) DebugMenuParameter[id] += "\"";
-		else DebugMenuParameter[id] += "2";
+		if (DebugKeyPressed("a")) text->insert(indexPointer, "A");
+		else if (DebugKeyPressed("b")) text->insert(indexPointer, "B");
+		else if (DebugKeyPressed("c")) text->insert(indexPointer, "C");
+		else if (DebugKeyPressed("d")) text->insert(indexPointer, "D");
+		else if (DebugKeyPressed("e")) text->insert(indexPointer, "E");
+		else if (DebugKeyPressed("f")) text->insert(indexPointer, "F");
+		else if (DebugKeyPressed("g")) text->insert(indexPointer, "G");
+		else if (DebugKeyPressed("h")) text->insert(indexPointer, "H");
+		else if (DebugKeyPressed("i")) text->insert(indexPointer, "I");
+		else if (DebugKeyPressed("j")) text->insert(indexPointer, "J");
+		else if (DebugKeyPressed("k")) text->insert(indexPointer, "K");
+		else if (DebugKeyPressed("l")) text->insert(indexPointer, "L");
+		else if (DebugKeyPressed("m")) text->insert(indexPointer, "M");
+		else if (DebugKeyPressed("n")) text->insert(indexPointer, "N");
+		else if (DebugKeyPressed("o")) text->insert(indexPointer, "O");
+		else if (DebugKeyPressed("p")) text->insert(indexPointer, "P");
+		else if (DebugKeyPressed("q")) text->insert(indexPointer, "Q");
+		else if (DebugKeyPressed("r")) text->insert(indexPointer, "R");
+		else if (DebugKeyPressed("s")) text->insert(indexPointer, "S");
+		else if (DebugKeyPressed("t")) text->insert(indexPointer, "T");
+		else if (DebugKeyPressed("u")) text->insert(indexPointer, "U");
+		else if (DebugKeyPressed("v")) text->insert(indexPointer, "V");
+		else if (DebugKeyPressed("w")) text->insert(indexPointer, "W");
+		else if (DebugKeyPressed("x")) text->insert(indexPointer, "X");
+		else if (DebugKeyPressed("y")) text->insert(indexPointer, "Y");
+		else if (DebugKeyPressed("z")) text->insert(indexPointer, "Z");
+		else if (DebugKeyPressed("d0")) text->insert(indexPointer, "=");
+		else if (DebugKeyPressed("d1")) text->insert(indexPointer, "!");
+		else if (DebugKeyPressed("d2")) text->insert(indexPointer, "\"");
+		else if (DebugKeyPressed("d3")) text->insert(indexPointer, "§");
+		else if (DebugKeyPressed("d4")) text->insert(indexPointer, "$");
+		else if (DebugKeyPressed("d5")) text->insert(indexPointer, "%");
+		else if (DebugKeyPressed("d6")) text->insert(indexPointer, "&");
+		else if (DebugKeyPressed("d7")) text->insert(indexPointer, "/");
+		else if (DebugKeyPressed("d8")) text->insert(indexPointer, "(");
+		else if (DebugKeyPressed("d9")) text->insert(indexPointer, ")");
+		else if (DebugKeyPressed("comma")) text->insert(indexPointer, ";");
+		else if (DebugKeyPressed("dot")) text->insert(indexPointer, ":");
+		else if (DebugKeyPressed("plus")) text->insert(indexPointer, "*");
+		else if (DebugKeyPressed("minus")) text->insert(indexPointer, "_");
 	}
-	if (DebugKeyPressed("d3")) DebugMenuParameter[id] += "3";
-	if (DebugKeyPressed("d4")) DebugMenuParameter[id] += "4";
-	if (DebugKeyPressed("d5")) DebugMenuParameter[id] += "5";
-	if (DebugKeyPressed("d6")) DebugMenuParameter[id] += "6";
-	if (DebugKeyPressed("d7")) DebugMenuParameter[id] += "7";
-	if (DebugKeyPressed("d8")) DebugMenuParameter[id] += "8";
-	if (DebugKeyPressed("d9")) DebugMenuParameter[id] += "9";
-	if (DebugKeyPressed("comma")) DebugMenuParameter[id] += ",";
-	if (DebugKeyPressed("dot")) DebugMenuParameter[id] += ".";
-	if (DebugKeyPressed("plus")) DebugMenuParameter[id] += "+";
-	if (DebugKeyPressed("minus")) DebugMenuParameter[id] += "-";
-	if (DebugKeyPressed("space")) DebugMenuParameter[id] += " ";
-	if (DebugKeyPressed("back")) if (DebugMenuParameter[id].length() > 0) DebugMenuParameter[id] = DebugMenuParameter[id].substr(0, DebugMenuParameter[id].length() - 1);
+	else
+	{
+		if (DebugKeyPressed("a")) text->insert(indexPointer, "a");
+		else if (DebugKeyPressed("b")) text->insert(indexPointer, "b");
+		else if (DebugKeyPressed("c")) text->insert(indexPointer, "c");
+		else if (DebugKeyPressed("d")) text->insert(indexPointer, "d");
+		else if (DebugKeyPressed("e")) text->insert(indexPointer, "e");
+		else if (DebugKeyPressed("f")) text->insert(indexPointer, "f");
+		else if (DebugKeyPressed("g")) text->insert(indexPointer, "g");
+		else if (DebugKeyPressed("h")) text->insert(indexPointer, "h");
+		else if (DebugKeyPressed("i")) text->insert(indexPointer, "i");
+		else if (DebugKeyPressed("j")) text->insert(indexPointer, "j");
+		else if (DebugKeyPressed("k")) text->insert(indexPointer, "k");
+		else if (DebugKeyPressed("l")) text->insert(indexPointer, "l");
+		else if (DebugKeyPressed("m")) text->insert(indexPointer, "m");
+		else if (DebugKeyPressed("n")) text->insert(indexPointer, "n");
+		else if (DebugKeyPressed("o")) text->insert(indexPointer, "o");
+		else if (DebugKeyPressed("p")) text->insert(indexPointer, "p");
+		else if (DebugKeyPressed("q")) text->insert(indexPointer, "q");
+		else if (DebugKeyPressed("r")) text->insert(indexPointer, "r");
+		else if (DebugKeyPressed("s")) text->insert(indexPointer, "s");
+		else if (DebugKeyPressed("t")) text->insert(indexPointer, "t");
+		else if (DebugKeyPressed("u")) text->insert(indexPointer, "u");
+		else if (DebugKeyPressed("v")) text->insert(indexPointer, "v");
+		else if (DebugKeyPressed("w")) text->insert(indexPointer, "w");
+		else if (DebugKeyPressed("x")) text->insert(indexPointer, "x");
+		else if (DebugKeyPressed("y")) text->insert(indexPointer, "y");
+		else if (DebugKeyPressed("z")) text->insert(indexPointer, "z");
+		else if (DebugKeyPressed("d0")) text->insert(indexPointer, "0");
+		else if (DebugKeyPressed("d1")) text->insert(indexPointer, "1");
+		else if (DebugKeyPressed("d2")) text->insert(indexPointer, "2");
+		else if (DebugKeyPressed("d3")) text->insert(indexPointer, "3");
+		else if (DebugKeyPressed("d4")) text->insert(indexPointer, "4");
+		else if (DebugKeyPressed("d5")) text->insert(indexPointer, "5");
+		else if (DebugKeyPressed("d6")) text->insert(indexPointer, "6");
+		else if (DebugKeyPressed("d7")) text->insert(indexPointer, "7");
+		else if (DebugKeyPressed("d8")) text->insert(indexPointer, "8");
+		else if (DebugKeyPressed("d9")) text->insert(indexPointer, "9");
+		else if (DebugKeyPressed("comma")) text->insert(indexPointer, ",");
+		else if (DebugKeyPressed("dot")) text->insert(indexPointer, ".");
+		else if (DebugKeyPressed("plus")) text->insert(indexPointer, "+");
+		else if (DebugKeyPressed("minus")) text->insert(indexPointer, "-");
+	}
+
+	if (DebugKeyPressed("space")) text->insert(indexPointer, " ");
+	if (DebugKeyPressed("back")) if (indexPointer > 0) text->erase(indexPointer - 1, 1);
+	if (DebugKeyPressed("aleft")) if (indexPointer > 0) indexPointer--;
+	if (DebugKeyPressed("aright")) if (indexPointer < text->length()) indexPointer++;
+
+	int newLength = text->length();
+	if (oldLength > newLength)
+	{
+		indexPointer -= oldLength - newLength;
+		if (indexPointer < 0) indexPointer = 0;
+	}
+	if (oldLength < newLength)
+	{
+		indexPointer += newLength - oldLength;
+	}
+	if (indexPointer != indexPointerOld)
+	{
+		TextIndexPointerBlink = true;
+		TextIndexPointerBlinkCounter = 0;
+	}
+
+	return indexPointer;
 }
 
-void DebugMenuCheckSavefileFieldInput()
-{
-	if (SavefileParentFocus == -1 || SavefileFielFocus == -1) return;
-	if (DebugKeyPressed("a")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "a";
-	if (DebugKeyPressed("b")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "b";
-	if (DebugKeyPressed("c")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "c";
-	if (DebugKeyPressed("d")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "d";
-	if (DebugKeyPressed("e")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "e";
-	if (DebugKeyPressed("f")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "f";
-	if (DebugKeyPressed("g")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "g";
-	if (DebugKeyPressed("h")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "h";
-	if (DebugKeyPressed("i")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "i";
-	if (DebugKeyPressed("j")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "j";
-	if (DebugKeyPressed("k")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "k";
-	if (DebugKeyPressed("l")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "l";
-	if (DebugKeyPressed("m")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "m";
-	if (DebugKeyPressed("n")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "n";
-	if (DebugKeyPressed("o")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "o";
-	if (DebugKeyPressed("p")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "p";
-	if (DebugKeyPressed("q")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "q";
-	if (DebugKeyPressed("r")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "r";
-	if (DebugKeyPressed("s")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "s";
-	if (DebugKeyPressed("t")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "t";
-	if (DebugKeyPressed("u")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "u";
-	if (DebugKeyPressed("v")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "v";
-	if (DebugKeyPressed("w")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "w";
-	if (DebugKeyPressed("x")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "x";
-	if (DebugKeyPressed("y")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "y";
-	if (DebugKeyPressed("z")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "z";
-	if (DebugKeyPressed("d0")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "0";
-	if (DebugKeyPressed("d1")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "1";
-	if (DebugKeyPressed("d2"))
-	{
-		if (GetAsyncKeyState(VK_LSHIFT) & 0x8000 || GetAsyncKeyState(VK_RSHIFT) & 0x8000) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "\"";
-		else SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "2";
-	}
 
-	if (DebugKeyPressed("d3")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "3";
-	if (DebugKeyPressed("d4")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "4";
-	if (DebugKeyPressed("d5")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "5";
-	if (DebugKeyPressed("d6")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "6";
-	if (DebugKeyPressed("d7")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "7";
-	if (DebugKeyPressed("d8")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "8";
-	if (DebugKeyPressed("d9")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "9";
-	if (DebugKeyPressed("comma")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += ",";
-	if (DebugKeyPressed("dot")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += ".";
-	if (DebugKeyPressed("plus")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "+";
-	if (DebugKeyPressed("minus")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += "-";
-	if (DebugKeyPressed("space")) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value += " ";
-	if (DebugKeyPressed("back")) if (SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value.length() > 0) SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value = SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value.substr(0, SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value.length() - 1);
-}
 
 RECT OriginalCursorClip;
 RECT CustomCursorClip;
@@ -941,7 +1096,6 @@ void CalcNewCursorPos()
 
 void __cdecl DebugMenuOpen()
 {
-	std::cout << "Opened!" << std::endl;
 	DebugMenuOpened = true;
 	DebugMenuInitSwitch = true;
 	DebugMenuMainForm = DEBUGMENUFORM::FORM_OVERVIEW;
@@ -950,85 +1104,107 @@ void __cdecl DebugMenuOpen()
 	DebugMenuSubFormLast = 0;
 	RawInputDisableForGame = true;
 
-	std::ifstream file(GlobalSettings.config_debugconfig_directory + "hotkeys.txt");
+	_DetectHoverBoxesTarget();
 
 	DebugFunction tmp;
 	tmp.nameFull = "- EMPTY -";
-	for (int i = 0; i < 25; i++) DebugMenuHotkeys[i] = tmp;
-	for (int i = 0; i < 25; i++) DebugMenuParameter[i] = "";
-	 
-	if (file.good())
+	for (int k = 0; k < 8; k++)
 	{
-		std::string script = "";
+		std::vector<DebugFunction> subListFun;
+		std::vector<std::string> subListStr;
+		for (int i = 0; i < 25; i++) subListFun.push_back(tmp);
+		for (int i = 0; i < 25; i++) subListStr.push_back("");
+		DebugMenuHotkeys.push_back(subListFun);
+		DebugMenuParameter.push_back(subListStr);
+		DebugMenuSlotName.push_back("Slot " + std::to_string(k));
+	}
+	
+	for (int f = 0; f < 8; f++)
+	{
+		std::ifstream file(GlobalSettings.config_debugconfig_directory + "hotkeys" + std::to_string(f) + ".txt");
 
-		while (!file.eof()) {
-			// Read line
-			std::string line = "";
-			std::getline(file, line);
+		if (file.good())
+		{
+			std::string script = "";
 
-			//Declare Substrings
-			std::string substring_instruction = "";
-			std::string substring_iterations = "";
+			bool firstSlotName = true;
 
-			// Check if line contains content
-			if (line.length() > 0) {
-				std::string key = line.substr(0, line.find("="));
-				std::string func = line.substr(line.find("=") + 1, line.find(";") - (line.find("=") + 1));
-				if (func != "")
+			while (!file.eof()) {
+				// Read line
+				std::string line = "";
+				std::getline(file, line);
+
+				if (firstSlotName)
 				{
-					int index = 0;
+					DebugMenuSlotName[f] = line;
+					firstSlotName = false;
+					continue;
+				}
 
-					if (key == "NUM_1") index = 0;
-					if (key == "NUM_2") index = 1;
-					if (key == "NUM_3") index = 2;
-					if (key == "NUM_4") index = 3;
-					if (key == "NUM_5") index = 4;
-					if (key == "NUM_6") index = 5;
-					if (key == "NUM_7") index = 6;
-					if (key == "NUM_8") index = 7;
-					if (key == "NUM_9") index = 8;
-					if (key == "NUM_/") index = 9;
-					if (key == "NUM_*") index = 10;
-					if (key == "NUM_-") index = 11;
-					if (key == "NUM_+") index = 12;
-					if (key == "F1") index = 13;
-					if (key == "F2") index = 14;
-					if (key == "F3") index = 15;
-					if (key == "F4") index = 16;
-					if (key == "F5") index = 17;
-					if (key == "F6") index = 18;
-					if (key == "F7") index = 19;
-					if (key == "F8") index = 20;
-					if (key == "F9") index = 21;
-					if (key == "F10") index = 22;
-					if (key == "F11") index = 23;
-					if (key == "F12") index = 24;
+				//Declare Substrings
+				std::string substring_instruction = "";
+				std::string substring_iterations = "";
 
-					std::string parentName = func.substr(0, func.find("."));
-					std::string childName = func.substr(func.find(".") + 1, func.find("(") - (func.find(".") + 1));
-					std::string paramsAll = func.substr(func.find("(") + 1, func.find(")") - (func.find("(") + 1));
-
-					for (int i = 0; i < DebugFunctions.size(); i++)
+				// Check if line contains content
+				if (line.length() > 0) {
+					std::string key = line.substr(0, line.find("="));
+					std::string func = line.substr(line.find("=") + 1, line.find(";") - (line.find("=") + 1));
+					if (func != "")
 					{
-						if (DebugFunctions[i].nameParent == parentName)
+						int index = 0;
+
+						if (key == "NUM_1") index = 0;
+						if (key == "NUM_2") index = 1;
+						if (key == "NUM_3") index = 2;
+						if (key == "NUM_4") index = 3;
+						if (key == "NUM_5") index = 4;
+						if (key == "NUM_6") index = 5;
+						if (key == "NUM_7") index = 6;
+						if (key == "NUM_8") index = 7;
+						if (key == "NUM_9") index = 8;
+						if (key == "NUM_/") index = 9;
+						if (key == "NUM_*") index = 10;
+						if (key == "NUM_-") index = 11;
+						if (key == "NUM_+") index = 12;
+						if (key == "F1") index = 13;
+						if (key == "F2") index = 14;
+						if (key == "F3") index = 15;
+						if (key == "F4") index = 16;
+						if (key == "F5") index = 17;
+						if (key == "F6") index = 18;
+						if (key == "F7") index = 19;
+						if (key == "F8") index = 20;
+						if (key == "F9") index = 21;
+						if (key == "F10") index = 22;
+						if (key == "F11") index = 23;
+						if (key == "F12") index = 24;
+
+						std::string parentName = func.substr(0, func.find("."));
+						std::string childName = func.substr(func.find(".") + 1, func.find("(") - (func.find(".") + 1));
+						std::string paramsAll = func.substr(func.find("(") + 1, func.find(")") - (func.find("(") + 1));
+
+						for (int i = 0; i < DebugFunctions.size(); i++)
 						{
-							for (int k = 0; k < DebugFunctions[i].functions.size(); k++)
+							if (DebugFunctions[i].nameParent == parentName)
 							{
-								if (DebugFunctions[i].functions[k].nameChild == childName)
+								for (int k = 0; k < DebugFunctions[i].functions.size(); k++)
 								{
-									DebugMenuHotkeys[index] = DebugFunctions[i].functions[k];
-									DebugMenuParameter[index] = paramsAll;
-									break;
+									if (DebugFunctions[i].functions[k].nameChild == childName)
+									{
+										DebugMenuHotkeys[f][index] = DebugFunctions[i].functions[k];
+										DebugMenuParameter[f][index] = paramsAll;
+										break;
+									}
 								}
 							}
 						}
-					}
 
+					}
 				}
 			}
-		}
 
-		file.close();
+			file.close();
+		}
 	}
 
 	if (GlobalDebugFeatures.savefileEditor)
@@ -1077,100 +1253,104 @@ void DebugMenuClose()
 	DebugMenuSubForm = 0;
 	RawInputDisableForGame = false;
 
-	std::ofstream file(GlobalSettings.config_debugconfig_directory + "hotkeys.txt");
-
-	for (int i = 0; i < DebugMenuHotkeys.size(); i++)
+	for (int f = 0; f < 8; f++)
 	{
-		std::string line = "";
-		if (i == 0) line = "NUM_1=";
-		if (i == 1) line = "NUM_2=";
-		if (i == 2) line = "NUM_3=";
-		if (i == 3) line = "NUM_4=";
-		if (i == 4) line = "NUM_5=";
-		if (i == 5) line = "NUM_6=";
-		if (i == 6) line = "NUM_7=";
-		if (i == 7) line = "NUM_8=";
-		if (i == 8) line = "NUM_9=";
-		if (i == 9) line = "NUM_/=";
-		if (i == 10) line = "NUM_*=";
-		if (i == 11) line = "NUM_-=";
-		if (i == 12) line = "NUM_+=";
-		if (i == 13) line = "F1=";
-		if (i == 14) line = "F2=";
-		if (i == 15) line = "F3=";
-		if (i == 16) line = "F4=";
-		if (i == 17) line = "F5=";
-		if (i == 18) line = "F6=";
-		if (i == 19) line = "F7=";
-		if (i == 20) line = "F8=";
-		if (i == 21) line = "F9=";
-		if (i == 22) line = "F10=";
-		if (i == 23) line = "F11=";
-		if (i == 24) line = "F12=";
+		std::ofstream file(GlobalSettings.config_debugconfig_directory + "hotkeys" + std::to_string(f) + ".txt");
 
-		if (DebugMenuHotkeys[i].nameFull != "- EMPTY -") line = line + DebugMenuHotkeys[i].nameFull + "(" + DebugMenuParameter[i] + ");";
-		else line = line + ";";
-
-		file << line << std::endl;
-	}
-
-	file.close();
-
-	// Update debug function parameter
-	for (int i = 0; i < DebugMenuHotkeys.size(); i++)
-	{
-		if (DebugMenuHotkeys[i].nameFull != "- EMPTY -")
+		file << DebugMenuSlotName[f] << std::endl;
+		for (int i = 0; i < DebugMenuHotkeys[f].size(); i++)
 		{
-			if (DebugMenuParameter[i] != "")
-			{
-				if (DebugMenuHotkeys[i].parameter.size() > 0)
-				{
-					std::string paramCopy = DebugMenuParameter[i];
-					int index = 0;
-					bool quote = false;
-					while (index < paramCopy.length())
-					{
-						if (paramCopy[index] == ' ' && !quote)
-						{
-							paramCopy.replace(index, 1, "");
-						}
-						else
-						{
-							index++;
-						}
-					}
+			std::string line = "";
+			if (i == 0) line = "NUM_1=";
+			if (i == 1) line = "NUM_2=";
+			if (i == 2) line = "NUM_3=";
+			if (i == 3) line = "NUM_4=";
+			if (i == 4) line = "NUM_5=";
+			if (i == 5) line = "NUM_6=";
+			if (i == 6) line = "NUM_7=";
+			if (i == 7) line = "NUM_8=";
+			if (i == 8) line = "NUM_9=";
+			if (i == 9) line = "NUM_/=";
+			if (i == 10) line = "NUM_*=";
+			if (i == 11) line = "NUM_-=";
+			if (i == 12) line = "NUM_+=";
+			if (i == 13) line = "F1=";
+			if (i == 14) line = "F2=";
+			if (i == 15) line = "F3=";
+			if (i == 16) line = "F4=";
+			if (i == 17) line = "F5=";
+			if (i == 18) line = "F6=";
+			if (i == 19) line = "F7=";
+			if (i == 20) line = "F8=";
+			if (i == 21) line = "F9=";
+			if (i == 22) line = "F10=";
+			if (i == 23) line = "F11=";
+			if (i == 24) line = "F12=";
 
-					if (paramCopy.empty())
+			if (DebugMenuHotkeys[f][i].nameFull != "- EMPTY -") line = line + DebugMenuHotkeys[f][i].nameFull + "(" + DebugMenuParameter[f][i] + ");";
+			else line = line + ";";
+
+			file << line << std::endl;
+		}
+
+		file.close();
+
+		// Update debug function parameter
+		for (int i = 0; i < DebugMenuHotkeys[f].size(); i++)
+		{
+			if (DebugMenuHotkeys[f][i].nameFull != "- EMPTY -")
+			{
+				if (DebugMenuParameter[f][i] != "")
+				{
+					if (DebugMenuHotkeys[f][i].parameter.size() > 0)
 					{
-						for (int k = 0; k < DebugMenuHotkeys[i].parameter.size(); k++) SetVariable(&DebugMenuHotkeys[i].parameter[k], "none");
-					}
-					else
-					{
-						std::vector<std::string> params;
-						splitStringVector(params, paramCopy, ",");
-						for (int k = 0; k < params.size(); k++)
+						std::string paramCopy = DebugMenuParameter[f][i];
+						int index = 0;
+						bool quote = false;
+						while (index < paramCopy.length())
 						{
-							if (params[k].empty())
+							if (paramCopy[index] == ' ' && !quote)
 							{
-								SetVariable(&DebugMenuHotkeys[i].parameter[k], "none");
+								paramCopy.replace(index, 1, "");
 							}
 							else
 							{
-								if (DebugMenuHotkeys[i].parameter[k].type.find("float") != std::string::npos && params[k].find(".") == std::string::npos) params[k] = params[k] + ".0";
-								SetVariable(&DebugMenuHotkeys[i].parameter[k], params[k]);
+								index++;
 							}
-							if (k + 1 > DebugMenuHotkeys[i].parameter.size()) break;
+						}
+
+						if (paramCopy.empty())
+						{
+							for (int k = 0; k < DebugMenuHotkeys[f][i].parameter.size(); k++) SetVariable(&DebugMenuHotkeys[f][i].parameter[k], "none");
+						}
+						else
+						{
+							std::vector<std::string> params;
+							splitStringVector(params, paramCopy, ",");
+							for (int k = 0; k < params.size(); k++)
+							{
+								if (params[k].empty())
+								{
+									SetVariable(&DebugMenuHotkeys[f][i].parameter[k], "none");
+								}
+								else
+								{
+									if (DebugMenuHotkeys[f][i].parameter[k].type.find("float") != std::string::npos && params[k].find(".") == std::string::npos) params[k] = params[k] + ".0";
+									SetVariable(&DebugMenuHotkeys[f][i].parameter[k], params[k]);
+								}
+								if (k + 1 > DebugMenuHotkeys[f][i].parameter.size()) break;
+							}
 						}
 					}
 				}
-			}
-			else
-			{
-				for (int k = 0; k < DebugMenuHotkeys[i].parameter.size(); k++) SetVariable(&DebugMenuHotkeys[i].parameter[k], "none");
+				else
+				{
+					for (int k = 0; k < DebugMenuHotkeys[f][i].parameter.size(); k++) SetVariable(&DebugMenuHotkeys[f][i].parameter[k], "none");
+				}
 			}
 		}
-	}
 
+	}
 
 }
 
@@ -1202,7 +1382,7 @@ void DebugDrawDebugAddresses()
 			else
 			{
 				pGetDebugAddressValue(&DebugMenuDebugAddressShowValues[i]);
-				text = DebugMenuDebugAddressShowValues[i].nameFull + ": " + DebugMenuDebugAddressShowValues[i].value.value;
+				text = DebugMenuDebugAddressShowValues[i].nameChild + ": " + DebugMenuDebugAddressShowValues[i].value.value;
 			}
 			SIZE textSize;
 			GetTextExtentPoint32A(hdc, text.c_str(), (int)text.length(), &textSize);
@@ -1246,13 +1426,13 @@ void DebugDrawDebugAddresses()
 			if (DebugMenuDebugAddressShowValues[i].nameParent != lastParent)
 			{
 				lastParent = DebugMenuDebugAddressShowValues[i].nameParent;
-				_DebugDrawText("- " + DebugMenuDebugAddressShowValues[i].nameParent + " -", 5 + (row > 0 ? DebugMenuDebugAddressShowValuesRowWidth[row - 1] : 0), 5 + (col * DebugMenuDebugAddressShowValuesRowHeight), FontSmall, ColorWhite, 1.0f, "left");
+				_DebugDrawText("- " + DebugMenuDebugAddressShowValues[i].nameParent + " -", 5 + (row > 0 ? DebugMenuDebugAddressShowValuesRowWidth[row - 1] : 0), 5 + (col * DebugMenuDebugAddressShowValuesRowHeight), FontSmall, ColorCyan, 1.0f, "left");
 				i--;
 			}
 			else
 			{
 				pGetDebugAddressValue(&DebugMenuDebugAddressShowValues[i]);
-				std::string text = DebugMenuDebugAddressShowValues[i].nameFull + ": " + DebugMenuDebugAddressShowValues[i].value.value;
+				std::string text = DebugMenuDebugAddressShowValues[i].nameChild + ": " + DebugMenuDebugAddressShowValues[i].value.value;
 				_DebugDrawText(text, 5 + (row > 0 ? DebugMenuDebugAddressShowValuesRowWidth[row - 1] : 0), 5 + (col * DebugMenuDebugAddressShowValuesRowHeight), FontSmall, ColorWhite, 1.0f, "left");
 			}
 
@@ -1271,16 +1451,86 @@ void DebugDrawDebugAddresses()
 
 
 
+void DebugDrawHotkeyOverlay()
+{
+	// Width detection
+	int widthSlots = 0;
+	int widthNums = 0;
+	int widthFs = 0;
+	for (int i = 0; i < 25; i++)
+	{
+		if (i < 8)
+		{
+			SIZE textSize;
+			GetTextExtentPoint32A(hdc, DebugMenuSlotName[i].c_str(), (int)DebugMenuSlotName[i].length(), &textSize);
+			if (textSize.cx > widthSlots) widthSlots = textSize.cx;
+		}
+		SIZE textSize;
+		std::string targetText = "F10: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][i].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][i].nameFull);
+		GetTextExtentPoint32A(hdc, targetText.c_str(), (int)targetText.length(), &textSize);
+		if (i < 13)
+		{
+			if (textSize.cx > widthNums) widthNums = textSize.cx;
+		}
+		else
+		{
+			if (textSize.cx > widthFs) widthFs = textSize.cx;
+		}
+	}
+
+	//Drawing
+	_DebugDrawRectangle(0, 850, widthSlots + widthNums + widthFs + 116, 230, ColorBlack, 0.8f);
+
+	_DebugDrawText("Active Slot:", 3, 853, FontSmall, ColorWhite, 1.0f);
+	for (int i = 0; i < 8; i++)
+	{
+		_DebugDrawText(DebugMenuSlotName[i], 3, 868 + (i * 15), FontSmall, DebugHotkeysActiveSlot == i ? ColorGreen : ColorRed, 1.0f);
+	}
+
+	_DebugDrawText("Functions:", 3 + widthSlots + 30, 853, FontSmall, ColorWhite, 1.0f);
+	_DebugDrawText("N1: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][0].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][0].nameFull), 3 + widthSlots + 30, 868 + (0 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N2: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][1].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][1].nameFull), 3 + widthSlots + 30, 868 + (1 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N3: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][2].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][2].nameFull), 3 + widthSlots + 30, 868 + (2 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N4: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][3].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][3].nameFull), 3 + widthSlots + 30, 868 + (3 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N5: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][4].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][4].nameFull), 3 + widthSlots + 30, 868 + (4 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N6: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][5].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][5].nameFull), 3 + widthSlots + 30, 868 + (5 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N7: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][6].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][6].nameFull), 3 + widthSlots + 30, 868 + (6 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N8: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][7].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][7].nameFull), 3 + widthSlots + 30, 868 + (7 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N9: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][8].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][8].nameFull), 3 + widthSlots + 30, 868 + (8 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N/: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][9].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][9].nameFull), 3 + widthSlots + 30, 868 + (9 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N*: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][10].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][10].nameFull), 3 + widthSlots + 30, 868 + (10 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N-: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][11].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][11].nameFull), 3 + widthSlots + 30, 868 + (11 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("N+: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][12].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][12].nameFull), 3 + widthSlots + 30, 868 + (12 * 15), FontSmall, ColorYellow, 1.0f);
+
+	_DebugDrawText("F1:  " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][13].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][13].nameFull), 3 + widthSlots + widthNums + 60, 868 + (0 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F2:  " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][14].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][14].nameFull), 3 + widthSlots + widthNums + 60, 868 + (1 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F3:  " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][15].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][15].nameFull), 3 + widthSlots + widthNums + 60, 868 + (2 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F4:  " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][16].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][16].nameFull), 3 + widthSlots + widthNums + 60, 868 + (3 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F5:  " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][17].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][17].nameFull), 3 + widthSlots + widthNums + 60, 868 + (4 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F6:  " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][18].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][18].nameFull), 3 + widthSlots + widthNums + 60, 868 + (5 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F7:  " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][19].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][19].nameFull), 3 + widthSlots + widthNums + 60, 868 + (6 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F8:  " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][20].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][20].nameFull), 3 + widthSlots + widthNums + 60, 868 + (7 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F9:  " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][21].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][21].nameFull), 3 + widthSlots + widthNums + 60, 868 + (8 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F10: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][22].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][22].nameFull), 3 + widthSlots + widthNums + 60, 868 + (9 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F11: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][23].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][23].nameFull), 3 + widthSlots + widthNums + 60, 868 + (10 * 15), FontSmall, ColorYellow, 1.0f);
+	_DebugDrawText("F12: " + (DebugMenuHotkeys[DebugHotkeysActiveSlot][24].nameFull == "- EMPTY -" ? "" : DebugMenuHotkeys[DebugHotkeysActiveSlot][24].nameFull), 3 + widthSlots + widthNums + 60, 868 + (11 * 15), FontSmall, ColorYellow, 1.0f);
+}
+
+
+
 int DebugMenuHotkeyDelegationIndex = 0;
 
 void DebugMenuMainRoutine()
 {
 	// Check for input
-	//if (!TASPlayScript && !TASRecordScript)
-	//{
+	if (!TASPlayScript && !TASRecordScript)
+	{
+		// Customize the cursor
+		GetCursorPos(&DebugMenuCursorPosition);
+		ScreenToClient(MainWindowHandle, &DebugMenuCursorPosition);
+	}
 	std::memcpy(&DebugInputLast, &DebugInputCurrent, sizeof(GameInput));
 	GetRawInput(false, &DebugInputCurrent, "all");
-	//}
 
 	GetWindowRect(MainWindowHandle, &MainWindowRect);
 	
@@ -1288,50 +1538,55 @@ void DebugMenuMainRoutine()
 
 	if (DebugMenuOpened)
 	{
-		// Customize the cursor
-		GetCursorPos(&DebugMenuCursorPosition);
-		ScreenToClient(MainWindowHandle, &DebugMenuCursorPosition);
+		// Input handling
+		if (MainWindowActive)
+		{
+			if (DebugKeyPressed("num0"))
+			{
+				DebugMenuClose();
+			}
 
-		//std::cout << "X: " << std::dec << DebugMenuCursorPosition.x << " | Y: " << DebugMenuCursorPosition.y << std::endl;
+			if (DebugKeyPressed("esc"))
+			{
+				if (DebugMenuSubForm > 0)
+				{
+					DebugMenuSubForm--;
+				}
+				else
+				{
+					if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW)
+					{
+						DebugMenuClose();
+					}
+					else
+					{
+						DebugMenuMainForm = DEBUGMENUFORM::FORM_OVERVIEW;
+					}
+				}
+			}
+
+			if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW)
+			{
+				if (DebugMenuParameterFocus > -1) TextIndexPointer = DebugMenuCheckTextInput(&DebugMenuParameter[DebugHotkeysActiveSlot][DebugMenuParameterFocus], TextIndexPointer);
+				if (DebugMenuParameterFocus == -2) TextIndexPointer = DebugMenuCheckTextInput(&DebugMenuSlotName[DebugHotkeysActiveSlot], TextIndexPointer);
+			}
+			if (DebugMenuMainForm == DEBUGMENUFORM::FORM_SAVEFILEEDITOR && DebugMenuSubForm == 2)
+			{
+				if (SavefileFielFocus > -1) TextIndexPointer = DebugMenuCheckTextInput(&SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value, TextIndexPointer);
+			}
+
+		}
+
+		_CheckHoverBoxes();
 
 		if (DebugMenuCanDraw)
 		{
 			ClearSurface(DebugMenuMainForm, DebugMenuSubForm);
-
-			// Input handling
-			if (MainWindowActive)
-			{
-
-				if (DebugKeyPressed("num0"))
-				{
-					DebugMenuClose();
-				}
-
-				if (DebugKeyPressed("esc"))
-				{
-					if (DebugMenuSubForm > 0)
-					{
-						DebugMenuSubForm--;
-					}
-					else
-					{
-						if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW)
-						{
-							DebugMenuClose();
-						}
-						else
-						{
-							DebugMenuMainForm = DEBUGMENUFORM::FORM_OVERVIEW;
-						}
-					}
-				}
-
-				if (DebugMenuParameterFocus > -1) DebugMenuCheckParameterInput(DebugMenuParameterFocus);
-			}
-
-			// Draw Hoverboxes
-			_DrawHoverBoxes();
 			
+			// Draw Hoverboxes
+			_DetectHoverBoxesTarget();
+			_DrawHoverBoxes();
+
 			// Draw overview
 			if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW)
 			{
@@ -1339,20 +1594,37 @@ void DebugMenuMainRoutine()
 				_DebugDrawText("Edit", 390, 260, FontBigMedium, ColorBlack, 1.0f, "center");
 				_DebugDrawText(GlobalDebugFeatures.savefileEditor ? "Edit" : "Not Available", 160, 370, FontBigMedium, GlobalDebugFeatures.savefileEditor ? ColorBlack : ColorGray, 1.0f, "center");
 				_DebugDrawText(GlobalDebugFeatures.supervision ? (DebugMenuSuperVisionMode ? "Enabled" : "Disabled") : "Not Available", 160, 493, FontBigMedium, GlobalDebugFeatures.supervision ? (DebugMenuSuperVisionMode ? ColorDarkGreen : ColorRed) : ColorGray, 1.0f, "center");
-				_DebugDrawText(DebugMenuSettingsPerformanceMode ? "Enabled" : "Disabled", 160, 983, FontBigMedium, DebugMenuSettingsPerformanceMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
+				_DebugDrawText(DebugMenuShowCursorMode ? "Enabled" : "Disabled", 160, 608, FontBigMedium, DebugMenuShowCursorMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
+				_DebugDrawText(DebugMenuSettingsPerformanceMode ? "Enabled" : "Disabled", 160, 721, FontBigMedium, DebugMenuSettingsPerformanceMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
+				_DebugDrawText(DebugMenuHotkeyOverlayMode ? "Enabled" : "Disabled", 160, 842, FontBigMedium, DebugMenuHotkeyOverlayMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
 
 				for (int i = 0; i < 13; i++)
 				{
-					_DebugDrawText(DebugMenuHotkeys[i].nameFull, 1245, 200 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
-					_DebugDrawText(DebugMenuParameter[i], 1245, 228 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
+					_DebugDrawText(DebugMenuHotkeys[DebugHotkeysActiveSlot][i].nameFull, 1245, 200 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
+					_DebugDrawText(DebugMenuParameter[DebugHotkeysActiveSlot][i], 1245, 228 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
 				}
 
 				for (int i = 0; i < 12; i++)
 				{
-					_DebugDrawText(DebugMenuHotkeys[i + 13].nameFull, 1690, 200 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
-					_DebugDrawText(DebugMenuParameter[i + 13], 1690, 228 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
+					_DebugDrawText(DebugMenuHotkeys[DebugHotkeysActiveSlot][i + 13].nameFull, 1690, 200 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
+					_DebugDrawText(DebugMenuParameter[DebugHotkeysActiveSlot][i + 13], 1690, 228 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
 				}
 
+				for (int i = 0; i < 8; i++)
+				{
+					if (DebugHotkeysActiveSlot == i)
+					{
+						_DebugDrawRectangle(1584 + (i * 37), 975, 29, 28, ColorGreen, 1.0f);
+						_DebugDrawText(std::to_string(i + 1), 1599 + (i * 37), 980, FontMedium, ColorRed, 1.0f, "center");
+					}
+					else
+					{
+						_DebugDrawText(std::to_string(i + 1), 1599 + (i * 37), 980, FontMedium, ColorBlack, 1.0f, "center");
+					}
+				}
+
+				// Draw slot name
+				_DebugDrawText(DebugMenuSlotName[DebugHotkeysActiveSlot], 1728, 1015, FontMedium, ColorBlack, 1.0f, "center");
 			}
 			else if (DebugMenuMainForm == DEBUGMENUFORM::FORM_DEBUGVALUES)
 			{
@@ -1425,7 +1697,7 @@ void DebugMenuMainRoutine()
 					{
 						bool selected = false;
 						DebugFunction focusFunction = DebugFunctions[DebugMenuDebugFunctionsParentFocus].functions[i];
-						if (focusFunction.nameFull == DebugMenuHotkeys[DebugMenuFunctionFocus].nameFull) selected = true;
+						if (focusFunction.nameFull == DebugMenuHotkeys[DebugHotkeysActiveSlot][DebugMenuFunctionFocus].nameFull) selected = true;
 
 						_DebugDrawText(focusFunction.nameChild, 60 + (360 * row), 165 + (30 * col), FontMedium, selected ? ColorDarkGreen : ColorRed, 1.0f, "left");
 						col++;
@@ -1443,7 +1715,6 @@ void DebugMenuMainRoutine()
 				_DebugDrawText("Done", 163, 981, FontBigMedium, ColorBlack, 1.0f, "center");
 				if (DebugMenuSubForm == 0)
 				{
-					std::cout << "Form 1" << std::endl;
 					int col = 0;
 					int row = 0;
 					for (int i = 0; i < SavefileFiles.size(); i++)
@@ -1459,7 +1730,6 @@ void DebugMenuMainRoutine()
 				}
 				else if (DebugMenuSubForm == 1)
 				{
-					std::cout << "Form 2" << std::endl;
 					int col = 0;
 					int row = 0;
 					for (int i = 0; i < SavefileParents.size(); i++)
@@ -1475,8 +1745,9 @@ void DebugMenuMainRoutine()
 				}
 				else if(DebugMenuSubForm == 2)
 				{
-					DebugMenuCheckSavefileFieldInput();
-					std::cout << "Form 3" << std::endl;
+					_DebugDrawText("Save", 812, 981, FontBigMedium, ColorBlack, 1.0f, "center");
+					_DebugDrawText("Reload", 1089, 981, FontBigMedium, ColorBlack, 1.0f, "center");
+
 					int col = 0;
 					int row = 0;
 					for (int i = 0; i < SavefileParents[SavefileParentFocus].fields.size(); i++)
@@ -1485,7 +1756,7 @@ void DebugMenuMainRoutine()
 						std::string value = SavefileParents[SavefileParentFocus].fields[i].value.value;
 						_DebugDrawText(title, 60 + (360 * row), 165 + (60 * col), FontMedium, ColorBlack, 1.0f, "left");
 						_DebugDrawRectangle(60 + (360 * row), 165 + (60 * col) + 30, 300, 26, ColorWhite, 1.0f);
-						_DebugDrawText(value, 60 + (360 * row) + 5, 165 + (60 * col) + 32, FontMedium, ColorBlack, 1.0f, "left");
+						_DebugDrawText(value, 60 + (360 * row) + 150, 165 + (60 * col) + 32, FontMedium, ColorBlack, 1.0f, "center");
 						col++;
 						if (col == 12)
 						{
@@ -1504,13 +1775,85 @@ void DebugMenuMainRoutine()
 				DebugMenuMainFormLast = DebugMenuMainForm;
 				DebugMenuSubFormLast = DebugMenuSubForm;
 			}
+
+			// Draw text index pointer
+			if (TextIndexPointerBlink)
+			{
+				SIZE originalSize;
+				SIZE partSize;
+				std::string targetText = "";
+				int targetX = 0;
+				int targetY = 0;
+				bool canDrawPointerIndex = true;
+				if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW)
+				{
+					if (DebugMenuParameterFocus > -1)
+					{
+						targetText = DebugMenuParameter[DebugHotkeysActiveSlot][DebugMenuParameterFocus];
+						if (DebugMenuParameterFocus < 13)
+						{
+							targetX = 1245;
+							targetY = 228 + (65 * DebugMenuParameterFocus);
+						}
+						else
+						{
+							targetX = 1690;
+							targetY = 228 + (65 * (DebugMenuParameterFocus - 13));
+						}
+					}
+					else if (DebugMenuParameterFocus == -2)
+					{
+						targetText = DebugMenuSlotName[DebugHotkeysActiveSlot];
+						targetX = 1728;
+						targetY = 1015;
+					}
+					else
+					{
+						canDrawPointerIndex = false;
+					}
+				}
+				else if (DebugMenuMainForm == DEBUGMENUFORM::FORM_SAVEFILEEDITOR && DebugMenuSubForm == 2)
+				{
+					if (SavefileFielFocus > -1)
+					{
+						targetText = SavefileParents[SavefileParentFocus].fields[SavefileFielFocus].value.value;
+						targetX = 60 + (360 * (std::floor(SavefileFielFocus / 12))) + 150;
+						targetY = 165 + (60 * SavefileFielFocus) + 32;
+					}
+					else
+					{
+						canDrawPointerIndex = false;
+					}
+				}
+				else
+				{
+					canDrawPointerIndex = false;
+				}
+
+				if (canDrawPointerIndex)
+				{
+					GetTextExtentPoint32A(hdc, targetText.c_str(), (int)targetText.length(), &originalSize);
+					GetTextExtentPoint32A(hdc, targetText.substr(0, TextIndexPointer).c_str(), (int)TextIndexPointer, &partSize);
+
+					_DebugDrawText("l", (targetX - ((originalSize.cx * 1.5) / 2)) + (partSize.cx * 1.5), targetY, FontMedium, ColorRed, 1.0f, "left");
+				}
+
+			}
+
+			// Handle blinker
+			TextIndexPointerBlinkCounter++;
+			if (TextIndexPointerBlinkCounter > 15)
+			{
+				TextIndexPointerBlinkCounter = 0;
+				TextIndexPointerBlink = !TextIndexPointerBlink;
+			}
+
+			// Draw custom cursor
+			DrawCursorToTexture(DebugMenuCursorPosition.x, DebugMenuCursorPosition.y);
+
+			DebugMenuCanDraw = false;
 		}
 
-		// Draw custom cursor
-		DrawCursorToTexture(DebugMenuCursorPosition.x, DebugMenuCursorPosition.y);
-
-		// Draw menu
-		_DrawMenu();
 	}
 	else
 	{
@@ -1521,45 +1864,45 @@ void DebugMenuMainRoutine()
 			DebugMenuInitSwitch = false;
 		}
 
-		if (DebugMenuCanDraw)
+		if (MainWindowActive)// && !TASPlayScript && !TASRecordScript)
+		{
+			if (DebugKeyPressed("num0"))
+			{
+				// Open the menu
+				DebugMenuOpen();
+			}
+
+			// Hotkeys
+			if (DebugKeyPressed("num1", DebugMenuHotkeys[DebugHotkeysActiveSlot][0].rapid)) DebugMenuExecuteHotkey(0);
+			if (DebugKeyPressed("num2", DebugMenuHotkeys[DebugHotkeysActiveSlot][1].rapid)) DebugMenuExecuteHotkey(1);
+			if (DebugKeyPressed("num3", DebugMenuHotkeys[DebugHotkeysActiveSlot][2].rapid)) DebugMenuExecuteHotkey(2);
+			if (DebugKeyPressed("num4", DebugMenuHotkeys[DebugHotkeysActiveSlot][3].rapid)) DebugMenuExecuteHotkey(3);
+			if (DebugKeyPressed("num5", DebugMenuHotkeys[DebugHotkeysActiveSlot][4].rapid)) DebugMenuExecuteHotkey(4);
+			if (DebugKeyPressed("num6", DebugMenuHotkeys[DebugHotkeysActiveSlot][5].rapid)) DebugMenuExecuteHotkey(5);
+			if (DebugKeyPressed("num7", DebugMenuHotkeys[DebugHotkeysActiveSlot][6].rapid)) DebugMenuExecuteHotkey(6);
+			if (DebugKeyPressed("num8", DebugMenuHotkeys[DebugHotkeysActiveSlot][7].rapid)) DebugMenuExecuteHotkey(7);
+			if (DebugKeyPressed("num9", DebugMenuHotkeys[DebugHotkeysActiveSlot][8].rapid)) DebugMenuExecuteHotkey(8);
+			if (DebugKeyPressed("num/", DebugMenuHotkeys[DebugHotkeysActiveSlot][9].rapid)) DebugMenuExecuteHotkey(9);
+			if (DebugKeyPressed("num*", DebugMenuHotkeys[DebugHotkeysActiveSlot][10].rapid)) DebugMenuExecuteHotkey(10);
+			if (DebugKeyPressed("num-", DebugMenuHotkeys[DebugHotkeysActiveSlot][11].rapid)) DebugMenuExecuteHotkey(11);
+			if (DebugKeyPressed("num+", DebugMenuHotkeys[DebugHotkeysActiveSlot][12].rapid)) DebugMenuExecuteHotkey(12);
+			if (DebugKeyPressed("f1", DebugMenuHotkeys[DebugHotkeysActiveSlot][13].rapid)) DebugMenuExecuteHotkey(13);
+			if (DebugKeyPressed("f2", DebugMenuHotkeys[DebugHotkeysActiveSlot][14].rapid)) DebugMenuExecuteHotkey(14);
+			if (DebugKeyPressed("f3", DebugMenuHotkeys[DebugHotkeysActiveSlot][15].rapid)) DebugMenuExecuteHotkey(15);
+			if (DebugKeyPressed("f4", DebugMenuHotkeys[DebugHotkeysActiveSlot][16].rapid)) DebugMenuExecuteHotkey(16);
+			if (DebugKeyPressed("f5", DebugMenuHotkeys[DebugHotkeysActiveSlot][17].rapid)) DebugMenuExecuteHotkey(17);
+			if (DebugKeyPressed("f6", DebugMenuHotkeys[DebugHotkeysActiveSlot][18].rapid)) DebugMenuExecuteHotkey(18);
+			if (DebugKeyPressed("f7", DebugMenuHotkeys[DebugHotkeysActiveSlot][19].rapid)) DebugMenuExecuteHotkey(19);
+			if (DebugKeyPressed("f8", DebugMenuHotkeys[DebugHotkeysActiveSlot][20].rapid)) DebugMenuExecuteHotkey(20);
+			if (DebugKeyPressed("f9", DebugMenuHotkeys[DebugHotkeysActiveSlot][21].rapid)) DebugMenuExecuteHotkey(21);
+			if (DebugKeyPressed("f10", DebugMenuHotkeys[DebugHotkeysActiveSlot][22].rapid)) DebugMenuExecuteHotkey(22);
+			if (DebugKeyPressed("f11", DebugMenuHotkeys[DebugHotkeysActiveSlot][23].rapid)) DebugMenuExecuteHotkey(23);
+			if (DebugKeyPressed("f12", DebugMenuHotkeys[DebugHotkeysActiveSlot][24].rapid)) DebugMenuExecuteHotkey(24);
+		}
+
+		if (DebugMenuCanDraw || (TASRecordScript && TASRecordFrameByFrame))
 		{
 			ClearSurface(DEBUGMENUFORM::FORM_NONE, 0);
-
-			if (CheckWindowActive())// && !TASPlayScript && !TASRecordScript)
-			{
-				if (DebugKeyPressed("num0"))
-				{
-					// Open the menu
-					DebugMenuOpen();
-				}
-
-				// Hotkeys
-				if (DebugKeyPressed("num1", DebugMenuHotkeys[0].rapid)) DebugMenuExecuteHotkey(0);
-				if (DebugKeyPressed("num2", DebugMenuHotkeys[1].rapid)) DebugMenuExecuteHotkey(1);
-				if (DebugKeyPressed("num3", DebugMenuHotkeys[2].rapid)) DebugMenuExecuteHotkey(2);
-				if (DebugKeyPressed("num4", DebugMenuHotkeys[3].rapid)) DebugMenuExecuteHotkey(3);
-				if (DebugKeyPressed("num5", DebugMenuHotkeys[4].rapid)) DebugMenuExecuteHotkey(4);
-				if (DebugKeyPressed("num6", DebugMenuHotkeys[5].rapid)) DebugMenuExecuteHotkey(5);
-				if (DebugKeyPressed("num7", DebugMenuHotkeys[6].rapid)) DebugMenuExecuteHotkey(6);
-				if (DebugKeyPressed("num8", DebugMenuHotkeys[7].rapid)) DebugMenuExecuteHotkey(7);
-				if (DebugKeyPressed("num9", DebugMenuHotkeys[8].rapid)) DebugMenuExecuteHotkey(8);
-				if (DebugKeyPressed("num/", DebugMenuHotkeys[9].rapid)) DebugMenuExecuteHotkey(9);
-				if (DebugKeyPressed("num*", DebugMenuHotkeys[10].rapid)) DebugMenuExecuteHotkey(10);
-				if (DebugKeyPressed("num-", DebugMenuHotkeys[11].rapid)) DebugMenuExecuteHotkey(11);
-				if (DebugKeyPressed("num+", DebugMenuHotkeys[12].rapid)) DebugMenuExecuteHotkey(12);
-				if (DebugKeyPressed("f1", DebugMenuHotkeys[13].rapid)) DebugMenuExecuteHotkey(13);
-				if (DebugKeyPressed("f2", DebugMenuHotkeys[14].rapid)) DebugMenuExecuteHotkey(14);
-				if (DebugKeyPressed("f3", DebugMenuHotkeys[15].rapid)) DebugMenuExecuteHotkey(15);
-				if (DebugKeyPressed("f4", DebugMenuHotkeys[16].rapid)) DebugMenuExecuteHotkey(16);
-				if (DebugKeyPressed("f5", DebugMenuHotkeys[17].rapid)) DebugMenuExecuteHotkey(17);
-				if (DebugKeyPressed("f6", DebugMenuHotkeys[18].rapid)) DebugMenuExecuteHotkey(18);
-				if (DebugKeyPressed("f7", DebugMenuHotkeys[19].rapid)) DebugMenuExecuteHotkey(19);
-				if (DebugKeyPressed("f8", DebugMenuHotkeys[20].rapid)) DebugMenuExecuteHotkey(20);
-				if (DebugKeyPressed("f9", DebugMenuHotkeys[21].rapid)) DebugMenuExecuteHotkey(21);
-				if (DebugKeyPressed("f10", DebugMenuHotkeys[22].rapid)) DebugMenuExecuteHotkey(22);
-				if (DebugKeyPressed("f11", DebugMenuHotkeys[23].rapid)) DebugMenuExecuteHotkey(23);
-				if (DebugKeyPressed("f12", DebugMenuHotkeys[24].rapid)) DebugMenuExecuteHotkey(24);
-			}
 
 			if (DebugMenuShowValuesMode)
 			{
@@ -1569,36 +1912,65 @@ void DebugMenuMainRoutine()
 				}
 			}
 
-		}
+			if (DebugMenuHotkeyOverlayMode) DebugDrawHotkeyOverlay();
 
-		if (TASPlayScript)
-		{
-			_DebugDrawRectangle(1845, 5, 70, 26, ColorBlack, 0.8f);
-			_DebugDrawRectangle(1850, 12, 12, 12, ColorGreen, 1.0f);
-			_DebugDrawText("Play", 1865, 7, FontMedium, ColorWhite, 1.0f, "left");
-		}
-		else if (TASRecordScript)
-		{
-			_DebugDrawRectangle(1845, 5, 70, 26, ColorBlack, 0.8f);
-			_DebugDrawRectangle(1850, 10, 12, 12, ColorRed, 1.0f);
-			_DebugDrawText("Rec.", 1865, 7, FontMedium, ColorWhite, 1.0f, "left");
+			if (TASPlayScript)
+			{
+				_DebugDrawRectangle(1845, 5, 70, 26, ColorBlack, 0.8f);
+				_DebugDrawRectangle(1850, 12, 12, 12, ColorGreen, 1.0f);
+				_DebugDrawText("Play", 1865, 7, FontMedium, ColorWhite, 1.0f, "left");
+			}
+			else if (TASRecordScript)
+			{
+				_DebugDrawRectangle(1845, 5, 70, 26, ColorBlack, 0.8f);
+				_DebugDrawRectangle(1850, 10, 12, 12, ColorRed, 1.0f);
+				_DebugDrawText("Rec.", 1865, 7, FontMedium, ColorWhite, 1.0f, "left");
+			}
+
+			DebugMenuCanDraw = false;
 		}
 
 		// Debugmod frame logic
 		pOnFrameDebugMod();
 
-		_DrawMenu();
+		// Draw cursor position
+		if (DebugMenuShowCursorMode)
+		{
+			std::string CursorPositionText = "X: " + std::to_string(DebugMenuCursorPosition.x) + "| Y: " + std::to_string(DebugMenuCursorPosition.y);
+			SIZE CursorPositionTextSize;
+			GetTextExtentPoint32A(hdc, CursorPositionText.c_str(), (int)CursorPositionText.length(), &CursorPositionTextSize);
+			CursorPositionTextSize.cx += 21;
+			CursorPositionTextSize.cy += 6;
+			_DebugDrawRectangle(DebugMenuCursorPosition.x + 10, DebugMenuCursorPosition.y, CursorPositionTextSize.cx, CursorPositionTextSize.cy, ColorBlack, 0.8f);
+			_DebugDrawText(CursorPositionText, DebugMenuCursorPosition.x + 13, DebugMenuCursorPosition.y + 3, FontSmallMedium, ColorYellow, 1.0f, "left");
+		}
+
 	}
 
+	_DrawMenu();
+
+	// Frameskips for performance
 	DebugMenuGeneralFrameskip++;
-	if (DebugMenuGeneralFrameskip == DebugMenuGeneralFrameskipFactor + DebugMenuSettingsPerformanceModeFrameskipFactor)
+	if (DebugMenuSettingsPerformanceMode)
 	{
-		DebugMenuGeneralFrameskip = 0;
-		DebugMenuCanDraw = true;
+		if (DebugMenuGeneralFrameskip >= DebugMenuGeneralFrameskipFactor + DebugMenuSettingsPerformanceModeFrameskipFactor)
+		{
+			DebugMenuGeneralFrameskip = 0;
+			DebugMenuCanDraw = true;
+		}
 	}
+	else
+	{
+		if (DebugMenuGeneralFrameskip >= DebugMenuGeneralFrameskipFactor)
+		{
+			DebugMenuGeneralFrameskip = 0;
+			DebugMenuCanDraw = true;
+		}
+	}
+
 
 	DebugMenuNotImportantSettingsFrameSkip++;
-	if (DebugMenuNotImportantSettingsFrameSkip == 5) DebugMenuNotImportantSettingsFrameSkip = 0;
+	if (DebugMenuNotImportantSettingsFrameSkip >= 5) DebugMenuNotImportantSettingsFrameSkip = 0;
 }
 
 
