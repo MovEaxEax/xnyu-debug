@@ -1,6 +1,6 @@
 #pragma once
 
-typedef void(__cdecl* OnInitDebugModT)(DebugSettings _globalSettings, DebugFeatures* features, void* _logger, void* _drawRectangle, void* _drawText, void* _TASRoutine);
+typedef void(__cdecl* OnInitDebugModT)(DebugSettings _globalSettings, DebugFeatures* _features, DebugReferences _references);
 OnInitDebugModT pOnInitDebugMod = nullptr;
 
 typedef void(__cdecl* OnFrameDebugModT)();
@@ -27,11 +27,11 @@ ScopeSavefileT pScopeSavefile = nullptr;
 typedef void(__cdecl* LoadSavefileT)(SavefileParent* savefileParent);
 LoadSavefileT pLoadSavefile = nullptr;
 
-typedef void(__cdecl* SaveSavefileT)(SavefileParent* savefileParent);
-SaveSavefileT pSaveSavefile = nullptr;
+typedef void(__cdecl* UpdateSavefileT)(SavefileParent* savefileParent);
+UpdateSavefileT pUpdateSavefile = nullptr;
 
-typedef void(__cdecl* SupervisionRoutineT)();
-SupervisionRoutineT pSupervisionRoutine = nullptr;
+typedef void(__cdecl* ToggleSupervisionRoutineT)(bool isEnabled);
+ToggleSupervisionRoutineT pToggleSupervisionRoutine = nullptr;
 
 HMODULE DebugModModuleHandle = nullptr;
 
@@ -44,7 +44,7 @@ typedef void(__cdecl* TASCommandT)(char* script);
 TASCommandT pTASPlayScript = nullptr;
 TASCommandT pTASRecordScript = nullptr;
 
-void InitDebugMod(void* pDebugDrawRectangle, void* pDebugDrawText)
+void InitDebugMod()
 {
 	try
 	{
@@ -68,12 +68,12 @@ void InitDebugMod(void* pDebugDrawRectangle, void* pDebugDrawText)
 
 			pGetSavefiles = (GetSavefilesT)GetProcAddress(DebugModModuleHandle, "GetSavefiles");
 			pLoadSavefile = (LoadSavefileT)GetProcAddress(DebugModModuleHandle, "LoadSavefile");
-			pSaveSavefile = (SaveSavefileT)GetProcAddress(DebugModModuleHandle, "SaveSavefile");
+			pUpdateSavefile = (UpdateSavefileT)GetProcAddress(DebugModModuleHandle, "SaveSavefile");
 			pScopeSavefile = (ScopeSavefileT)GetProcAddress(DebugModModuleHandle, "ScopeSavefile");
 
-			pSupervisionRoutine = (SupervisionRoutineT)GetProcAddress(DebugModModuleHandle, "SupervisionRoutine");
+			pToggleSupervisionRoutine = (ToggleSupervisionRoutineT)GetProcAddress(DebugModModuleHandle, "ToggleSupervisionRoutine");
 
-			pOnInitDebugMod(GlobalSettings, &GlobalDebugFeatures, DebugConsoleOutput, pDebugDrawRectangle, pDebugDrawText, pTASRoutine);
+			pOnInitDebugMod(GlobalSettings, &GlobalDebugFeatures, GlobalReferences);
 		}
 	}
 	catch (std::exception e)

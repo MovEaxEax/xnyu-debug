@@ -288,8 +288,16 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         pTASPlayScript = (TASCommandT)playScriptTAS;
         pTASRecordScript = (TASCommandT)recordScriptTAS;
 
+        // Set the debug references
+        GlobalReferences.drawRectangle = _DebugDrawRectangle;
+        GlobalReferences.drawText = _DebugDrawText;
+        GlobalReferences.logger = DebugConsoleOutput;
+        GlobalReferences.TASRoutine = pTASRoutine;
+        GlobalReferences.installGraphicsHook = InstallGraphicHook;
+        GlobalReferences.removeGraphicsHook = RemoveGraphicHook;
+
         // Init the debug mod
-        InitDebugMod(_DebugDrawRectangle, _DebugDrawText);
+        InitDebugMod();
 
         // Init the debug menu variables
         DebugMenuInitValues();
@@ -539,6 +547,23 @@ EXTERN_DLL_EXPORT int toggleDevMode(char* parameterRaw)
     }
     return 1;
 }
+
+EXTERN_DLL_EXPORT int toggleOverclocker(char* parameterRaw)
+{
+    try
+    {
+        if (!OverclockerIsActive) InitOverclocker();
+        else UninitOverclocker();
+    }
+    catch (const std::exception e)
+    {
+        DebugConsoleOutput("Error in enableOverclocker()", false, "red");
+        return 0;
+    }
+    return 1;
+}
+
+
 
 DWORD MainThread()
 {

@@ -21,6 +21,10 @@
 #include <atlimage.h>
 #include <thread>
 #include <mutex>
+#include <functional>
+
+#include <mmsystem.h>
+#pragma comment (lib,"winmm.lib")
 
 #include <objidl.h>
 #include <gdiplus.h>
@@ -29,6 +33,7 @@
 #define SUBHOOK_STATIC
 #include <subhook.h>
 #include "subhook.c"
+#include <regex>
 
 
 
@@ -78,7 +83,15 @@ struct DebugFeatures
     bool supervision;
 };
 
-
+struct DebugReferences
+{
+    void* logger;
+    void* drawRectangle;
+    void* drawText;
+    void* TASRoutine;
+    void* installGraphicsHook;
+    void* removeGraphicsHook;
+};
 
 //
 // Globals -------------------------------------------------------------------------
@@ -106,6 +119,7 @@ RECT MainWindowRect;
 BOOL MainWindowActive = false;
 
 DebugSettings GlobalSettings;
+DebugReferences GlobalReferences;
 int GlobalFrameSkipCurrent = 0;
 
 void __cdecl DebugConsoleOutput(std::string text, bool dev, std::string color = "white")
@@ -117,6 +131,7 @@ void __cdecl DebugConsoleOutput(std::string text, bool dev, std::string color = 
     if (color == "green") ForegroundColor = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
     if (color == "blue") ForegroundColor = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
     if (color == "purple") ForegroundColor = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+    if (color == "yellow") ForegroundColor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
     SetConsoleTextAttribute(DebugConsoleHandle, ForegroundColor);
     std::cout << text << std::endl;
 }
@@ -892,9 +907,21 @@ float HexStringToFloat(std::string hex_string) {
     return x;
 }
 
+bool contains_double_or_string(const std::string& str)
+{
+    std::regex double_or_string_regex(R"([-+]?\d*\.\d+|\D+)"); // regular expression to match double or string
+    return std::regex_match(str, double_or_string_regex);
+}
+
 bool is_digits(const std::string& str, std::string extra = "")
 {
     return str.find_first_not_of("0123456789" + extra) == std::string::npos;
+}
+
+bool contains_double(const std::string& str)
+{
+    std::regex double_regex(R"([-+]?[0-9]*\.?[0-9]+)");
+    return std::regex_match(str, double_regex);
 }
 
 bool contains_dot(const std::string& str)
@@ -929,10 +956,12 @@ std::string GetCurrentDateTime() {
 }
 
 // Special
+#include "xNyuHooks.h"
 #include "WindowStayActive.h"
+#include "Overclocker.h"
 
 // Debug mod
-#include "Variables.h"
+#include "xNyuVariables.h"
 #include "DebugAddresses.h"
 #include "DebugFunctions.h"
 #include "SavefileEditor.h"
@@ -958,6 +987,8 @@ std::string GetCurrentDateTime() {
 #include <dxgi.h>
 #include "DXGI.h"
 #include "Direct3DBase.h"
+#include "D3D9-Extra-Hooks.h"
+#include "GraphicsHookGlobals.h"
 #include "D3D9-Hook.h"
 #include "D3D10-Hook.h"
 #include "D3D11-Hook.h"

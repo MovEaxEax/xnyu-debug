@@ -139,10 +139,10 @@ int ParseInstructions(std::vector<Instruction> &functions, std::string content)
         int entries[10];
         entries[0] = content.find("(") == std::string::npos ? INT32_MAX : content.find("(");
         entries[1] = content.find("{") == std::string::npos ? INT32_MAX : content.find("{");
-        entries[2] = content.find("+") == std::string::npos ? INT32_MAX : content.find("+");
-        entries[3] = content.find("-") == std::string::npos ? INT32_MAX : content.find("-");
-        entries[4] = content.find("*") == std::string::npos ? INT32_MAX : content.find("*");
-        entries[5] = content.find("/") == std::string::npos ? INT32_MAX : content.find("/");
+        entries[2] = content.find("+=") == std::string::npos ? INT32_MAX : content.find("+=");
+        entries[3] = content.find("-=") == std::string::npos ? INT32_MAX : content.find("-=");
+        entries[4] = content.find("*=") == std::string::npos ? INT32_MAX : content.find("*=");
+        entries[5] = content.find("/=") == std::string::npos ? INT32_MAX : content.find("/=");
         entries[6] = content.find("=") == std::string::npos ? INT32_MAX : content.find("=");
         entries[7] = content.find(";") == std::string::npos ? INT32_MAX : content.find(";");
         entries[8] = entries[1] + 1;
@@ -264,7 +264,7 @@ int ParseInstructions(std::vector<Instruction> &functions, std::string content)
                 if (instruction.type == "if")
                 {
                     Instruction endInstruction;
-                    endInstruction.type = "ifjmp";
+                    endInstruction.type = "ifnotjmp";
                     endInstruction.parameter.push_back(std::to_string(subInstructions.size() + 1));
                     if (parameter.find("&&") != std::string::npos)
                     {
@@ -291,7 +291,7 @@ int ParseInstructions(std::vector<Instruction> &functions, std::string content)
                 if (instruction.type == "repeat")
                 {
                     Instruction createInstruction;
-                    createInstruction.type = "int";
+                    createInstruction.type = "int32";
                     createInstruction.parameter.push_back("repeater" + std::to_string(TASRepeatNamer));
                     createInstruction.parameter.push_back("0");
                     Instruction incrementInstruction;
@@ -304,7 +304,7 @@ int ParseInstructions(std::vector<Instruction> &functions, std::string content)
                     Instruction endInstruction;
                     endInstruction.type = "ifjmp";
                     endInstruction.parameter.push_back("-" + std::to_string(subInstructions.size() + 1));
-                    endInstruction.parameter.push_back("repeater" + std::to_string(TASRepeatNamer) + ">=" + parameter);
+                    endInstruction.parameter.push_back("repeater" + std::to_string(TASRepeatNamer) + "<" + parameter);
 
                     functions.push_back(createInstruction);
                     for (int i = 0; i < subInstructions.size(); i++) functions.push_back(subInstructions[i]);
@@ -450,7 +450,7 @@ int ParseInstructions(std::vector<Instruction> &functions, std::string content)
             else
             {
                 instruction.type = "equal";
-                instruction.parameter.push_back(content.substr(5, content.find("=") - 5));
+                instruction.parameter.push_back(content.substr(0, content.find("=")));
             }
 
             instruction.parameter.push_back(content.substr(entries[index] + 1, entries[7] - (entries[index] + 1)));
@@ -498,7 +498,7 @@ int ParseFunction(std::vector<Function> &functions, std::string script)
         }
         std::string functionContent = script.substr(functionEntry + 1, functionEnd - (functionEntry + 1));
 
-        if (functionName == "imports")
+        if (functionName == "import")
         {
             if (functionContent.find("/") != std::string::npos) {
                 while (functionContent.find("/") != std::string::npos) {
@@ -825,6 +825,93 @@ void GameInputSetFrame(GameInput* SRC, std::string key, std::vector<std::string>
     }
 }
 
+
+bool FindDebugFunction(std::string parentName, std::string childName, DebugFunction* debugFunction)
+{
+    bool found = false;
+    for (int i = 0; i < DebugFunctions.size(); i++)
+    {
+        std::string nameParentTarget = DebugFunctions[i].nameParent;
+        std::transform(nameParentTarget.begin(), nameParentTarget.end(), nameParentTarget.begin(), [](unsigned char c) { return std::tolower(c); });
+        if (nameParentTarget == parentName)
+        {
+            for (int k = 0; k < DebugFunctions[i].functions.size(); k++)
+            {
+                std::string nameChildTarget = DebugFunctions[i].functions[k].nameChild;
+                std::transform(nameChildTarget.begin(), nameChildTarget.end(), nameChildTarget.begin(), [](unsigned char c) { return std::tolower(c); });
+                if (nameChildTarget == childName)
+                {
+                    *debugFunction = DebugFunctions[i].functions[k];
+                    found = true;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    return found;
+}
+
+bool FindDebugAddress(std::string parentName, std::string childName, DebugAddress* debugAddress)
+{
+    bool found = false;
+    for (int i = 0; i < DebugAddresses.size(); i++)
+    {
+        std::string nameParentTarget = DebugAddresses[i].nameParent;
+        std::transform(nameParentTarget.begin(), nameParentTarget.end(), nameParentTarget.begin(), [](unsigned char c) { return std::tolower(c); });
+        if (nameParentTarget == parentName)
+        {
+            for (int k = 0; k < DebugAddresses[i].addresses.size(); k++)
+            {
+                std::string nameChildTarget = DebugAddresses[i].addresses[k].nameChild;
+                std::transform(nameChildTarget.begin(), nameChildTarget.end(), nameChildTarget.begin(), [](unsigned char c) { return std::tolower(c); });
+                if (nameChildTarget == childName)
+                {
+                    *debugAddress = DebugAddresses[i].addresses[k];
+                    found = true;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    return found;
+}
+
+bool FindTASVariable(std::string name, Variable** variable)
+{
+    bool found = false;
+    for (int i = 0; i < TASScriptVariables.size(); i++)
+    {
+        if (TASScriptVariables[i].name == name)
+        {
+            *variable = &TASScriptVariables[i];
+            found = true;
+            break;
+        }
+    }
+
+    return found;
+}
+
+bool FindTASFunction(std::string name, Function** function)
+{
+    bool found = false;
+    for (int i = 0; i < TASScriptFunctions.size(); i++)
+    {
+        if (TASScriptFunctions[i].name == name)
+        {
+            *function = &TASScriptFunctions[i];
+            found = true;
+            break;
+        }
+    }
+
+    return found;
+}
+
 bool VariableCondition(std::string condition)
 {
     std::string paramA = "";
@@ -874,7 +961,7 @@ bool VariableCondition(std::string condition)
 
     std::string valueA = paramA;
     std::string typeA = GetValueType(paramA);
-    if (paramA.find(".") != std::string::npos && !is_digits(paramA, "."))
+    if (paramA.find(".") != std::string::npos && !contains_double(paramA))
     {
         // Debug address
         std::string parentName = paramA.substr(0, paramA.find("."));
@@ -943,7 +1030,7 @@ bool VariableCondition(std::string condition)
     {
         std::string valueC = paramC;
         std::string typeC = GetValueType(paramC);
-        if (paramC.find(".") != std::string::npos && !is_digits(paramC, "."))
+        if (paramC.find(".") != std::string::npos && !contains_double(paramC))
         {
             // Debug address
             std::string parentName = paramC.substr(0, paramC.find("."));
@@ -1054,6 +1141,8 @@ bool VariableCondition(std::string condition)
     return false;
 }
 
+
+
 int PlayInstruction(Instruction instruction)
 {
     if (instruction.type == "ifjmp" || instruction.type == "ifnotjmp")
@@ -1120,54 +1209,33 @@ int PlayInstruction(Instruction instruction)
             }
             else
             {
-                if (instruction.parameter[i].find(".") != std::string::npos && !is_digits(instruction.parameter[i], "."))
+                if (instruction.parameter[i].find(".") != std::string::npos && !contains_double(instruction.parameter[i]))
                 {
                     // Debug address
-                    std::string parentName = instruction.parameter[1].substr(0, instruction.parameter[1].find("."));
-                    std::string childName = instruction.parameter[1].substr(instruction.parameter[1].find(".") + 1, instruction.parameter[1].length() - (instruction.parameter[1].find(".") + 1));
+                    std::string parentName = instruction.parameter[i].substr(0, instruction.parameter[i].find("."));
+                    std::string childName = instruction.parameter[i].substr(instruction.parameter[i].find(".") + 1, instruction.parameter[i].length() - (instruction.parameter[i].find(".") + 1));
                     DebugAddress debugAddress;
-                    bool found = false;
-                    for (int i = 0; i < DebugAddresses.size(); i++)
-                    {
-                        std::string nameParentTarget = DebugAddresses[i].nameParent;
-                        std::transform(nameParentTarget.begin(), nameParentTarget.end(), nameParentTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                        if (nameParentTarget == parentName)
-                        {
-                            for (int k = 0; k < DebugAddresses[i].addresses.size(); k++)
-                            {
-                                std::string nameChildTarget = DebugAddresses[i].addresses[k].nameChild;
-                                std::transform(nameChildTarget.begin(), nameChildTarget.end(), nameChildTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                                if (nameChildTarget == childName)
-                                {
-                                    debugAddress = DebugAddresses[i].addresses[k];
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
 
-                    if (found)
+                    if (FindDebugAddress(parentName, childName, &debugAddress))
                     {
                         // Debug address
+                        pGetDebugAddressValue(&debugAddress);
                         finalText = finalText + debugAddress.value.value;
                     }
                 }
                 else if(GetValueType(instruction.parameter[i]) == "")
                 {
                     // TAS variable
-                    for (int i = 0; i < TASScriptVariables.size(); i++)
+                    Variable* targetVariable = nullptr;
+                    if (FindTASVariable(instruction.parameter[i], &targetVariable))
                     {
-                        if (TASScriptVariables[i].name == instruction.parameter[i])
-                        {
-                            finalText = finalText + TASScriptVariables[i].value;
-                            break;
-                        }
+                        finalText = finalText + targetVariable->value;
+                        break;
                     }
                 }
             }
         }
+        DebugConsoleOutput(finalText, false, "yellow");
         TASCurrentStack.line++;
     }
     else if (instruction.type == "byte" || instruction.type == "int32" || instruction.type == "int64" || instruction.type == "float" || instruction.type == "double" || instruction.type == "string" || instruction.type == "bool")
@@ -1175,7 +1243,36 @@ int PlayInstruction(Instruction instruction)
         Variable variable;
         variable.type = instruction.type;
         variable.name = instruction.parameter[0];
-        SetVariable(&variable, instruction.parameter[1]);
+
+        if (instruction.parameter[1].find(".") != std::string::npos && !contains_double(instruction.parameter[1]))
+        {
+            // Debug address
+            std::string parentName = instruction.parameter[1].substr(0, instruction.parameter[1].find("."));
+            std::string childName = instruction.parameter[1].substr(instruction.parameter[1].find(".") + 1, instruction.parameter[1].length() - (instruction.parameter[1].find(".") + 1));
+            DebugAddress debugAddress;
+            if (FindDebugAddress(parentName, childName, &debugAddress))
+            {
+                // Debug address
+                pGetDebugAddressValue(&debugAddress);
+                SetVariable(&variable, debugAddress.value.value);
+            }
+        }
+        else if (GetValueType(instruction.parameter[1]) == "")
+        {
+            // TAS variable
+            Variable* targetVariable = nullptr;
+            if (FindTASVariable(instruction.parameter[1], &targetVariable))
+            {
+                SetVariable(&variable, targetVariable->value);
+            }
+        }
+        else
+        {
+            std::cout << "par2: " << instruction.parameter[1] << std::endl;
+            SetVariable(&variable, instruction.parameter[1]);
+            std::cout << "par2: " << variable.value << std::endl;
+        }
+
         TASScriptVariables.push_back(variable);
         TASCurrentStack.line++;
     }
@@ -1212,35 +1309,13 @@ int PlayInstruction(Instruction instruction)
     {
         std::string value = instruction.parameter[1];
         std::string type = GetValueType(instruction.parameter[1]);
-        if (instruction.parameter[1].find(".") != std::string::npos && !is_digits(instruction.parameter[1], "."))
+        if (instruction.parameter[1].find(".") != std::string::npos && !contains_double(instruction.parameter[1]))
         {
             // Debug address
             std::string parentName = instruction.parameter[1].substr(0, instruction.parameter[1].find("."));
             std::string childName = instruction.parameter[1].substr(instruction.parameter[1].find(".") + 1, instruction.parameter[1].length() - (instruction.parameter[1].find(".") + 1));
             DebugAddress debugAddress;
-            bool found = false;
-            for (int i = 0; i < DebugAddresses.size(); i++)
-            {
-                std::string nameParentTarget = DebugAddresses[i].nameParent;
-                std::transform(nameParentTarget.begin(), nameParentTarget.end(), nameParentTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                if (nameParentTarget == parentName)
-                {
-                    for (int k = 0; k < DebugAddresses[i].addresses.size(); k++)
-                    {
-                        std::string nameChildTarget = DebugAddresses[i].addresses[k].nameChild;
-                        std::transform(nameChildTarget.begin(), nameChildTarget.end(), nameChildTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                        if (nameChildTarget == childName)
-                        {
-                            debugAddress = DebugAddresses[i].addresses[k];
-                            found = true;
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (found)
+            if (FindDebugAddress(parentName, childName, &debugAddress))
             {
                 // Debug address
                 pGetDebugAddressValue(&debugAddress);
@@ -1266,36 +1341,14 @@ int PlayInstruction(Instruction instruction)
             }
         }
 
-        if (instruction.parameter[0].find(".") != std::string::npos && !is_digits(instruction.parameter[0], "."))
+        if (instruction.parameter[0].find(".") != std::string::npos && !contains_double(instruction.parameter[0]))
         {
             if (DebugAddresses.size() > 0)
             {
                 std::string parentName = instruction.parameter[0].substr(0, instruction.parameter[0].find("."));
                 std::string childName = instruction.parameter[0].substr(instruction.parameter[0].find(".") + 1, instruction.parameter[0].length() - (instruction.parameter[0].find(".") + 1));
                 DebugAddress debugAddress;
-                bool found = false;
-                for (int i = 0; i < DebugAddresses.size(); i++)
-                {
-                    std::string nameParentTarget = DebugAddresses[i].nameParent;
-                    std::transform(nameParentTarget.begin(), nameParentTarget.end(), nameParentTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                    if (nameParentTarget == parentName)
-                    {
-                        for (int k = 0; k < DebugAddresses[i].addresses.size(); k++)
-                        {
-                            std::string nameChildTarget = DebugAddresses[i].addresses[k].nameChild;
-                            std::transform(nameChildTarget.begin(), nameChildTarget.end(), nameChildTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                            if (nameChildTarget == childName)
-                            {
-                                debugAddress = DebugAddresses[i].addresses[k];
-                                found = true;
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-
-                if (found)
+                if (FindDebugAddress(parentName, childName, &debugAddress))
                 {
                     // Debug address
                     if (instruction.type == "plus")
@@ -1364,31 +1417,28 @@ int PlayInstruction(Instruction instruction)
         else if(GetValueType(instruction.parameter[0]) == "")
         {
             // TAS variable
-            for (int i = 0; i < TASScriptVariables.size(); i++)
+            Variable* targetVariable = nullptr;
+            if (FindTASVariable(instruction.parameter[0], &targetVariable))
             {
-                if (TASScriptVariables[i].name == instruction.parameter[0])
+                if (instruction.type == "plus")
                 {
-                    if (instruction.type == "plus")
-                    {
-                        VariableAdd(&TASScriptVariables[i], value);
-                    }
-                    else if (instruction.type == "minus")
-                    {
-                        VariableSubtract(&TASScriptVariables[i], value);
-                    }
-                    else if (instruction.type == "multi")
-                    {
-                        VariableMultiply(&TASScriptVariables[i], value);
-                    }
-                    else if (instruction.type == "divide")
-                    {
-                        VariableDivide(&TASScriptVariables[i], value);
-                    }
-                    else if (instruction.type == "equal")
-                    {
-                        SetVariable(&TASScriptVariables[i], value);
-                    }
-                    break;
+                    VariableAdd(targetVariable, value);
+                }
+                else if (instruction.type == "minus")
+                {
+                    VariableSubtract(targetVariable, value);
+                }
+                else if (instruction.type == "multi")
+                {
+                    VariableMultiply(targetVariable, value);
+                }
+                else if (instruction.type == "divide")
+                {
+                    VariableDivide(targetVariable, value);
+                }
+                else if (instruction.type == "equal")
+                {
+                    SetVariable(targetVariable, value);
                 }
             }
         }
@@ -1397,69 +1447,25 @@ int PlayInstruction(Instruction instruction)
     else
     {
         // Function
-        if (instruction.type.find(".") != std::string::npos && !is_digits(instruction.type, "."))
+        if (instruction.type.find(".") != std::string::npos && !contains_double(instruction.type))
         {
             // Debug function
             std::string parentName = instruction.type.substr(0, instruction.type.find("."));
             std::string childName = instruction.type.substr(instruction.type.find(".") + 1, instruction.type.length() - (instruction.type.find(".") + 1));
             DebugFunction debugFunction;
-            bool found = false;
-            for (int i = 0; i < DebugAddresses.size(); i++)
-            {
-                std::string nameParentTarget = DebugFunctions[i].nameParent;
-                std::transform(nameParentTarget.begin(), nameParentTarget.end(), nameParentTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                if (nameParentTarget == parentName)
-                {
-                    for (int k = 0; k < DebugFunctions[i].functions.size(); k++)
-                    {
-                        std::string nameChildTarget = DebugFunctions[i].functions[k].nameChild;
-                        std::transform(nameChildTarget.begin(), nameChildTarget.end(), nameChildTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                        if (nameChildTarget == childName)
-                        {
-                            debugFunction = DebugFunctions[i].functions[k];
-                            found = true;
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (found)
+            if (FindDebugFunction(parentName, childName, &debugFunction))
             {
                 for (int i = 0; i < instruction.parameter.size(); i++)
                 {
                     std::string value = instruction.parameter[i];
                     std::string type = GetValueType(instruction.parameter[i]);
-                    if (value.find(".") != std::string::npos && !is_digits(value, "."))
+                    if (value.find(".") != std::string::npos && !contains_double(value))
                     {
                         // Debug address
                         std::string parentName = value.substr(0, value.find("."));
                         std::string childName = value.substr(value.find(".") + 1, value.length() - (value.find(".") + 1));
                         DebugAddress debugAddress;
-                        bool found = false;
-                        for (int i = 0; i < DebugAddresses.size(); i++)
-                        {
-                            std::string nameParentTarget = DebugAddresses[i].nameParent;
-                            std::transform(nameParentTarget.begin(), nameParentTarget.end(), nameParentTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                            if (nameParentTarget == parentName)
-                            {
-                                for (int k = 0; k < DebugAddresses[i].addresses.size(); k++)
-                                {
-                                    std::string nameChildTarget = DebugAddresses[i].addresses[k].nameChild;
-                                    std::transform(nameChildTarget.begin(), nameChildTarget.end(), nameChildTarget.begin(), [](unsigned char c) { return std::tolower(c); });
-                                    if (nameChildTarget == childName)
-                                    {
-                                        debugAddress = DebugAddresses[i].addresses[k];
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                break;
-                            }
-                        }
-
-                        if (found)
+                        if (FindDebugAddress(parentName, childName, &debugAddress))
                         {
                             // Debug address
                             pGetDebugAddressValue(&debugAddress);
@@ -1474,20 +1480,15 @@ int PlayInstruction(Instruction instruction)
                     else if (type == "")
                     {
                         // TAS variable
-                        for (int i = 0; i < TASScriptVariables.size(); i++)
+                        Variable* targetVariable = nullptr;
+                        if (FindTASVariable(value, &targetVariable))
                         {
-                            if (TASScriptVariables[i].name == value)
-                            {
-                                value = TASScriptVariables[i].value;
-                                type = TASScriptVariables[i].type;
-                                break;
-                            }
+                            value = targetVariable->value;
+                            type = targetVariable->type;
                         }
                     }
                     SetVariable(&debugFunction.parameter[i], value);
                 }
-                std::cout << "Execute!" << std::endl;
-                std::cout << debugFunction.nameFull << std::endl;
                 pExecuteDebugFunction(&debugFunction);
             }
             TASCurrentStack.line++;
@@ -1495,16 +1496,13 @@ int PlayInstruction(Instruction instruction)
         else
         {
             // TAS function
-            for (int i = 0; i < TASScriptFunctions.size(); i++)
+            Function* targetFunction = nullptr;
+            if (FindTASFunction(instruction.type, &targetFunction))
             {
-                if (TASScriptFunctions[i].name == instruction.type)
-                {
-                    TASCurrentStack.line++;
-                    TASStack.push_back(TASCurrentStack);
-                    TASCurrentStack.id = TASScriptFunctions[i].id;
-                    TASCurrentStack.line = 0;
-                    break;
-                }
+                TASCurrentStack.line++;
+                TASStack.push_back(TASCurrentStack);
+                TASCurrentStack.id = targetFunction->id;
+                TASCurrentStack.line = 0;
             }
         }
     }
@@ -1589,7 +1587,6 @@ bool __stdcall PlayScriptRoutine() {
 
             if (TASPlayCanExecute)
             {
-                //std::cout << "FRAME INDEX: " << std::dec << TASFramesPassed << std::endl;
                 std::memcpy(&TASInputLast, &TASInputCurrent, sizeof(GameInput));
                 std::memset(&TASInputCurrent, 0x00, sizeof(GameInput));
                 std::memset(&TASInputMouse, 0x00, sizeof(GameInput));
@@ -1771,12 +1768,10 @@ bool __stdcall RecordScriptRoutine() {
 
                 if (TASRecordCanExecute)
                 {
-                    std::cout << "111" << std::endl;
                     while (TASRecordFrameReceived == "" && !TASRecordScriptUninit)
                     {
                         Sleep(3);
                     }
-                    std::cout << "222" << std::endl;
                     if (!TASRecordScriptUninit)
                     {
                         TASRecordScriptStream << TASRecordFrameReceived << std::endl;

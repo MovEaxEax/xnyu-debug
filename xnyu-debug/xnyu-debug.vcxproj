@@ -158,13 +158,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="D3D9-Extra-Hooks.h" />
     <ClInclude Include="DebugModGlobals.h" />
     <ClInclude Include="GetMessageA-Hook.h" />
     <ClInclude Include="GetMessageW-Hook.h" />
     <ClInclude Include="DebugAddresses.h" />
     <ClInclude Include="DebugFunctions.h" />
+    <ClInclude Include="GraphicsHookGlobals.h" />
+    <ClInclude Include="Overclocker.h" />
     <ClInclude Include="SavefileEditor.h" />
-    <ClInclude Include="Variables.h" />
+    <ClInclude Include="xNyuVariables.h" />
     <ClInclude Include="SendInput-Hook.h" />
     <ClInclude Include="TAS.h" />
     <ClInclude Include="InputHookGlobals.h" />
@@ -186,6 +189,7 @@
     <ClInclude Include="header\technical\Exceptions.hpp" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Window.h" />
+    <ClInclude Include="xNyuHooks.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />

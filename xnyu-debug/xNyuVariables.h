@@ -404,12 +404,14 @@ void VariableAdd(Variable* variableDST, Variable* variableSRC)
 
 void VariableSubtract(Variable* variable, std::string value)
 {
+    std::cout << "aaa" << std::endl;
     if (variable->value == "none" || value == "none") return;
     if (!CheckVariableType(variable->type, value) || variable->type == "string" || variable->type == "bool")
     {
         variable->value = "none";
         return;
     }
+    std::cout << "bbb" << std::endl;
 
     try
     {
@@ -422,6 +424,7 @@ void VariableSubtract(Variable* variable, std::string value)
             if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val2 = (BYTE)std::stoi(value, 0, 16);
             else val2 = (BYTE)std::stoi(value);
             variable->value = std::to_string(val1 - val2);
+            std::cout << variable->value << std::endl;
             return;
         }
         if (variable->type == "int32")

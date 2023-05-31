@@ -1,32 +1,3 @@
-/*
-MIT License
-Copyright (c) 2018 Benjamin Höglinger
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-#include <d3d9.h>
-#include <d3dx9.h>
-#pragma comment (lib, "d3d9.lib")
-#pragma comment (lib, "d3dx9.lib")
-#include <DXErr.h>
-#pragma comment(lib, "DXErr.lib")
-
-
-
 namespace Direct3D9Hooking
 {
     enum Direct3DDevice9FunctionOrdinals : short
@@ -239,8 +210,6 @@ Direct3D9Hooking::Direct3D9::~Direct3D9()
 //
 
 // Hook Function Pointer
-typedef HRESULT(__stdcall* PresentT)(IDirect3DDevice9* pDevice, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion);
-PresentT pD3D9_Present = nullptr;
 typedef HRESULT(__stdcall* EndSceneT)(IDirect3DDevice9* pDevice);
 EndSceneT pD3D9_Endscene = nullptr;
 
@@ -426,129 +395,81 @@ void Draw_D3D9()
     pD3D9_Device->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
     pD3D9_Device->SetPixelShader(pD3D9_PixelShader);
     pD3D9_Device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, vertices, sizeof(VertexD3D9));
-    //pD3D9_Device->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-    //pD3D9_Device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
     
     RestoreOldStates_D3D9(RenderStatesBackup_D3D9);
 }
 
-
-
-//
-// Technical function --------------------------------------------------------------------
-//
-
-
-
-
-
-
 //
 // Hook Routine ---------------------------------------------------------------------
 //
-HRESULT APIENTRY D3D9_Present_Hook(IDirect3DDevice9* pDevice, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion)
-{
-    if (DebugMenuInit)
-    {
-        pD3D9_Device = pDevice;
-
-        HRESULT hr = 0;
-
-        // Error buffer
-        LPD3DXBUFFER pShaderBuffer = NULL;
-        LPD3DXBUFFER pErrorBuffer = NULL;
-
-        // Create Texture
-        hr = D3DXCreateTexture(pD3D9_Device, SurfaceTextureWidth, SurfaceTextureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8B8G8R8, D3DPOOL_DEFAULT, &pD3D9_SurfaceTexture);
-        if (FAILED(hr)) { DebugConsoleOutput("Error: D3DXCreateTexture()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
-
-        // Compile shader code
-        hr = D3DXCompileShader(pD3D9_TextureShader, strlen(pD3D9_TextureShader), NULL, NULL, "main", "ps_2_0", 0, &pShaderBuffer, &pErrorBuffer, NULL);
-        if (FAILED(hr)) { DebugConsoleOutput("Error: CompilePixelShader()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
-        hr = pD3D9_Device->CreatePixelShader(reinterpret_cast<DWORD*>(pShaderBuffer->GetBufferPointer()), &pD3D9_PixelShader);
-        if (FAILED(hr)) { DebugConsoleOutput("Error: CreatePixelShader()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
-
-        // Set DebugMenu function
-        DebugDraw = (DebugDrawT)Draw_D3D9;
-
-        // Deactivate DebugMenu
-        DebugMenuInit = false;
-        DebugConsoleOutput("DirectX 9 init success!", false, "green");
-    }
-    
-    // Remove hook
-    D3D9_Subhook.Remove();
-
-    // TAS routine
-    if (GlobalSettings.config_tashook == "graphics")
-    {
-        pTASRoutine();
+typedef HRESULT(__stdcall* D3D9_PresentT)(IDirect3DDevice9* pDevice, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion);
+template <typename FuncT>
+class D3D9_PresentHook : public xNyuHook<D3D9_PresentT> {
+public:
+    static D3D9_PresentHook* instance;
+    D3D9_PresentHook(void* originalAddress, void* hookExecuteBefore = nullptr, void* hookExecuteAfter = nullptr)
+        : xNyuHook<D3D9_PresentT>(originalAddress, hookExecuteBefore, hookExecuteAfter) {
+        instance = this;
     }
 
-    // Debug Menu
-    DebugMenuMainRoutine();
-
-    // Trampoline
-    HRESULT Trampoline = pD3D9_Present(pDevice, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
-
-    // Reinstall Hook
-    if (sizeof(void*) == 8) D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address, subhook::HookFlags::HookFlag64BitOffset);
-    if (sizeof(void*) == 4) D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address);
-
-    return Trampoline;
-}
-
-HRESULT APIENTRY D3D9_Endscene_Hook(IDirect3DDevice9* pDevice)
-{
-    if (DebugMenuInit)
+    static HRESULT APIENTRY CustomHook(IDirect3DDevice9* pDevice, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion)
     {
-        pD3D9_Device = pDevice;
+        if (DebugMenuInit)
+        {
+            pD3D9_Device = pDevice;
 
-        HRESULT hr = 0;
+            HRESULT hr = 0;
 
-        // Error buffer
-        LPD3DXBUFFER pShaderBuffer = NULL;
-        LPD3DXBUFFER pErrorBuffer = NULL;
+            // Error buffer
+            LPD3DXBUFFER pShaderBuffer = NULL;
+            LPD3DXBUFFER pErrorBuffer = NULL;
 
-        // Create Texture
-        hr = D3DXCreateTexture(pD3D9_Device, SurfaceTextureWidth, SurfaceTextureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8B8G8R8, D3DPOOL_DEFAULT, &pD3D9_SurfaceTexture);
-        if (FAILED(hr)) { DebugConsoleOutput("Error: D3DXCreateTexture()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
+            // Create Texture
+            hr = D3DXCreateTexture(pD3D9_Device, SurfaceTextureWidth, SurfaceTextureHeight, 1, D3DUSAGE_DYNAMIC, D3DFMT_A8B8G8R8, D3DPOOL_DEFAULT, &pD3D9_SurfaceTexture);
+            if (FAILED(hr)) { DebugConsoleOutput("Error: D3DXCreateTexture()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
 
-        // Compile shader code
-        hr = D3DXCompileShader(pD3D9_TextureShader, strlen(pD3D9_TextureShader), NULL, NULL, "main", "ps_2_0", 0, &pShaderBuffer, &pErrorBuffer, NULL);
-        if (FAILED(hr)) { DebugConsoleOutput("Error: CompilePixelShader()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
-        hr = pD3D9_Device->CreatePixelShader(reinterpret_cast<DWORD*>(pShaderBuffer->GetBufferPointer()), &pD3D9_PixelShader);
-        if (FAILED(hr)) { DebugConsoleOutput("Error: CreatePixelShader()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
+            // Compile shader code
+            hr = D3DXCompileShader(pD3D9_TextureShader, strlen(pD3D9_TextureShader), NULL, NULL, "main", "ps_2_0", 0, &pShaderBuffer, &pErrorBuffer, NULL);
+            if (FAILED(hr)) { DebugConsoleOutput("Error: CompilePixelShader()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
+            hr = pD3D9_Device->CreatePixelShader(reinterpret_cast<DWORD*>(pShaderBuffer->GetBufferPointer()), &pD3D9_PixelShader);
+            if (FAILED(hr)) { DebugConsoleOutput("Error: CreatePixelShader()", false, "red"); DebugConsoleOutput(std::string(DXGetErrorStringA(hr)), false, "red"); }
 
-        // Set DebugMenu function
-        DebugDraw = (DebugDrawT)Draw_D3D9;
+            // Set DebugMenu function
+            DebugDraw = (DebugDrawT)Draw_D3D9;
 
-        // Deactivate DebugMenu
-        DebugMenuInit = false;
-        DebugConsoleOutput("DirectX 9 init success!", false, "green");
+            // Deactivate DebugMenu
+            DebugMenuInit = false;
+            DebugConsoleOutput("DirectX 9 init success!", false, "green");
+        }
+
+        // Remove hook
+        instance->remove();
+
+        // TAS routine
+        if (GlobalSettings.config_tashook == "graphics")
+        {
+            pTASRoutine();
+        }
+
+        // Debug Menu
+        DebugMenuMainRoutine();
+
+        // Trampoline
+        HRESULT Trampoline = instance->pFunction(pDevice, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
+
+        // Reinstall Hook
+        instance->install();
+
+        return Trampoline;
     }
 
-    // Remove hook
-    D3D9_Subhook.Remove();
-
-    // TAS routine
-    if (GlobalSettings.config_tashook == "graphics")
-    {
-        pTASRoutine();
+    void install() {
+        if (sizeof(void*) == 8) Subhook.Install((void*)instance->pFunction, instance->CustomHook, subhook::HookFlags::HookFlag64BitOffset);
+        if (sizeof(void*) == 4) Subhook.Install((void*)instance->pFunction, instance->CustomHook);
     }
+};
 
-    // Trampoline
-    HRESULT Trampoline = pD3D9_Endscene(pDevice);
-
-    // Debug Menu
-    DebugMenuMainRoutine();
-
-    // Reinstall Hook
-    if (sizeof(void*) == 8) D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address, subhook::HookFlags::HookFlag64BitOffset);
-    if (sizeof(void*) == 4) D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address);
-
-    return Trampoline;
-}
+D3D9_PresentHook<D3D9_PresentT>* D3D9_PresentHook<D3D9_PresentT>::instance = nullptr;
 
 //
 // Init function --------------------------------------------------------------------
@@ -565,32 +486,14 @@ BOOL D3D9HookInit()
         Direct3D9Hooking::Direct3D9 D3D9Hookah;
         std::vector<uintptr_t> vTable = D3D9Hookah.vtable();
 
-        // Set addresses
-        if (GlobalSettings.config_d3d9_hook == "present")
-        {
-            D3D9_Graphics_Original_Address = (void*)vTable[17];
-            D3D9_Graphics_Hook_Address = D3D9_Present_Hook;
-            pD3D9_Present = (PresentT)D3D9_Graphics_Original_Address;
-        }
-        else if (GlobalSettings.config_d3d9_hook == "endscene")
-        {
-            D3D9_Graphics_Original_Address = (void*)vTable[42];
-            D3D9_Graphics_Hook_Address = D3D9_Endscene_Hook;
-            pD3D9_Endscene = (EndSceneT)D3D9_Graphics_Original_Address;
-        }
+        // Set present hook
+        D3D9_PresentHook<D3D9_PresentT>::instance = new D3D9_PresentHook<D3D9_PresentT>((void*)vTable[17]);
+        D3D9_PresentHook<D3D9_PresentT>::instance->install();
 
-        std::cout << "DrawPrimitive: " << std::hex << vTable[81] << std::endl;
-        std::cout << "DrawIndexedPrimitive: " << std::hex << vTable[82] << std::endl;
-        std::cout << "DrawPrimitiveUP: " << std::hex << vTable[83] << std::endl;
-        std::cout << "DrawIndexedPrimitiveUP: " << std::hex << vTable[84] << std::endl;
-        std::cout << "DrawRectPatch: " << std::hex << vTable[115] << std::endl;
-        std::cout << "DrawTriPatch: " << std::hex << vTable[116] << std::endl;
+        // Set other hooks
+        D3D9_InitExtraHooks(vTable);
 
-        // Install the Hook
-        if (sizeof(void*) == 8) return D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address, subhook::HookFlags::HookFlag64BitOffset);
-        if (sizeof(void*) == 4) return D3D9_Subhook.Install(D3D9_Graphics_Original_Address, D3D9_Graphics_Hook_Address);
-
-        return false;
+        return true;
     }
     catch (const std::exception e)
     {

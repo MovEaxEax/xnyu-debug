@@ -575,8 +575,8 @@ void DebugMenuHandleClick(int id, bool left)
 			DebugMenuParameterFocus = -1;
 			TextIndexPointer = 0;
 
-			if (id == 0) DebugMenuShowValuesMode = !DebugMenuShowValuesMode;
-			if (id == 1)
+			if (id == 0 && GlobalDebugFeatures.debugAddress) DebugMenuShowValuesMode = !DebugMenuShowValuesMode;
+			if (id == 1 && GlobalDebugFeatures.debugAddress)
 			{
 				DebugMenuMainForm = DEBUGMENUFORM::FORM_DEBUGVALUES;
 				DebugMenuSubForm = 0;
@@ -587,7 +587,11 @@ void DebugMenuHandleClick(int id, bool left)
 				DebugMenuMainForm = DEBUGMENUFORM::FORM_SAVEFILEEDITOR;
 				DebugMenuSubForm = 0;
 			}
-			if (id == 3) if (GlobalDebugFeatures.supervision) DebugMenuSuperVisionMode = !DebugMenuSuperVisionMode;
+			if (id == 3 && GlobalDebugFeatures.supervision)
+			{
+				DebugMenuSuperVisionMode = !DebugMenuSuperVisionMode;
+				pToggleSupervisionRoutine(DebugMenuSuperVisionMode);
+			}
 			if (id == 4) DebugMenuShowCursorMode = !DebugMenuShowCursorMode;
 			if (id == 5) DebugMenuSettingsPerformanceMode = !DebugMenuSettingsPerformanceMode;
 			if (id == 6) DebugMenuHotkeyOverlayMode = !DebugMenuHotkeyOverlayMode;
@@ -742,7 +746,7 @@ void DebugMenuHandleClick(int id, bool left)
 				if (id == 1)
 				{
 					// Save
-					pSaveSavefile(&SavefileParents[SavefileParentFocus]);
+					pUpdateSavefile(&SavefileParents[SavefileParentFocus]);
 				}
 
 				if (id == 2)
@@ -1087,12 +1091,6 @@ RECT OriginalCursorClip;
 RECT CustomCursorClip;
 POINT OriginalCursorPos;
 POINT CustomCursorPos;
-
-void CalcNewCursorPos()
-{
-	CustomCursorPos.x += DebugInputCurrent.MOUSEX;
-	CustomCursorPos.y += DebugInputCurrent.MOUSEY;
-}
 
 void __cdecl DebugMenuOpen()
 {
@@ -1590,8 +1588,8 @@ void DebugMenuMainRoutine()
 			// Draw overview
 			if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW)
 			{
-				_DebugDrawText(DebugMenuShowValuesMode ? "Enabled" : "Disabled", 160, 260, FontBigMedium, DebugMenuShowValuesMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
-				_DebugDrawText("Edit", 390, 260, FontBigMedium, ColorBlack, 1.0f, "center");
+				_DebugDrawText(GlobalDebugFeatures.debugAddress ? (DebugMenuShowValuesMode ? "Enabled" : "Disabled") : "Not Available", 160, 260, FontBigMedium, DebugMenuShowValuesMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
+				_DebugDrawText(GlobalDebugFeatures.debugAddress ? "Edit" : "Not Available", 390, 260, FontBigMedium, ColorBlack, 1.0f, "center");
 				_DebugDrawText(GlobalDebugFeatures.savefileEditor ? "Edit" : "Not Available", 160, 370, FontBigMedium, GlobalDebugFeatures.savefileEditor ? ColorBlack : ColorGray, 1.0f, "center");
 				_DebugDrawText(GlobalDebugFeatures.supervision ? (DebugMenuSuperVisionMode ? "Enabled" : "Disabled") : "Not Available", 160, 493, FontBigMedium, GlobalDebugFeatures.supervision ? (DebugMenuSuperVisionMode ? ColorDarkGreen : ColorRed) : ColorGray, 1.0f, "center");
 				_DebugDrawText(DebugMenuShowCursorMode ? "Enabled" : "Disabled", 160, 608, FontBigMedium, DebugMenuShowCursorMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
