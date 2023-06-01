@@ -1880,10 +1880,10 @@ void DebugMenuMainRoutine()
 			if (DebugKeyPressed("num7", DebugMenuHotkeys[DebugHotkeysActiveSlot][6].rapid)) DebugMenuExecuteHotkey(6);
 			if (DebugKeyPressed("num8", DebugMenuHotkeys[DebugHotkeysActiveSlot][7].rapid)) DebugMenuExecuteHotkey(7);
 			if (DebugKeyPressed("num9", DebugMenuHotkeys[DebugHotkeysActiveSlot][8].rapid)) DebugMenuExecuteHotkey(8);
-			if (DebugKeyPressed("num/", DebugMenuHotkeys[DebugHotkeysActiveSlot][9].rapid)) DebugMenuExecuteHotkey(9);
-			if (DebugKeyPressed("num*", DebugMenuHotkeys[DebugHotkeysActiveSlot][10].rapid)) DebugMenuExecuteHotkey(10);
-			if (DebugKeyPressed("num-", DebugMenuHotkeys[DebugHotkeysActiveSlot][11].rapid)) DebugMenuExecuteHotkey(11);
-			if (DebugKeyPressed("num+", DebugMenuHotkeys[DebugHotkeysActiveSlot][12].rapid)) DebugMenuExecuteHotkey(12);
+			if (DebugKeyPressed("numdiv", DebugMenuHotkeys[DebugHotkeysActiveSlot][9].rapid)) DebugMenuExecuteHotkey(9);
+			if (DebugKeyPressed("nummul", DebugMenuHotkeys[DebugHotkeysActiveSlot][10].rapid)) DebugMenuExecuteHotkey(10);
+			if (DebugKeyPressed("nummin", DebugMenuHotkeys[DebugHotkeysActiveSlot][11].rapid)) DebugMenuExecuteHotkey(11);
+			if (DebugKeyPressed("numplu", DebugMenuHotkeys[DebugHotkeysActiveSlot][12].rapid)) DebugMenuExecuteHotkey(12);
 			if (DebugKeyPressed("f1", DebugMenuHotkeys[DebugHotkeysActiveSlot][13].rapid)) DebugMenuExecuteHotkey(13);
 			if (DebugKeyPressed("f2", DebugMenuHotkeys[DebugHotkeysActiveSlot][14].rapid)) DebugMenuExecuteHotkey(14);
 			if (DebugKeyPressed("f3", DebugMenuHotkeys[DebugHotkeysActiveSlot][15].rapid)) DebugMenuExecuteHotkey(15);

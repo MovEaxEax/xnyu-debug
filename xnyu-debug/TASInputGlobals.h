@@ -3,6 +3,8 @@ GameInput TASInputMouse;
 GameInput TASInputKeyboard;
 GameInput TASInputJoystick;
 
+bool TASIgnoreMouseInput = false;
+
 bool InitTASPlayers()
 {
     try
@@ -151,11 +153,11 @@ bool GetTASInput()
         std::memset(&TASInputKeyboard, 0x00, sizeof(GameInput));
         std::memset(&TASInputJoystick, 0x00, sizeof(GameInput));
 
-        if (InputDriverMouseGet == InputDriverz::RAW1NPUT) GetRawInput(true, &TASInputMouse, "mouse");
+        if (!TASIgnoreMouseInput && InputDriverMouseGet == InputDriverz::RAW1NPUT) GetRawInput(true, &TASInputMouse, "mouse");
         if (InputDriverKeyboardGet == InputDriverz::RAW1NPUT) GetRawInput(true, &TASInputKeyboard, "keyboard");
         if (InputDriverJoystickGet == InputDriverz::RAW1NPUT) GetRawInput(true, &TASInputJoystick, "joystick");
 
-        if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8) GetDirectInput8(true, &TASInputMouse, "mouse");
+        if (!TASIgnoreMouseInput && InputDriverMouseGet == InputDriverz::DIRECT1NPUT8) GetDirectInput8(true, &TASInputMouse, "mouse");
         if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8) GetDirectInput8(true, &TASInputKeyboard, "keyboard");
         if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8) GetDirectInput8(true, &TASInputJoystick, "joystick");
 

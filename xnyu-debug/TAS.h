@@ -1862,8 +1862,8 @@ bool __stdcall RecordScriptRoutine() {
             else
             {
                 bool TASRecordCanExecute = true;
-
-                if (InputDriverMouseGet != InputDriverz::N0NE)
+                
+                if (!TASIgnoreMouseInput && InputDriverMouseGet != InputDriverz::N0NE)
                 {
                     if (InputDriverMouseGet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputMouseGet || GetRawInputGetInformation)) TASRecordCanExecute = false;
                     if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8MouseGet || DirectInput8GetInformation)) TASRecordCanExecute = false;

@@ -563,7 +563,25 @@ EXTERN_DLL_EXPORT int toggleOverclocker(char* parameterRaw)
     return 1;
 }
 
+EXTERN_DLL_EXPORT int toggleTASIgnoreMouse(char* parameterRaw)
+{
+    try
+    {
+        std::string parameterString(parameterRaw);
 
+        // Split the message
+        std::vector<std::string> params;
+        splitStringVector(params, parameterString, ";");
+
+        TASIgnoreMouseInput = !TASIgnoreMouseInput;
+    }
+    catch (const std::exception e)
+    {
+        DebugConsoleOutput("Error in toggleTASIgnoreMouse()", false, "red");
+        return 0;
+    }
+    return 1;
+}
 
 DWORD MainThread()
 {
