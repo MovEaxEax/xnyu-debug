@@ -38,6 +38,8 @@ bool DebugMenuSuperVisionMode = false;
 bool DebugMenuSettingsPerformanceMode = false;
 bool DebugMenuShowCursorMode = false;
 bool DebugMenuHotkeyOverlayMode = false;
+bool DebugMenuEditorMode = false;
+bool DebugMenuEditorModeInit = false;
 
 
 int DebugMenuShowValuesModeUpdateIntervall = 200;
@@ -57,9 +59,11 @@ int TextIndexPointer = 0;
 
 // Cursor
 POINT DebugMenuCursorPosition;
+POINT DebugMenuCursorPositionLast;
+POINT DebugMenuCursorPositionLastDelta;
+POINT RealCursorPosition;
 
 // Menu Selector
-
 std::vector<std::string> DebugMenuSlotName;
 std::vector<std::vector<DebugFunction>> DebugMenuHotkeys;
 std::vector<std::vector<std::string>> DebugMenuParameter;
@@ -75,7 +79,6 @@ std::vector<std::vector<RECT>> DebugMenuDebugFunctionsChildsHoverBoxes;
 std::vector<RECT> DebugMenuSavefileEditorFilesHoverBoxes;
 std::vector<RECT> DebugMenuSavefileEditorParentsHoverBoxes;
 std::vector<std::vector<RECT>> DebugMenuSavefileEditorChildsHoverBoxes;
-
 
 int DebugMenuDebugAddressesParentFocus = 0;
 int DebugMenuDebugFunctionsParentFocus = 0;
@@ -94,8 +97,36 @@ int DebugMenuSubForm = 0;
 DEBUGMENUFORM DebugMenuMainFormLast = DEBUGMENUFORM::FORM_NONE;
 int DebugMenuSubFormLast = 0;
 
+bool DebugMenuHoverDescriptionShow = false;
+std::vector<std::string> DebugMenuHoverDescription;
+
 GameInput DebugInputCurrent = GameInput();
 GameInput DebugInputLast = GameInput();
+
+// Editor mode variables
+Point DebugMenuEditorModeDraggingLMBPosition = Point();
+Point DebugMenuEditorModeDraggingRMBPosition = Point();
+Point DebugMenuEditorModeDraggingMBPosition = Point();
+Point DebugMenuEditorModeDraggingLMBPositionLast = Point();
+Point DebugMenuEditorModeDraggingRMBPositionLast = Point();
+Point DebugMenuEditorModeDraggingMBPositionLast = Point();
+Point DebugMenuEditorModeDraggingLMBPositionLastDelta = Point();
+Point DebugMenuEditorModeDraggingRMBPositionLastDelta = Point();
+Point DebugMenuEditorModeDraggingMBPositionLastDelta = Point();
+bool DebugMenuEditorModeDraggingLMBTrigger;
+bool DebugMenuEditorModeDraggingRMBTrigger;
+bool DebugMenuEditorModeDraggingMBTrigger;
+bool DebugMenuEditorModeDraggingLMB;
+bool DebugMenuEditorModeDraggingRMB;
+bool DebugMenuEditorModeDraggingMB;
+
+Point DebugMenuEditorModeContextMenuPosition = Point();
+bool DebugMenuEditorModeContextMenuShowTrigger;
+bool DebugMenuEditorModeContextMenuShowOpen;
+int DebugMenuEditorModeContextMenuEntryIdLayer1;
+int DebugMenuEditorModeContextMenuEntryIdLayer2;
+
+int DebugMenuEditorModeCurrentMode;
 
 void DebugMenuInitForms()
 {
@@ -152,6 +183,9 @@ void DebugMenuInitHoverBoxes()
 	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1806, 975, 1835, 1003 });
 	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1843, 975, 1872, 1003 });
 	DebugMenuOverviewHoverBoxes.push_back(RECT{ 1584, 1011, 1872, 1037 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 282, 487, 499, 527 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 58, 955, 274, 995 });
+	DebugMenuOverviewHoverBoxes.push_back(RECT{ 282, 955, 499, 995 });
 
 	for (int i = 0; i < 13; i++)
 	{
@@ -164,7 +198,8 @@ void DebugMenuInitHoverBoxes()
 		DebugMenuOverviewHoverBoxes.push_back(RECT{ 1505, 195 + (65 * i) + 29, 1875, 195 + (65 * i) + 29 + 28 });
 	}
 
-	// Debug addresses
+
+	// Debug functions
 	DebugMenuDebugAddressesParentsHoverBoxes.push_back(RECT{ 63, 975, 279, 1016 });
 
 	col = 0;
@@ -273,6 +308,7 @@ void DebugMenuInitHotkeys()
 {
 	DebugFunction tmp;
 	tmp.nameFull = "- EMPTY -";
+	
 	for (int k = 0; k < 8; k++)
 	{
 		std::vector<DebugFunction> subListFun;
@@ -437,6 +473,45 @@ void DebugMenuInitSettings()
 	}
 }
 
+HCURSOR HiddenCursor = nullptr;
+HCURSOR OriginalCursor = nullptr;
+
+void DebugMenuInitHiddenCursor()
+{
+	HiddenCursor = LoadCursorFromFileA((GlobalSettings.config_settings_directory + "imgs\\InvisibleCursor.cur").c_str());
+	if (HiddenCursor == NULL) DebugConsoleOutput("Hidden cursor feature can't load!", false, "red");
+}
+
+int DebugMenuEditorModeContextMenuMaxWidth;
+int DebugMenuEditorModeContextMenuMaxHeight;
+int DebugMenuEditorModeContextMenuLayer1Width;
+std::vector<int> DebugMenuEditorModeContextMenuLayer2Width;
+
+void DebugMenuInitEditorMode()
+{
+	int highestWidthLayer1 = 0;
+	for (int i = 0; i < DebugEditorModeActions.size(); i++)
+	{
+		SIZE textSizeLayer1;
+		GetTextExtentPoint32A(hdc, DebugEditorModeActions[i].nameParent.c_str(), (int)DebugEditorModeActions[i].nameParent.length(), &textSizeLayer1);
+		int highestWidthLayer2 = 0;
+		if (textSizeLayer1.cx > highestWidthLayer1) highestWidthLayer1 = textSizeLayer1.cx;
+		if ((i + 1) + DebugEditorModeActions [i].actions.size() > DebugMenuEditorModeContextMenuMaxHeight) DebugMenuEditorModeContextMenuMaxHeight = (i + 1) + DebugEditorModeActions[i].actions.size();
+		for (int k = 0; k < DebugEditorModeActions[i].actions.size(); k++)
+		{
+			SIZE textSizeLayer2;
+			GetTextExtentPoint32A(hdc, DebugEditorModeActions[i].actions[k].nameChild.c_str(), (int)DebugEditorModeActions[i].actions[k].nameChild.length(), &textSizeLayer2);
+			if (textSizeLayer2.cx > highestWidthLayer2) highestWidthLayer2 = textSizeLayer2.cx;
+		}
+		highestWidthLayer2 = round(highestWidthLayer2 * 1.1) + 45;
+		DebugMenuEditorModeContextMenuLayer2Width.push_back(highestWidthLayer2);
+		if (highestWidthLayer2 > DebugMenuEditorModeContextMenuMaxWidth) DebugMenuEditorModeContextMenuMaxWidth = highestWidthLayer2;
+	}
+	DebugMenuEditorModeContextMenuMaxHeight = (DebugMenuEditorModeContextMenuMaxHeight * 27) + 14;
+	DebugMenuEditorModeContextMenuLayer1Width = round(highestWidthLayer1 * 1.1) + 60;
+	DebugMenuEditorModeContextMenuMaxWidth += DebugMenuEditorModeContextMenuLayer1Width + 4;
+}
+
 void DebugMenuInitValues()
 {
 	DebugMenuMockData();
@@ -444,6 +519,12 @@ void DebugMenuInitValues()
 	DebugMenuInitSaveEditor();
 	DebugMenuInitSettings();
 	DebugMenuInitHoverBoxes();
+	DebugMenuInitEditorMode();
+
+	// Set the cursor for the window class
+
+
+	// Later, when you want to show the cursor again
 
 	DebugConsoleOutput("Debug menu init successfull!", false, "green");
 	DebugMenuInit = true;
@@ -458,14 +539,22 @@ BOOLEAN CheckWindowActive()
 // Wrapper function
 void __cdecl _DebugDrawText(std::string text, int x, int y, HFONT font, unsigned char* color, float alpha, std::string align = "left")
 {
+	if (!DebugMenuCanDraw) return;
 	unsigned char alphaC = (unsigned char)(alpha * 255);
 	DrawTextToTexture(x, y, text, font, color, alphaC, align);
 }
 
 void __cdecl _DebugDrawRectangle(int x, int y, int w, int h, unsigned char* color, float alpha)
 {
+	if (!DebugMenuCanDraw) return;
 	unsigned char alphaC = (unsigned char)(alpha * 255);
 	DrawRectangleToTexture(x, y, w, h, color, alphaC);
+}
+
+void _DrawCursorToTexture(int x, int y)
+{
+	if (!DebugMenuCanDraw) return;
+	DrawCursorToTexture(x, y);
 }
 
 void _DrawMenu()
@@ -561,8 +650,61 @@ BOOL DebugKeyPressed(std::string id, bool rapid = false)
 	if (id == "rmb") return DebugInputCurrent.RMB && (rapid ? true : !DebugInputLast.RMB);
 	if (id == "rmb") return DebugInputCurrent.RMB && (rapid ? true : !DebugInputLast.RMB);
 	if (id == "mb") return DebugInputCurrent.MB && (rapid ? true : !DebugInputLast.MB);
+	if (id == "wheelup") return DebugInputLast.WHEEL > 0 && (rapid ? true : !(DebugInputLast.WHEEL > 0));
+	if (id == "wheeldown") return DebugInputLast.WHEEL < 0 && (rapid ? true : !(DebugInputLast.WHEEL < 0));
 
 	return false;
+}
+
+void DebugMenuHandleHover(int id)
+{
+	if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW)
+	{
+		if (id - 19 >= 0 && (id - 19) % 2 == 0)
+		{
+			DebugMenuHoverDescriptionShow = true;
+			DebugMenuHoverDescription = DebugMenuHotkeys[DebugHotkeysActiveSlot][(id - 19) / 2].description;
+		}
+	}
+	else if (DebugMenuMainForm == DEBUGMENUFORM::FORM_DEBUGVALUES)
+	{
+		if (DebugMenuSubForm == 0)
+		{
+			if (id > 0 && DebugAddresses.size() > (id - 1))
+			{
+				DebugMenuHoverDescriptionShow = true;
+				DebugMenuHoverDescription = DebugAddresses[id - 1].description;
+			}
+		}
+		else if (DebugMenuSubForm == 1)
+		{
+			if (id > 0 && DebugMenuDebugAddressesParentFocus > -1 && DebugAddresses[DebugMenuDebugAddressesParentFocus].addresses.size() > (id - 1))
+			{
+				DebugMenuHoverDescriptionShow = true;
+				DebugMenuHoverDescription = DebugAddresses[DebugMenuDebugAddressesParentFocus].addresses[id - 1].description;
+			}
+		}
+	}
+	else if (DebugMenuMainForm == DEBUGMENUFORM::FORM_DEBUGFUNCTIONS)
+	{
+		if (DebugMenuSubForm == 0)
+		{
+			if (id > 0 && DebugFunctions.size() > (id - 1))
+			{
+				DebugMenuHoverDescriptionShow = true;
+				DebugMenuHoverDescription = DebugFunctions[id - 1].description;
+			}
+		}
+		else if (DebugMenuSubForm == 1)
+		{
+			if (id > 0 && DebugMenuDebugFunctionsParentFocus > -1 && DebugFunctions[DebugMenuDebugFunctionsParentFocus].functions.size() > (id - 1))
+			{
+				DebugMenuHoverDescriptionShow = true;
+				DebugMenuHoverDescription = DebugFunctions[DebugMenuDebugFunctionsParentFocus].functions[id - 1].description;
+			}
+		}
+	}
+
 }
 
 void DebugMenuHandleClick(int id, bool left)
@@ -614,18 +756,36 @@ void DebugMenuHandleClick(int id, bool left)
 				TextIndexPointer = DebugMenuSlotName[DebugHotkeysActiveSlot].length();
 			}
 
-			if (id - 16 >= 0 && (id - 16) % 2 == 0)
+			if (id == 16 && GlobalDebugFeatures.supervision)
 			{
-				DebugMenuFunctionFocus = (id - 16) / 2; // Debug function focus
+				DebugMenuMainForm = DEBUGMENUFORM::FORM_SUPERVISION;
+				DebugMenuSubForm = 0;
+			}
+			if (id == 17 && GlobalDebugFeatures.editorMode)
+			{
+				DebugMenuEditorMode = !DebugMenuEditorMode;
+				DebugMenuEditorModeInit = DebugMenuEditorMode;
+				pToggleEditorModeRoutine(DebugMenuEditorMode);
+			}
+			if (id == 18 && GlobalDebugFeatures.editorMode)
+			{
+				DebugMenuMainForm = DEBUGMENUFORM::FORM_EDITORMODE;
+				DebugMenuSubForm = 0;
+			}
+
+			if (id - 19 >= 0 && (id - 19) % 2 == 0)
+			{
+				DebugMenuFunctionFocus = (id - 19) / 2; // Debug function focus
 				DebugMenuMainForm = DEBUGMENUFORM::FORM_DEBUGFUNCTIONS;
 				DebugMenuSubForm = 0;
 				DebugMenuDebugFunctionsParentFocus = -1;
 			}
-			if (id - 17 >= 0 && (id - 17) % 2 == 0)
+			if (id - 20 >= 0 && (id - 20) % 2 == 0)
 			{
-				DebugMenuParameterFocus = (id - 17) / 2; // Debug function parameter focus
+				DebugMenuParameterFocus = (id - 20) / 2; // Debug function parameter focus
 				TextIndexPointer = DebugMenuParameter[DebugHotkeysActiveSlot][DebugMenuParameterFocus].length();
 			}
+
 		}
 		else if (DebugMenuMainForm == DEBUGMENUFORM::FORM_DEBUGVALUES)
 		{
@@ -696,6 +856,7 @@ void DebugMenuHandleClick(int id, bool left)
 					{
 						DebugFunction tmp;
 						tmp.nameFull = "- EMPTY -";
+						
 						DebugMenuHotkeys[DebugHotkeysActiveSlot][DebugMenuFunctionFocus] = tmp;
 					}
 					else
@@ -792,6 +953,7 @@ void DebugMenuHandleClick(int id, bool left)
 			{
 				DebugFunction tmp;
 				tmp.nameFull = "- EMPTY -";
+				
 				DebugMenuHotkeys[DebugHotkeysActiveSlot][(id - 16) / 2] = tmp;
 			}
 			if (id - 17 >= 0 && (id - 17) % 2 == 0) DebugMenuParameter[DebugHotkeysActiveSlot][(id - 17) / 2] = "";
@@ -860,10 +1022,13 @@ void _DrawHoverBoxes()
 
 void _CheckHoverBoxes()
 {
+	DebugMenuHoverDescriptionShow = false;
+	if (DebugMenuHoverDescription.size() > 0) DebugMenuHoverDescription.clear();
 	for (int i = 0; i < HoverBoxesTarget.size(); i++)
 	{
 		if (DebugMenuCursorPosition.x > HoverBoxesTarget[i].left && DebugMenuCursorPosition.x < HoverBoxesTarget[i].right && DebugMenuCursorPosition.y > HoverBoxesTarget[i].top && DebugMenuCursorPosition.y < HoverBoxesTarget[i].bottom)
 		{
+			DebugMenuHandleHover(i);
 			if (DebugKeyPressed("lmb") || DebugKeyPressed("mb")) DebugMenuHandleClick(i, true);
 			if (DebugKeyPressed("rmb")) DebugMenuHandleClick(i, false);
 			break;
@@ -952,6 +1117,25 @@ void DebugMenuExecuteHotkey(int id)
 			}
 			else DebugMenuHotkeyOverlayMode = !DebugMenuHotkeyOverlayMode;
 		}
+		else if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "EnableSupervision")
+		{
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty())
+			{
+				DebugMenuSuperVisionMode = GetVariableBool(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+			}
+			else DebugMenuSuperVisionMode = !DebugMenuShowCursorMode;
+			pToggleSupervisionRoutine(DebugMenuSuperVisionMode);
+		}
+		else if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].nameChild == "EnableEditorMode")
+		{
+			if (DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value != "none" && !DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0].value.empty())
+			{
+				DebugMenuEditorMode = GetVariableBool(&DebugMenuHotkeys[DebugHotkeysActiveSlot][id].parameter[0]);
+			}
+			else DebugMenuEditorMode = !DebugMenuEditorMode;
+			DebugMenuEditorModeInit = DebugMenuEditorMode;
+			pToggleEditorModeRoutine(DebugMenuEditorMode);
+		}
 	}
 	else
 	{
@@ -968,6 +1152,17 @@ std::string DebugMenuHotkeyDisplayParameter(int id)
 {
 	return "Parameter: " + DebugMenuParameter[DebugHotkeysActiveSlot][id];
 }
+
+bool DebugMenuCheckShiftKeyAsync()
+{
+	return GetAsyncKeyState(VK_LSHIFT) & 0x8000 || GetAsyncKeyState(VK_RSHIFT) & 0x8000;
+}
+
+bool DebugMenuCheckCtrlKeyAsync()
+{
+	return GetAsyncKeyState(VK_CONTROL) & 0x8000 || GetAsyncKeyState(VK_RCONTROL) & 0x8000;
+}
+
 
 int DebugMenuCheckTextInput(std::string* text, int indexPointer)
 {
@@ -1094,6 +1289,15 @@ POINT CustomCursorPos;
 
 void __cdecl DebugMenuOpen()
 {
+	// Set hidden cursor
+	if (HiddenCursor != NULL)
+	{
+		OriginalCursor = (HCURSOR)GetClassLongPtr(MainWindowHandle, GCLP_HCURSOR);
+		SetClassLongPtr(MainWindowHandle, GCLP_HCURSOR, (LONG_PTR)OriginalCursor);
+		SetCursor(HiddenCursor);
+		while (ShowCursor(FALSE) >= 0);
+	}
+
 	DebugMenuOpened = true;
 	DebugMenuInitSwitch = true;
 	DebugMenuMainForm = DEBUGMENUFORM::FORM_OVERVIEW;
@@ -1101,11 +1305,14 @@ void __cdecl DebugMenuOpen()
 	DebugMenuMainFormLast = DEBUGMENUFORM::FORM_OVERVIEW;
 	DebugMenuSubFormLast = 0;
 	RawInputDisableForGame = true;
+	XInput1_4DisableForGame = true;
+	DirectInput8DisableForGame = true;
 
 	_DetectHoverBoxesTarget();
 
 	DebugFunction tmp;
 	tmp.nameFull = "- EMPTY -";
+	
 	for (int k = 0; k < 8; k++)
 	{
 		std::vector<DebugFunction> subListFun;
@@ -1231,10 +1438,19 @@ void __cdecl DebugMenuOpen()
 		}
 	}
 
+	pOnDebugMenu(true);
 }
 
 void DebugMenuClose()
 {
+	// Restore original cursor:
+	if (HiddenCursor != NULL)
+	{
+		SetClassLongPtr(MainWindowHandle, GCLP_HCURSOR, (LONG_PTR)OriginalCursor);
+		SetCursor(OriginalCursor);
+		while (ShowCursor(TRUE) < 0);
+	}
+
 	if (DebugMenuShowValuesMode)
 	{
 		DebugMenuShowValuesModeCalculateSize();
@@ -1250,6 +1466,8 @@ void DebugMenuClose()
 	DebugMenuMainForm = DEBUGMENUFORM::FORM_NONE;
 	DebugMenuSubForm = 0;
 	RawInputDisableForGame = false;
+	XInput1_4DisableForGame = false;
+	DirectInput8DisableForGame = false;
 
 	for (int f = 0; f < 8; f++)
 	{
@@ -1350,6 +1568,7 @@ void DebugMenuClose()
 
 	}
 
+	pOnDebugMenu(false);
 }
 
 void DebugDrawDebugAddresses()
@@ -1526,19 +1745,30 @@ void DebugMenuMainRoutine()
 		// Customize the cursor
 		GetCursorPos(&DebugMenuCursorPosition);
 		ScreenToClient(MainWindowHandle, &DebugMenuCursorPosition);
+		GetCursorPos(&RealCursorPosition);
+		ScreenToClient(MainWindowHandle, &RealCursorPosition);
 	}
 	std::memcpy(&DebugInputLast, &DebugInputCurrent, sizeof(GameInput));
 	GetRawInput(false, &DebugInputCurrent, "all");
 
-	GetWindowRect(MainWindowHandle, &MainWindowRect);
+	GetClientRect(MainWindowHandle, &MainWindowRect);
 	
 	MainWindowActive = CheckWindowActive();
+	DebugMenuCursorPosition.x = (LONG)round((float)DebugMenuCursorPosition.x * (float)((float)1920 / (float)(MainWindowRect.right - MainWindowRect.left)));
+	DebugMenuCursorPosition.y = (LONG)round((float)DebugMenuCursorPosition.y * (float)((float)1080 / (float)(MainWindowRect.bottom - MainWindowRect.top)));
 
 	if (DebugMenuOpened)
 	{
 		// Input handling
 		if (MainWindowActive)
 		{
+			if (HiddenCursor != NULL)
+			{
+				SetClassLongPtr(MainWindowHandle, GCLP_HCURSOR, (LONG_PTR)OriginalCursor);
+				SetCursor(HiddenCursor);
+				while (ShowCursor(FALSE) >= 0);
+			}
+
 			if (DebugKeyPressed("num0"))
 			{
 				DebugMenuClose();
@@ -1585,27 +1815,81 @@ void DebugMenuMainRoutine()
 			_DetectHoverBoxesTarget();
 			_DrawHoverBoxes();
 
+			if (DebugMenuHoverDescriptionShow)
+			{
+				// Show debugfunction description
+				_DebugDrawRectangle(8, 8, 417, 128, ColorYellow, 1.0f);
+				_DebugDrawRectangle(10, 10, 413, 124, ColorDarkBlue, 1.0f);
+
+				if (DebugMenuHoverDescription.size() > 0)
+				{
+					for (int i = 0; i < DebugMenuHoverDescription.size(); i++)
+					{
+						if (i > 8) break;
+						unsigned char* lineColor = ColorYellow;
+						std::string line = DebugMenuHoverDescription[i];
+
+						int colorStart = line.find("(color=");
+						if (colorStart != std::string::npos)
+						{
+							int colorEnd = line.find(")", colorStart);
+							if (colorStart != std::string::npos)
+							{
+								if (line.substr(0, 7) == "(color=")
+								{
+									std::string colorKey = line.substr(colorStart + 7, colorEnd - (colorStart + 7));
+									line.replace(colorStart, colorEnd - colorStart + 1, "");
+
+									if (colorKey == "red") lineColor = ColorRed;
+									else if (colorKey == "green") lineColor = ColorGreen;
+									else if (colorKey == "darkgreen") lineColor = ColorDarkGreen;
+									else if (colorKey == "blue") lineColor = ColorBlue;
+									else if (colorKey == "darkblue") lineColor = ColorDarkBlue;
+									else if (colorKey == "black") lineColor = ColorBlack;
+									else if (colorKey == "white") lineColor = ColorWhite;
+									else if (colorKey == "gray") lineColor = ColorGray;
+									else if (colorKey == "yellow") lineColor = ColorYellow;
+									else if (colorKey == "purple") lineColor = ColorPurple;
+									else if (colorKey == "pink") lineColor = ColorPink;
+									else if (colorKey == "orange") lineColor = ColorOrange;
+									else if (colorKey == "cyan") lineColor = ColorCyan;
+								}
+							}
+						}
+
+						_DebugDrawText(line, 15, 15 + (i * 13), FontSmall, lineColor, 1.0f, "left");
+					}
+				}
+				else
+				{
+					_DebugDrawText("- No description available -", 205, 62, FontSmall, ColorYellow, 1.0f, "center");
+				}
+			}
+
 			// Draw overview
 			if (DebugMenuMainForm == DEBUGMENUFORM::FORM_OVERVIEW)
 			{
-				_DebugDrawText(GlobalDebugFeatures.debugAddress ? (DebugMenuShowValuesMode ? "Enabled" : "Disabled") : "Not Available", 160, 260, FontBigMedium, DebugMenuShowValuesMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
-				_DebugDrawText(GlobalDebugFeatures.debugAddress ? "Edit" : "Not Available", 390, 260, FontBigMedium, ColorBlack, 1.0f, "center");
+				_DebugDrawText(GlobalDebugFeatures.debugAddress ? (DebugMenuShowValuesMode ? "Enabled" : "Disabled") : "Not Available", 160, 260, FontBigMedium, GlobalDebugFeatures.debugAddress ? (DebugMenuShowValuesMode ? ColorDarkGreen : ColorRed) : ColorGray, 1.0f, "center");
+				_DebugDrawText(GlobalDebugFeatures.debugAddress ? "Edit" : "Not Available", 390, 260, FontBigMedium, GlobalDebugFeatures.debugAddress ? ColorBlack : ColorGray, 1.0f, "center");
 				_DebugDrawText(GlobalDebugFeatures.savefileEditor ? "Edit" : "Not Available", 160, 370, FontBigMedium, GlobalDebugFeatures.savefileEditor ? ColorBlack : ColorGray, 1.0f, "center");
 				_DebugDrawText(GlobalDebugFeatures.supervision ? (DebugMenuSuperVisionMode ? "Enabled" : "Disabled") : "Not Available", 160, 493, FontBigMedium, GlobalDebugFeatures.supervision ? (DebugMenuSuperVisionMode ? ColorDarkGreen : ColorRed) : ColorGray, 1.0f, "center");
 				_DebugDrawText(DebugMenuShowCursorMode ? "Enabled" : "Disabled", 160, 608, FontBigMedium, DebugMenuShowCursorMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
 				_DebugDrawText(DebugMenuSettingsPerformanceMode ? "Enabled" : "Disabled", 160, 721, FontBigMedium, DebugMenuSettingsPerformanceMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
 				_DebugDrawText(DebugMenuHotkeyOverlayMode ? "Enabled" : "Disabled", 160, 842, FontBigMedium, DebugMenuHotkeyOverlayMode ? ColorDarkGreen : ColorRed, 1.0f, "center");
+				_DebugDrawText(GlobalDebugFeatures.supervision ? "Edit" : "Not Available", 390, 495, FontBigMedium, GlobalDebugFeatures.supervision ? ColorBlack : ColorGray, 1.0f, "center");
+				_DebugDrawText(GlobalDebugFeatures.editorMode ? (DebugMenuEditorMode ? "Enabled" : "Disabled") : "Not Available", 160, 963, FontBigMedium, GlobalDebugFeatures.editorMode ? (DebugMenuEditorMode ? ColorDarkGreen : ColorRed) : ColorGray, 1.0f, "center");
+				_DebugDrawText(GlobalDebugFeatures.editorMode ? "Edit" : "Not Available", 390, 963, FontBigMedium, GlobalDebugFeatures.editorMode ? ColorBlack : ColorGray, 1.0f, "center");
 
 				for (int i = 0; i < 13; i++)
 				{
 					_DebugDrawText(DebugMenuHotkeys[DebugHotkeysActiveSlot][i].nameFull, 1245, 200 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
-					_DebugDrawText(DebugMenuParameter[DebugHotkeysActiveSlot][i], 1245, 228 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
+					_DebugDrawText(DebugMenuParameter[DebugHotkeysActiveSlot][i].empty() ? DebugMenuHotkeys[DebugHotkeysActiveSlot][i].placeholder : DebugMenuParameter[DebugHotkeysActiveSlot][i], 1245, 228 + (65 * i), FontMedium, DebugMenuParameter[DebugHotkeysActiveSlot][i].empty() ? ColorGray : ColorBlack, 1.0f, "center");
 				}
 
 				for (int i = 0; i < 12; i++)
 				{
 					_DebugDrawText(DebugMenuHotkeys[DebugHotkeysActiveSlot][i + 13].nameFull, 1690, 200 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
-					_DebugDrawText(DebugMenuParameter[DebugHotkeysActiveSlot][i + 13], 1690, 228 + (65 * i), FontMedium, ColorBlack, 1.0f, "center");
+					_DebugDrawText(DebugMenuParameter[DebugHotkeysActiveSlot][i + 13].empty() ? DebugMenuHotkeys[DebugHotkeysActiveSlot][i + 13].placeholder : DebugMenuParameter[DebugHotkeysActiveSlot][i + 13], 1690, 228 + (65 * i), FontMedium, DebugMenuParameter[DebugHotkeysActiveSlot][i + 13].empty() ? ColorGray : ColorBlack, 1.0f, "center");
 				}
 
 				for (int i = 0; i < 8; i++)
@@ -1847,7 +2131,7 @@ void DebugMenuMainRoutine()
 			}
 
 			// Draw custom cursor
-			DrawCursorToTexture(DebugMenuCursorPosition.x, DebugMenuCursorPosition.y);
+			_DrawCursorToTexture(DebugMenuCursorPosition.x, DebugMenuCursorPosition.y);
 
 			DebugMenuCanDraw = false;
 		}
@@ -1860,6 +2144,28 @@ void DebugMenuMainRoutine()
 			DebugMenuGeneralFrameskip = 0;
 			DebugMenuCanDraw = true;
 			DebugMenuInitSwitch = false;
+
+			if (DebugMenuEditorMode)
+			{
+				// Disable game input
+				RawInputDisableForGame = true;
+				XInput1_4DisableForGame = true;
+				DirectInput8DisableForGame = true;
+
+				// Dragging
+				DebugMenuEditorModeDraggingLMBTrigger = false;
+				DebugMenuEditorModeDraggingRMBTrigger = false;
+				DebugMenuEditorModeDraggingMBTrigger = false;
+				DebugMenuEditorModeDraggingLMB = false;
+				DebugMenuEditorModeDraggingRMB = false;
+				DebugMenuEditorModeDraggingMB = false;
+
+				// Init editor mode variables
+				DebugMenuEditorModeContextMenuShowTrigger = false;
+				DebugMenuEditorModeContextMenuShowOpen = false;
+				DebugMenuEditorModeContextMenuEntryIdLayer1 = -1;
+				DebugMenuEditorModeContextMenuEntryIdLayer2 = -1;
+			}
 		}
 
 		if (MainWindowActive)// && !TASPlayScript && !TASRecordScript)
@@ -1924,8 +2230,6 @@ void DebugMenuMainRoutine()
 				_DebugDrawRectangle(1850, 10, 12, 12, ColorRed, 1.0f);
 				_DebugDrawText("Rec.", 1865, 7, FontMedium, ColorWhite, 1.0f, "left");
 			}
-
-			DebugMenuCanDraw = false;
 		}
 
 		// Debugmod frame logic
@@ -1934,7 +2238,7 @@ void DebugMenuMainRoutine()
 		// Draw cursor position
 		if (DebugMenuShowCursorMode)
 		{
-			std::string CursorPositionText = "X: " + std::to_string(DebugMenuCursorPosition.x) + "| Y: " + std::to_string(DebugMenuCursorPosition.y);
+			std::string CursorPositionText = "X: " + std::to_string(RealCursorPosition.x) + "| Y: " + std::to_string(RealCursorPosition.y);
 			SIZE CursorPositionTextSize;
 			GetTextExtentPoint32A(hdc, CursorPositionText.c_str(), (int)CursorPositionText.length(), &CursorPositionTextSize);
 			CursorPositionTextSize.cx += 21;
@@ -1943,6 +2247,394 @@ void DebugMenuMainRoutine()
 			_DebugDrawText(CursorPositionText, DebugMenuCursorPosition.x + 13, DebugMenuCursorPosition.y + 3, FontSmallMedium, ColorYellow, 1.0f, "left");
 		}
 
+		if (DebugMenuEditorMode)
+		{
+			if (DebugMenuEditorModeInit)
+			{
+				// Disable game input
+				RawInputDisableForGame = true;
+				XInput1_4DisableForGame = true;
+				DirectInput8DisableForGame = true;
+
+				// Dragging
+				DebugMenuEditorModeDraggingLMBTrigger = false;
+				DebugMenuEditorModeDraggingRMBTrigger = false;
+				DebugMenuEditorModeDraggingMBTrigger = false;
+				DebugMenuEditorModeDraggingLMB = false;
+				DebugMenuEditorModeDraggingRMB = false;
+				DebugMenuEditorModeDraggingMB = false;
+
+				// Init editor mode variables
+				DebugMenuEditorModeContextMenuShowTrigger = false;
+				DebugMenuEditorModeContextMenuShowOpen = false;
+				DebugMenuEditorModeContextMenuEntryIdLayer1 = -1;
+				DebugMenuEditorModeContextMenuEntryIdLayer2 = -1;
+				DebugMenuEditorModeCurrentMode = 0;
+
+				pEditorModeActionEnterMovingMode();
+
+				DebugMenuEditorModeInit = false;
+			}
+
+			// Draw Mode Bar
+			_DebugDrawRectangle(895, 0, 130, 30, ColorBlack, 0.7f);
+			_DebugDrawText("Editor Mode", 960, 5, FontMedium, ColorOrange, 1.0f, "center");
+			_DebugDrawRectangle(897 + (32 * 0), 32, 30, 30, ColorBlack, 0.7f);
+			_DebugDrawRectangle(897 + (32 * 0) + 2, 32 + 2, 26, 26, DebugMenuEditorModeCurrentMode == 0 ? ColorGreen : ColorWhite, 0.8f);
+			_DebugDrawRectangle(897 + (32 * 1), 32, 30, 30, ColorBlack, 0.7f);
+			_DebugDrawRectangle(897 + (32 * 1) + 2, 32 + 2, 26, 26, DebugMenuEditorModeCurrentMode == 1 ? ColorGreen : ColorWhite, 0.8f);
+			_DebugDrawRectangle(897 + (32 * 2), 32, 30, 30, ColorBlack, 0.7f);
+			_DebugDrawRectangle(897 + (32 * 2) + 2, 32 + 2, 26, 26, DebugMenuEditorModeCurrentMode == 2 ? ColorGreen : ColorWhite, 0.8f);
+			_DebugDrawRectangle(897 + (32 * 3), 32, 30, 30, ColorBlack, 0.7f);
+			_DebugDrawRectangle(897 + (32 * 3) + 2, 32 + 2, 26, 26, ColorWhite, 0.8f);
+			_DebugDrawText("M", 897 + (32 * 0) + 15, 37, FontMedium, ColorBlack, 1.0f, "center");
+			_DebugDrawText("R", 897 + (32 * 1) + 15, 37, FontMedium, ColorBlack, 1.0f, "center");
+			_DebugDrawText("S", 897 + (32 * 2) + 15, 37, FontMedium, ColorBlack, 1.0f, "center");
+			_DebugDrawText("X", 897 + (32 * 3) + 15, 37, FontMedium, ColorRed, 1.0f, "center");
+
+			for (int i = 0; i < 4; i++)
+			{
+				if (DebugMenuCursorPosition.x > 897 + (32 * i) && DebugMenuCursorPosition.x < 897 + (32 * (i + 1)))
+				{
+					if (DebugMenuCursorPosition.y > 32 && DebugMenuCursorPosition.y < 62)
+					{
+						_DebugDrawRectangle(897 + (32 * i) + 2, 32 + 2, 26, 26, ColorYellow, 0.6f);
+						break;
+					}
+				}
+			}
+
+			if (CheckWindowActive())
+			{
+				// Debug cursor coordinates
+				DebugMenuCursorPositionLastDelta.x = DebugMenuCursorPosition.x - DebugMenuCursorPositionLast.x;
+				DebugMenuCursorPositionLastDelta.y = DebugMenuCursorPosition.y - DebugMenuCursorPositionLast.y;
+				Point DebugMenuCursorPositionConverted = PointConversion(DebugMenuCursorPosition);
+				Point DebugMenuCursorPositionConvertedLast = PointConversion(DebugMenuCursorPosition);
+
+				// Get inputs
+				bool lmbSingle = DebugKeyPressed("lmb", false);
+				bool lmbRapid = DebugKeyPressed("lmb", true);
+				bool rmbSingle = DebugKeyPressed("rmb", false);
+				bool rmbRapid = DebugKeyPressed("rmb", true);
+				bool mbSingle = DebugKeyPressed("mb", false);
+				bool mbRapid = DebugKeyPressed("mb", true);
+
+				bool wheelupRapid = DebugKeyPressed("wheelup", true);
+				bool wheeldownRapid = DebugKeyPressed("wheeldown", true);
+				bool WKeyRapid = DebugKeyPressed("w", true);
+				bool AKeyRapid = DebugKeyPressed("a", true);
+				bool SKeyRapid = DebugKeyPressed("s", true);
+				bool DKeyRapid = DebugKeyPressed("d", true);
+				bool QKeyRapid = DebugKeyPressed("q", true);
+				bool EKeyRapid = DebugKeyPressed("e", true);
+				bool ZKeySingle = DebugKeyPressed("z", false);
+				bool YKeySingle = DebugKeyPressed("y", false);
+				bool D1KeyRapid = DebugKeyPressed("d1", true);
+				bool D2KeySingle = DebugKeyPressed("d2", false);
+				bool D3KeySingle = DebugKeyPressed("d3", false);
+				bool ShiftKeyRapid = DebugMenuCheckShiftKeyAsync();// DebugKeyPressed("lshift", true) || DebugKeyPressed("rshift", true);
+				bool CtrlKeyRapid = DebugMenuCheckCtrlKeyAsync();// DebugKeyPressed("lshift", true) || DebugKeyPressed("rshift", true);
+
+				// Dragging LMB
+				if (lmbRapid && !DebugMenuEditorModeDraggingLMBTrigger && !DebugMenuEditorModeDraggingLMB)
+				{
+					DebugMenuEditorModeDraggingLMBPosition.x = DebugMenuCursorPositionConverted.x;
+					DebugMenuEditorModeDraggingLMBPosition.y = DebugMenuCursorPositionConverted.y;
+					DebugMenuEditorModeDraggingLMBTrigger = true;
+				}
+				if (lmbRapid && DebugMenuEditorModeDraggingLMBTrigger)
+				{
+					if ((DebugMenuCursorPosition.x > DebugMenuEditorModeDraggingLMBPosition.x + 10 || DebugMenuCursorPosition.x < DebugMenuEditorModeDraggingLMBPosition.x - 10) || (DebugMenuCursorPosition.y > DebugMenuEditorModeDraggingLMBPosition.y + 10 || DebugMenuCursorPosition.y < DebugMenuEditorModeDraggingLMBPosition.y - 10))
+					{
+						// LMB is Dragging
+						DebugMenuEditorModeDraggingLMB = true;
+						DebugMenuEditorModeDraggingLMBTrigger = false;
+						DebugMenuEditorModeDraggingLMBPositionLast = DebugMenuCursorPositionConverted;
+					}
+				}
+				if (!lmbRapid)
+				{
+					if (DebugMenuEditorModeDraggingLMBTrigger && !DebugMenuEditorModeContextMenuShowOpen)
+					{
+						// Click mode bar
+						bool alreadyClicked = false;
+						for (int i = 0; i < 4; i++)
+						{
+							if (DebugMenuEditorModeDraggingLMBPosition.x > 897 + (32 * i) && DebugMenuEditorModeDraggingLMBPosition.x < 897 + (32 * (i + 1)))
+							{
+								if (DebugMenuEditorModeDraggingLMBPosition.y > 32 && DebugMenuEditorModeDraggingLMBPosition.y < 62)
+								{
+									if (i == 0 && DebugMenuEditorModeCurrentMode != 0)
+									{
+										pEditorModeActionEnterMovingMode();
+										DebugMenuEditorModeCurrentMode = 0;
+									}
+									else if (i == 1 && DebugMenuEditorModeCurrentMode != 1)
+									{
+										pEditorModeActionEnterRotationMode();
+										DebugMenuEditorModeCurrentMode = 1;
+									}
+									else if (i == 2 && DebugMenuEditorModeCurrentMode != 2)
+									{
+										pEditorModeActionEnterScalingMode();
+										DebugMenuEditorModeCurrentMode = 2;
+									}
+									else if (i == 3)
+									{
+										DebugMenuEditorMode = false;
+									}
+									alreadyClicked = true;
+									break;
+								}
+							}
+						}
+						if (!alreadyClicked) pEditorModeActionLeftClick(DebugMenuEditorModeDraggingLMBPosition);
+					}
+					DebugMenuEditorModeDraggingLMBTrigger = false;
+					DebugMenuEditorModeDraggingLMB = false;
+				}
+				if (DebugMenuEditorModeDraggingLMB)
+				{
+					DebugMenuEditorModeDraggingLMBPositionLastDelta = PointCreate(DebugMenuCursorPositionConverted.x - DebugMenuEditorModeDraggingLMBPositionLast.x, DebugMenuCursorPositionConverted.y - DebugMenuEditorModeDraggingLMBPositionLast.y);
+					DebugMenuEditorModeDraggingLMBPositionLast = DebugMenuCursorPositionConverted;
+				}
+
+				// Dragging RMB
+				if (rmbRapid && !DebugMenuEditorModeDraggingRMBTrigger && !DebugMenuEditorModeDraggingRMB)
+				{
+					DebugMenuEditorModeDraggingRMBPosition.x = DebugMenuCursorPositionConverted.x;
+					DebugMenuEditorModeDraggingRMBPosition.y = DebugMenuCursorPositionConverted.y;
+					DebugMenuEditorModeDraggingRMBTrigger = true;
+				}
+				if (rmbRapid && DebugMenuEditorModeDraggingRMBTrigger)
+				{
+					if ((DebugMenuCursorPosition.x > DebugMenuEditorModeDraggingRMBPosition.x + 8 || DebugMenuCursorPosition.x < DebugMenuEditorModeDraggingRMBPosition.x - 8) || (DebugMenuCursorPosition.y > DebugMenuEditorModeDraggingRMBPosition.y + 8 || DebugMenuCursorPosition.y < DebugMenuEditorModeDraggingRMBPosition.y - 8))
+					{
+						// RMB is Dragging
+						DebugMenuEditorModeDraggingRMB = true;
+						DebugMenuEditorModeDraggingRMBTrigger = false;
+						DebugMenuEditorModeDraggingRMBPositionLast = DebugMenuCursorPositionConverted;
+					}
+				}
+				if (!rmbRapid)
+				{
+					if (DebugMenuEditorModeDraggingRMBTrigger && !DebugMenuEditorModeContextMenuShowOpen) pEditorModeActionRightClick(DebugMenuEditorModeDraggingRMBPosition);
+					DebugMenuEditorModeDraggingRMBTrigger = false;
+					DebugMenuEditorModeDraggingRMB = false;
+				}
+				if (DebugMenuEditorModeDraggingRMB)
+				{
+					DebugMenuEditorModeDraggingRMBPositionLastDelta = PointCreate(DebugMenuCursorPositionConverted.x - DebugMenuEditorModeDraggingRMBPositionLast.x, DebugMenuCursorPositionConverted.y - DebugMenuEditorModeDraggingRMBPositionLast.y);
+					DebugMenuEditorModeDraggingRMBPositionLast = DebugMenuCursorPositionConverted;
+					POINT pt;
+					GetClientRect(MainWindowHandle, &MainWindowRect);
+					pt.x = MainWindowRect.left + round(((float)MainWindowRect.right - (float)MainWindowRect.left) / 2.0f);
+					pt.y = MainWindowRect.top + round(((float)MainWindowRect.bottom - (float)MainWindowRect.top) / 2.0f);
+					ClientToScreen(MainWindowHandle, &pt);
+					SetCursorPos(pt.x, pt.y);
+				}
+
+				// Dragging MB
+				if (mbRapid && !DebugMenuEditorModeDraggingMBTrigger && !DebugMenuEditorModeDraggingMB)
+				{
+					DebugMenuEditorModeDraggingMBPosition.x = DebugMenuCursorPositionConverted.x;
+					DebugMenuEditorModeDraggingMBPosition.y = DebugMenuCursorPositionConverted.y;
+					DebugMenuEditorModeDraggingMBTrigger = true;
+				}
+				if (mbRapid && DebugMenuEditorModeDraggingMBTrigger)
+				{
+					if ((DebugMenuCursorPosition.x > DebugMenuEditorModeDraggingMBPosition.x + 8 || DebugMenuCursorPosition.x < DebugMenuEditorModeDraggingMBPosition.x - 8) || (DebugMenuCursorPosition.y > DebugMenuEditorModeDraggingMBPosition.y + 8 || DebugMenuCursorPosition.y < DebugMenuEditorModeDraggingMBPosition.y - 8))
+					{
+						// MB is Dragging
+						DebugMenuEditorModeDraggingMB = true;
+						DebugMenuEditorModeDraggingMBTrigger = false;
+						DebugMenuEditorModeDraggingMBPositionLast = DebugMenuCursorPositionConverted;
+					}
+				}
+				if (!mbRapid)
+				{
+					if (DebugMenuEditorModeDraggingMBTrigger && !DebugMenuEditorModeContextMenuShowOpen) pEditorModeActionMiddleClick(DebugMenuEditorModeDraggingMBPosition);
+					DebugMenuEditorModeDraggingMBTrigger = false;
+					DebugMenuEditorModeDraggingMB = false;
+				}
+				if (DebugMenuEditorModeDraggingMB)
+				{
+					DebugMenuEditorModeDraggingMBPositionLastDelta = PointCreate(DebugMenuCursorPositionConverted.x - DebugMenuEditorModeDraggingMBPositionLast.x, DebugMenuCursorPositionConverted.y - DebugMenuEditorModeDraggingMBPositionLast.y);
+					DebugMenuEditorModeDraggingMBPositionLast = DebugMenuCursorPositionConverted;
+				}
+
+				// Send actions
+				if (!DebugMenuEditorModeContextMenuShowOpen)
+				{
+					if (DebugMenuEditorModeDraggingLMB) pEditorModeActionLeftClickDragging(DebugMenuEditorModeDraggingLMBPosition, DebugMenuCursorPositionConverted, DebugMenuEditorModeDraggingLMBPositionLastDelta);
+					if (DebugMenuEditorModeDraggingRMB) pEditorModeActionRightClickDragging(DebugMenuEditorModeDraggingRMBPosition, DebugMenuCursorPositionConverted, DebugMenuEditorModeDraggingRMBPositionLastDelta);
+					if (DebugMenuEditorModeDraggingMB) pEditorModeActionMiddleClickDragging(DebugMenuEditorModeDraggingMBPosition, DebugMenuCursorPositionConverted, DebugMenuEditorModeDraggingMBPositionLastDelta);
+					if (WKeyRapid) pEditorModeMovementMoveForward();
+					if (AKeyRapid) pEditorModeMovementStrifeLeft();
+					if (SKeyRapid) pEditorModeMovementMoveBackward();
+					if (DKeyRapid) pEditorModeMovementStrifeRight();
+					if (QKeyRapid) pEditorModeMovementMoveDownwards();
+					if (EKeyRapid) pEditorModeMovementMoveUpwards();
+					if (ShiftKeyRapid) pEditorModeActionHoldingShift();
+					if (CtrlKeyRapid && ZKeySingle) pEditorModeActionUndo();
+					if (CtrlKeyRapid && YKeySingle) pEditorModeActionRedo();
+					if (DebugMenuCursorPositionLastDelta.x != 0) pEditorModeMovementMouseXAxis((float)DebugMenuCursorPositionLastDelta.x);
+					if (DebugMenuCursorPositionLastDelta.y != 0) pEditorModeMovementMouseYAxis((float)DebugMenuCursorPositionLastDelta.y);
+					if (wheelupRapid) pEditorModeMovementMouseWheelAxis(1.0f);
+					if (wheeldownRapid) pEditorModeMovementMouseWheelAxis(-1.0f);
+				}
+
+				// Context menu
+				if (!DebugMenuEditorModeContextMenuShowTrigger && rmbRapid && !DebugMenuEditorModeDraggingRMB && !WKeyRapid && !AKeyRapid && !SKeyRapid && !DKeyRapid)
+				{
+					// Save location
+					DebugMenuEditorModeContextMenuPosition.x = (float)DebugMenuCursorPosition.x;
+					DebugMenuEditorModeContextMenuPosition.y = (float)DebugMenuCursorPosition.y;
+
+					if (DebugMenuEditorModeContextMenuPosition.x > 1920 - DebugMenuEditorModeContextMenuMaxWidth) DebugMenuEditorModeContextMenuPosition.x = 1920 - DebugMenuEditorModeContextMenuMaxWidth;
+					if (DebugMenuEditorModeContextMenuPosition.y > 1080 - DebugMenuEditorModeContextMenuMaxHeight) DebugMenuEditorModeContextMenuPosition.y = 1080 - DebugMenuEditorModeContextMenuMaxHeight;
+
+					DebugMenuEditorModeContextMenuShowTrigger = true;
+				}
+				if (DebugMenuEditorModeContextMenuShowTrigger && (DebugMenuEditorModeDraggingRMB || WKeyRapid || AKeyRapid || SKeyRapid || DKeyRapid)) DebugMenuEditorModeContextMenuShowTrigger = false;
+				if (DebugMenuEditorModeContextMenuShowTrigger && !rmbRapid && !DebugMenuEditorModeDraggingRMB && !WKeyRapid && !AKeyRapid && !SKeyRapid && !DKeyRapid)
+				{
+					// Open context menu
+					DebugMenuEditorModeContextMenuEntryIdLayer1 = -1;
+					DebugMenuEditorModeContextMenuEntryIdLayer2 = -1;
+					DebugMenuEditorModeContextMenuShowOpen = true;
+					DebugMenuEditorModeContextMenuShowTrigger = false;
+					DebugMenuEditorModeContextMenuShowTrigger = false;
+				}
+				if (DebugMenuEditorModeContextMenuShowOpen)
+				{
+					// Draw context menu
+					int x = (int)DebugMenuEditorModeContextMenuPosition.x;
+					int y = (int)DebugMenuEditorModeContextMenuPosition.y;
+
+					_DebugDrawRectangle(x - 2, y - 2, DebugMenuEditorModeContextMenuLayer1Width + 4, (DebugEditorModeActions.size() * 27) + 14, ColorBlack, 1.0f);
+					_DebugDrawRectangle(x, y, DebugMenuEditorModeContextMenuLayer1Width, (DebugEditorModeActions.size() * 27) + 10, ColorGray, 1.0f);
+					for (int i = 0; i < DebugEditorModeActions.size(); i++)
+					{
+						_DebugDrawText(DebugEditorModeActions[i].nameParent, x + 6, y + 8 + (i * 27), FontSmallMedium, ColorBlack, 1.0f, "left");
+						_DebugDrawText(">", x + (DebugMenuEditorModeContextMenuLayer1Width - 15), y + 6 + (i * 27), FontSmallMedium, ColorBlack, 1.0f, "center");
+						if (i > 0) _DebugDrawRectangle(x + 10, y + 4 + (i * 27), DebugMenuEditorModeContextMenuLayer1Width - 20, 2, ColorBlack, 1.0f);
+
+						if (DebugMenuEditorModeContextMenuEntryIdLayer1 == -1)
+						{
+							if (DebugMenuCursorPosition.x > x + 10 && DebugMenuCursorPosition.x < x + (DebugMenuEditorModeContextMenuLayer1Width - 10))
+							{
+								if (DebugMenuCursorPosition.y > y + 6 + (i * 27) && DebugMenuCursorPosition.y < y + 6 + ((i + 1) * 27))
+								{
+									DebugMenuEditorModeContextMenuEntryIdLayer1 = i;
+								}
+							}
+						}
+						if (DebugMenuEditorModeContextMenuEntryIdLayer1 > -1)
+						{
+							if (DebugMenuCursorPosition.x > x + 10 && DebugMenuCursorPosition.x < x + (DebugMenuEditorModeContextMenuLayer1Width - 10))
+							{
+								if (DebugMenuCursorPosition.y < y + 6 + (DebugMenuEditorModeContextMenuEntryIdLayer1 * 27) || DebugMenuCursorPosition.y > y + 6 + ((DebugMenuEditorModeContextMenuEntryIdLayer1 + 1) * 27))
+								{
+									DebugMenuEditorModeContextMenuEntryIdLayer1 = -1;
+								}
+							}
+							else if (DebugMenuCursorPosition.x < x + 10 || DebugMenuCursorPosition.x > x + DebugMenuEditorModeContextMenuLayer1Width + DebugMenuEditorModeContextMenuLayer2Width[DebugMenuEditorModeContextMenuEntryIdLayer1] + 80)
+							{
+								DebugMenuEditorModeContextMenuEntryIdLayer1 = -1;
+							}
+						}
+
+						if (DebugMenuEditorModeContextMenuEntryIdLayer1 == i)
+						{
+							_DebugDrawRectangle(x + 4, y + 5 + (i * 27), DebugMenuEditorModeContextMenuLayer1Width - 8, 24, ColorYellow, 0.6f);
+							int x2 = x + DebugMenuEditorModeContextMenuLayer1Width + 2;
+							int y2 = y + 6 + (i * 27);
+							_DebugDrawRectangle(x2 - 2, y2 - 2, DebugMenuEditorModeContextMenuLayer2Width[DebugMenuEditorModeContextMenuEntryIdLayer1] + 4, (DebugEditorModeActions[i].actions.size() * 27) + 14, ColorBlack, 1.0f);
+							_DebugDrawRectangle(x2, y2, DebugMenuEditorModeContextMenuLayer2Width[DebugMenuEditorModeContextMenuEntryIdLayer1], (DebugEditorModeActions[i].actions.size() * 27) + 10, ColorGray, 1.0f);
+
+							for (int k = 0; k < DebugEditorModeActions[i].actions.size(); k++)
+							{
+								_DebugDrawText(DebugEditorModeActions[i].actions[k].nameChild, x2 + 6, y2 + 8 + (k * 27), FontSmallMedium, ColorBlack, 1.0f, "left");
+								if (k > 0) _DebugDrawRectangle(x2 + 10, y2 + 4 + (k * 27), DebugMenuEditorModeContextMenuLayer2Width[i] - 20, 2, ColorBlack, 1.0f);
+
+								if (DebugMenuEditorModeContextMenuEntryIdLayer2 == -1)
+								{
+									if (DebugMenuCursorPosition.x > x2 + 10 && DebugMenuCursorPosition.x < x2 + (DebugMenuEditorModeContextMenuLayer2Width[i] - 10))
+									{
+										if (DebugMenuCursorPosition.y > y2 + 6 + (k * 27) && DebugMenuCursorPosition.y < y2 + 6 + ((k + 1) * 27))
+										{
+											DebugMenuEditorModeContextMenuEntryIdLayer2 = k;
+										}
+									}
+								}
+								if (DebugMenuEditorModeContextMenuEntryIdLayer2 > -1)
+								{
+									if (DebugMenuCursorPosition.x > x2 + 10 && DebugMenuCursorPosition.x < x2 + (DebugMenuEditorModeContextMenuLayer2Width[i] - 10))
+									{
+										if (DebugMenuCursorPosition.y < y2 + 6 + (DebugMenuEditorModeContextMenuEntryIdLayer2 * 27) || DebugMenuCursorPosition.y > y2 + 6 + ((DebugMenuEditorModeContextMenuEntryIdLayer2 + 1) * 27))
+										{
+											DebugMenuEditorModeContextMenuEntryIdLayer2 = -1;
+										}
+									}
+									else if (DebugMenuCursorPosition.x < x2 + 10 || DebugMenuCursorPosition.x > x2 + DebugMenuEditorModeContextMenuLayer2Width[DebugMenuEditorModeContextMenuEntryIdLayer1])
+									{
+										DebugMenuEditorModeContextMenuEntryIdLayer2 = -1;
+									}
+								}
+
+								if (DebugMenuEditorModeContextMenuEntryIdLayer2 == k)
+								{
+									_DebugDrawRectangle(x2 + 4, y2 + 5 + (k * 27), DebugMenuEditorModeContextMenuLayer2Width[i] - 8, 24, ColorYellow, 0.6f);
+								}
+
+							}
+						}
+
+					}
+
+					if (DebugMenuEditorModeContextMenuEntryIdLayer1 == -1 && lmbSingle) DebugMenuEditorModeContextMenuShowOpen = false;
+					if (DebugMenuEditorModeContextMenuEntryIdLayer1 > -1 && DebugMenuEditorModeContextMenuEntryIdLayer2 == -1 && lmbSingle)
+					{
+						if (DebugMenuCursorPosition.x > DebugMenuEditorModeContextMenuPosition.x + DebugMenuEditorModeContextMenuLayer1Width) DebugMenuEditorModeContextMenuShowOpen = false;
+					}
+					if (DebugMenuEditorModeContextMenuEntryIdLayer1 > -1 && DebugMenuEditorModeContextMenuEntryIdLayer2 > -1 && lmbSingle)
+					{
+						// Send Action
+						pEditorModeActionContextAction(&DebugEditorModeActions[DebugMenuEditorModeContextMenuEntryIdLayer1].actions[DebugMenuEditorModeContextMenuEntryIdLayer2]);
+						DebugMenuEditorModeContextMenuShowOpen = false;
+					}
+				}
+			}
+			
+			// Draw debug cursor
+			_DrawCursorToTexture(DebugMenuCursorPosition.x, DebugMenuCursorPosition.y);
+		}
+		else
+		{
+			if (!DebugMenuEditorModeInit)
+			{
+				// Enable
+				RawInputDisableForGame = false;
+				XInput1_4DisableForGame = false;
+				DirectInput8DisableForGame = false;
+
+				// Deactivate editor mode variables
+				DebugMenuEditorModeContextMenuShowTrigger = false;
+				DebugMenuEditorModeContextMenuShowOpen = false;
+				DebugMenuEditorModeContextMenuEntryIdLayer1 = -1;
+				DebugMenuEditorModeContextMenuEntryIdLayer2 = -1;
+				DebugMenuEditorModeCurrentMode = 0;
+
+				DebugMenuEditorModeInit = true;
+			}
+		}
+
+		if (DebugMenuCanDraw || (TASRecordScript && TASRecordFrameByFrame))
+		{
+			DebugMenuCanDraw = false;
+		}
 	}
 
 	_DrawMenu();
@@ -1966,6 +2658,11 @@ void DebugMenuMainRoutine()
 		}
 	}
 
+	if (!TASPlayScript && !TASRecordScript)
+	{
+		// Last cursor position
+		DebugMenuCursorPositionLast = DebugMenuCursorPosition;
+	}
 
 	DebugMenuNotImportantSettingsFrameSkip++;
 	if (DebugMenuNotImportantSettingsFrameSkip >= 5) DebugMenuNotImportantSettingsFrameSkip = 0;

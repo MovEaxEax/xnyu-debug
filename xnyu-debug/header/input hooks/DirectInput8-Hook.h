@@ -42,8 +42,69 @@ DIMOUSESTATE DirectInput8MouseInputState;
 BYTE DirectInput8KeyboardSendState[256];
 BYTE DirectInput8KeyboardInputState[256];
 
+HANDLE DirectInput8ThreadMutex = CreateMutex(NULL, FALSE, NULL);
+
+bool DirectInput8TASSyncStateMouseSet()
+{
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.DirectInput8MouseSend || DirectInput8SendInformation;
+    ReleaseMutex(DirectInput8ThreadMutex);
+    return finished;
+}
+
+bool DirectInput8TASSyncStateMouseGet()
+{
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.DirectInput8MouseGet || DirectInput8GetInformation;
+    ReleaseMutex(DirectInput8ThreadMutex);
+    return finished;
+}
+
+bool DirectInput8TASSyncStateKeyboardSet()
+{
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.DirectInput8KeyboardSend || DirectInput8SendInformation;
+    ReleaseMutex(DirectInput8ThreadMutex);
+    return finished;
+}
+
+bool DirectInput8TASSyncStateKeyboardGet()
+{
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.DirectInput8KeyboardGet || DirectInput8GetInformation;
+    ReleaseMutex(DirectInput8ThreadMutex);
+    return finished;
+}
+
+bool DirectInput8TASSyncStateJoystickSet()
+{
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.DirectInput8JoystickSend || DirectInput8SendInformation;
+    ReleaseMutex(DirectInput8ThreadMutex);
+    return finished;
+}
+
+bool DirectInput8TASSyncStateJoystickGet()
+{
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.DirectInput8JoystickGet || DirectInput8GetInformation;
+    ReleaseMutex(DirectInput8ThreadMutex);
+    return finished;
+}
+
+void DirectInput8TLockMutex()
+{
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
+}
+
+void DirectInput8TReleaseMutex()
+{
+    ReleaseMutex(DirectInput8ThreadMutex);
+}
+
 HRESULT __stdcall DirectInput8Hook(IDirectInputDevice8* pDevice, DWORD cbData, LPVOID lpvData)
 {
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
     if(pDirectInput8_Device != pDevice) pDirectInput8_Device = pDevice;
 
     // Remove hook to restore original function
@@ -62,7 +123,9 @@ HRESULT __stdcall DirectInput8Hook(IDirectInputDevice8* pDevice, DWORD cbData, L
     // TAS routine
     if (GlobalSettings.config_tashook == "directinput8")
     {
+        ReleaseMutex(DirectInput8ThreadMutex);
         pTASRoutine();
+        WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
     }
 
     if (DirectInput8SendInformation)
@@ -205,51 +268,64 @@ HRESULT __stdcall DirectInput8Hook(IDirectInputDevice8* pDevice, DWORD cbData, L
     if (sizeof(void*) == 8) DirectInput8SubHook.Install(DirectInput8OriginalAddress, DirectInput8HookAddress, subhook::HookFlags::HookFlag64BitOffset);
     if (sizeof(void*) == 4) DirectInput8SubHook.Install(DirectInput8OriginalAddress, DirectInput8HookAddress);
 
+    ReleaseMutex(DirectInput8ThreadMutex);
+
     return result;
 }
 
 BOOL DirectInput8HookUninit()
 {
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
     DirectInput8DeviceJoystick->Release();
     pDirectInput_DI8->Release();
     DirectInput8SubHook.Remove();
+    ReleaseMutex(DirectInput8ThreadMutex);
     return true;
 }
 
 void InitPlayDirectInput8TAS()
 {
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
     DirectInput8DisableForGame = true;
     DirectInput8SendInformation = true;
+    ReleaseMutex(DirectInput8ThreadMutex);
 }
 
 void UninitPlayDirectInput8TAS()
 {
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
     DirectInput8DisableForGame = false;
     DirectInput8SendInformation = false;
+    ReleaseMutex(DirectInput8ThreadMutex);
 }
 
 void InitRecordDirectInput8TAS()
 {
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
     if (TASRecordFrameByFrameInputTrigger)
     {
         DirectInput8DisableForGame = true;
         DirectInput8SendInformation = true;
     }
+    ReleaseMutex(DirectInput8ThreadMutex);
 }
 
 void UninitRecordDirectInput8TAS()
 {
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
     if (TASRecordFrameByFrameInputTrigger)
     {
         DirectInput8DisableForGame = false;
         DirectInput8SendInformation = false;
     }
+    ReleaseMutex(DirectInput8ThreadMutex);
 }
 
 
 
 void __stdcall GetDirectInput8(BOOL TAS, GameInput* DST, std::string device)
 {
+    WaitForSingleObject(DirectInput8ThreadMutex, INFINITE);
     if (device == "all") GetDirectInput8DSTAll = DST;
     else if (device == "mouse") GetDirectInput8DSTMouse = DST;
     else if (device == "keyboard") GetDirectInput8DSTKeyboard = DST;
@@ -258,6 +334,7 @@ void __stdcall GetDirectInput8(BOOL TAS, GameInput* DST, std::string device)
     if (TAS)
     {
         DirectInput8GetInformation = true;
+        ReleaseMutex(DirectInput8ThreadMutex);
         return;
     }
 
@@ -406,6 +483,7 @@ void __stdcall GetDirectInput8(BOOL TAS, GameInput* DST, std::string device)
     else if (device == "mouse") std::memcpy(GetDirectInput8DSTMouse, &DirectInput8GameInputCurrent, sizeof(GameInput));
     else if (device == "keyboard") std::memcpy(GetDirectInput8DSTKeyboard, &DirectInput8GameInputCurrent, sizeof(GameInput));
     else if (device == "joystick") std::memcpy(GetDirectInput8DSTJoystick, &DirectInput8GameInputCurrent, sizeof(GameInput));
+    ReleaseMutex(DirectInput8ThreadMutex);
 }
 
 void SetDirectInput8(GameInput DirectInput8GameInput, BOOL TAS)

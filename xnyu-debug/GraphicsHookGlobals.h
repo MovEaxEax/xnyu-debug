@@ -34,8 +34,8 @@ void __stdcall InstallGraphicHook(std::string functionName, void* functionHookBe
 	}
 
 	// Update a specific hook
-	SuspendOtherThreads();
-	Sleep(50);
+	ThreadHookerSuspendThreads(5);
+
 	if (GlobalSettings.config_graphicdriver == "directx12")
 	{
 
@@ -765,8 +765,8 @@ void __stdcall InstallGraphicHook(std::string functionName, void* functionHookBe
 			if (!found) D3D9_CreateQuery<D3D9_CreateQueryT>::instance->install();
 		}
 	}
-	ResumeOtherThreads();
-	Sleep(50);
+
+	ThreadHookerResumeThreads(5);
 }
 
 void __stdcall RemoveGraphicHook(std::string functionName)
@@ -792,8 +792,7 @@ void __stdcall RemoveGraphicHook(std::string functionName)
 			// Probably add mutex in future?
 			// std::lock_guard<std::mutex> lock(GraphicsHookMutex);
 
-			SuspendOtherThreads();
-			Sleep(50);
+			ThreadHookerSuspendThreads(5);
 
 			bool deactivate = true;
 
@@ -1409,8 +1408,7 @@ void __stdcall RemoveGraphicHook(std::string functionName)
 
 			}
 
-			ResumeOtherThreads();
-			Sleep(50);
+			ThreadHookerResumeThreads(5);
 
 			if (deactivate)
 			{
@@ -1423,5 +1421,4 @@ void __stdcall RemoveGraphicHook(std::string functionName)
 	}
 
 }
-
 

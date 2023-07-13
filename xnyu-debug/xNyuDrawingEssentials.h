@@ -19,6 +19,8 @@ unsigned char FormTextureDebugValues[SurfaceTextureDimension];
 unsigned char FormTextureDebugFunctions[SurfaceTextureDimension];
 unsigned char FormTextureSavefileEditor[SurfaceTextureDimension];
 unsigned char FormTextureSavefileEditorSelect[SurfaceTextureDimension];
+unsigned char FormTextureSupervision[SurfaceTextureDimension];
+unsigned char FormTextureEditormode[SurfaceTextureDimension];
 
 // Cursor
 const int CustomCursorTextureWidth = 52;
@@ -40,6 +42,7 @@ unsigned char ColorRed[4] = { 255, 0, 0 };
 unsigned char ColorGreen[4] = { 0, 255, 0 };
 unsigned char ColorDarkGreen[4] = { 0, 190, 0 };
 unsigned char ColorBlue[4] = { 0, 0, 255 };
+unsigned char ColorDarkBlue[4] = { 0, 0, 140 };
 unsigned char ColorBlack[4] = { 0, 0, 0 };
 unsigned char ColorWhite[4] = { 255, 255, 255 };
 unsigned char ColorGray[4] = { 150, 150, 150 };
@@ -56,7 +59,9 @@ enum DEBUGMENUFORM {
     FORM_OVERVIEW = 0,
     FORM_DEBUGVALUES = 1,
     FORM_DEBUGFUNCTIONS = 2,
-    FORM_SAVEFILEEDITOR = 3
+    FORM_SAVEFILEEDITOR = 3,
+    FORM_SUPERVISION = 4,
+    FORM_EDITORMODE = 5
 };
 
 void ClearSurface(DEBUGMENUFORM form, int subform)
@@ -70,6 +75,8 @@ void ClearSurface(DEBUGMENUFORM form, int subform)
         if (subform == 2) memcpy(SurfaceTextureRaw, FormTextureSavefileEditorSelect, SurfaceTextureDimension);
         else memcpy(SurfaceTextureRaw, FormTextureSavefileEditor, SurfaceTextureDimension);
     }
+    if (form == DEBUGMENUFORM::FORM_SUPERVISION) memcpy(SurfaceTextureRaw, FormTextureSupervision, SurfaceTextureDimension);
+    if (form == DEBUGMENUFORM::FORM_EDITORMODE) memcpy(SurfaceTextureRaw, FormTextureEditormode, SurfaceTextureDimension);
 }
 
 void SetTexturePixel(int offset, unsigned char* color, unsigned char alpha)
@@ -278,6 +285,42 @@ void LoadFormTextures()
         }
     }
     free(dataSavefileEditorSelect);
+
+    // Supervision form
+    std::string fileNameSupervision = GlobalSettings.config_settings_directory + "imgs\\" + "Supervision.raw";
+    FILE* fileSupervision = fopen(fileNameSupervision.c_str(), "rb");
+    unsigned char* dataSupervision = (unsigned char*)malloc(SurfaceTextureDimension);
+    fread(dataSupervision, 1, SurfaceTextureDimension, fileSupervision);
+    fclose(fileSupervision);
+    for (int h = 0; h < SurfaceTextureHeight; h++) {
+        for (int w = 0; w < SurfaceTextureWidth; w++) {
+            int pixelT = ((h * SurfaceTextureWidth) + w) * 4;
+            int pixelS = (((SurfaceTextureHeight - h - 1) * SurfaceTextureWidth) + w) * 4;
+            FormTextureSupervision[pixelS + 0] = dataSupervision[pixelT + 0];
+            FormTextureSupervision[pixelS + 1] = dataSupervision[pixelT + 1];
+            FormTextureSupervision[pixelS + 2] = dataSupervision[pixelT + 2];
+            FormTextureSupervision[pixelS + 3] = dataSupervision[pixelT + 3];
+        }
+    }
+    free(dataSupervision);
+
+    // Editor Mode form
+    std::string fileNameEditormode = GlobalSettings.config_settings_directory + "imgs\\" + "EditorMode.raw";
+    FILE* fileEditormode = fopen(fileNameEditormode.c_str(), "rb");
+    unsigned char* dataEditormode = (unsigned char*)malloc(SurfaceTextureDimension);
+    fread(dataEditormode, 1, SurfaceTextureDimension, fileEditormode);
+    fclose(fileEditormode);
+    for (int h = 0; h < SurfaceTextureHeight; h++) {
+        for (int w = 0; w < SurfaceTextureWidth; w++) {
+            int pixelT = ((h * SurfaceTextureWidth) + w) * 4;
+            int pixelS = (((SurfaceTextureHeight - h - 1) * SurfaceTextureWidth) + w) * 4;
+            FormTextureEditormode[pixelS + 0] = dataEditormode[pixelT + 0];
+            FormTextureEditormode[pixelS + 1] = dataEditormode[pixelT + 1];
+            FormTextureEditormode[pixelS + 2] = dataEditormode[pixelT + 2];
+            FormTextureEditormode[pixelS + 3] = dataEditormode[pixelT + 3];
+        }
+    }
+    free(dataEditormode);
 
     // Custom cursor
     std::string fileNameCustomCursor = GlobalSettings.config_settings_directory + "imgs\\" + "CustomCursor.raw";

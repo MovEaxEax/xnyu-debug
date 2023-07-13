@@ -31,10 +31,38 @@ XINPUT_STATE XInput1_4InputState;
 int XInput1_4PacketNumber = 0;
 
 
+HANDLE XInput1_4ThreadMutex = CreateMutex(NULL, FALSE, NULL);
+
+bool XInput1_4TASSyncStateJoystickSet()
+{
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.XInput1_4JoystickSend || GetXInput1_4SendInformation;
+    ReleaseMutex(XInput1_4ThreadMutex);
+    return finished;
+}
+
+bool XInput1_4TASSyncStateJoystickGet()
+{
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.XInput1_4JoystickGet || XInput1_4GetInformation;
+    ReleaseMutex(XInput1_4ThreadMutex);
+    return finished;
+}
+
+void XInput1_4TLockMutex()
+{
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
+}
+
+void XInput1_4TReleaseMutex()
+{
+    ReleaseMutex(XInput1_4ThreadMutex);
+}
 
 DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
     // Remove hook to restore original function
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
     XInput1_4SubHook.Remove();
 
     // The return value of this function
@@ -48,17 +76,23 @@ DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
     if (XInput1_4PacketNumber > 0xDEADBEEF) XInput1_4PacketNumber = 0;
     pState->dwPacketNumber = XInput1_4PacketNumber;
 
+    if (GlobalSettings.config_tashook == "xinput1_4")
+    {
+        ReleaseMutex(XInput1_4ThreadMutex);
+        pTASRoutine();
+        WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
+    }
+
     if (GetXInput1_4SendInformation)
     {
 
-        if(dwUserIndex == 0)
+        if (dwUserIndex == 0)
         {
             result = ERROR_SUCCESS;
             XInput1_4SendState.dwPacketNumber = pState->dwPacketNumber;
             std::memset(pState, 0x00, sizeof(XINPUT_STATE));
-            std::memcpy(pState , &XInput1_4SendState, sizeof(XINPUT_STATE));
+            std::memcpy(pState, &XInput1_4SendState, sizeof(XINPUT_STATE));
 
-            GetXInput1_4SendInformation = false;
             TASSynchronizer.XInput1_4JoystickSend = false;
         }
         else
@@ -66,6 +100,7 @@ DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
             result = pXInput1_4GetState(dwUserIndex, pState);
         }
 
+        GetXInput1_4SendInformation = TASSynchronizer.XInput1_4JoystickSend;
     }
     else
     {
@@ -78,13 +113,16 @@ DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
         else if (XInput1_4DisableForGame)
         {
             std::memset(pState, 0x00, sizeof(XINPUT_STATE));
-            result = ERROR_INVALID_PARAMETER;
+            result = ERROR_SUCCESS;
         }
     }
-
     // Init Hook again
-    if (sizeof(void*) == 8) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress, subhook::HookFlags::HookFlag64BitOffset);
-    if (sizeof(void*) == 4) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress);
+    while (!XInput1_4SubHook.IsInstalled())
+    {
+        if (sizeof(void*) == 8) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress, subhook::HookFlags::HookFlag64BitOffset);
+        if (sizeof(void*) == 4) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress);
+    }
+    ReleaseMutex(XInput1_4ThreadMutex);
 
     return result;
 }
@@ -93,28 +131,35 @@ DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
 
 BOOL XInput1_4HookUninit()
 {
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
     XInput1_4SubHook.Remove();
+    ReleaseMutex(XInput1_4ThreadMutex);
     return true;
 }
 
 void InitPlayXInput1_4TAS()
 {
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
     XInput1_4DisableForGame = true;
     GetXInput1_4SendInformation = true;
     std::memset(&XInput1_4GameInputCurrent, 0x00, sizeof(GameInput));
     std::memset(&XInput1_4GameInputLast, 0x00, sizeof(GameInput));
+    ReleaseMutex(XInput1_4ThreadMutex);
 }
 
 void UninitPlayXInput1_4TAS()
 {
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
     XInput1_4DisableForGame = false;
     GetXInput1_4SendInformation = false;
     std::memset(&XInput1_4GameInputCurrent, 0x00, sizeof(GameInput));
     std::memset(&XInput1_4GameInputLast, 0x00, sizeof(GameInput));
+    ReleaseMutex(XInput1_4ThreadMutex);
 }
 
 void InitRecordXInput1_4TAS()
 {
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
     if (TASRecordFrameByFrameInputTrigger)
     {
         XInput1_4DisableForGame = true;
@@ -122,10 +167,12 @@ void InitRecordXInput1_4TAS()
     }
     std::memset(&XInput1_4GameInputCurrent, 0x00, sizeof(GameInput));
     std::memset(&XInput1_4GameInputLast, 0x00, sizeof(GameInput));
+    ReleaseMutex(XInput1_4ThreadMutex);
 }
 
 void UninitRecordXInput1_4TAS()
 {
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
     if (TASRecordFrameByFrameInputTrigger)
     {
         XInput1_4DisableForGame = false;
@@ -133,17 +180,20 @@ void UninitRecordXInput1_4TAS()
     }
     std::memset(&XInput1_4GameInputCurrent, 0x00, sizeof(GameInput));
     std::memset(&XInput1_4GameInputLast, 0x00, sizeof(GameInput));
+    ReleaseMutex(XInput1_4ThreadMutex);
 }
 
 
 
 void __stdcall GetXInput1_4(BOOL TAS, GameInput* DST, std::string device)
 {
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
     GetXInput1_4DST = DST;
 
     if (TAS)
     {
         XInput1_4GetInformation = true;
+        ReleaseMutex(XInput1_4ThreadMutex);
         return;
     }
 
@@ -180,10 +230,12 @@ void __stdcall GetXInput1_4(BOOL TAS, GameInput* DST, std::string device)
     }
 
     std::memcpy(GetXInput1_4DST, &XInput1_4GameInputCurrent, sizeof(GameInput));
+    ReleaseMutex(XInput1_4ThreadMutex);
 }
 
 void SetXInput1_4(GameInput XInput1_4GameInput, BOOL TAS)
 {
+    WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
     GetXInput1_4TASMode = TAS;
     GetXInput1_4SendInformation = true;
 
@@ -217,13 +269,18 @@ void SetXInput1_4(GameInput XInput1_4GameInput, BOOL TAS)
         XInput1_4SendState.Gamepad.sThumbLX = LAXISX;
         XInput1_4SendState.Gamepad.sThumbLY = LAXISY;
     }
+    ReleaseMutex(XInput1_4ThreadMutex);
 }
 
 BOOL XInput1_4HookInit()
 {
     // Detect the XInput module handle
     HMODULE XInputDllHandle = GetModuleHandleA("xinput1_4.dll");
-    if (XInputDllHandle == NULL) return false;
+    if (XInputDllHandle == NULL)
+    {
+        XInputDllHandle = GetModuleHandleA("xinput1_3.dll");
+        if (XInputDllHandle == NULL) return false;
+    }
 
     pGetXInput1_4 = (GetXInput1_4T)GetXInput1_4;
 
@@ -237,5 +294,8 @@ BOOL XInput1_4HookInit()
 
     return true;
 }
+
+
+
 
 

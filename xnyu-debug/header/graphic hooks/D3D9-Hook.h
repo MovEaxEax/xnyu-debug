@@ -370,10 +370,17 @@ void Draw_D3D9()
 
     HRESULT hr = 0;
 
+    // Get resolution
+    IDirect3DSurface9* backBuffer;
+    pD3D9_Device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
+    D3DSURFACE_DESC surfaceDesc;
+    backBuffer->GetDesc(&surfaceDesc);
+    backBuffer->Release();
+
     int x = 0;
     int y = 0;
-    int w = SurfaceTextureWidth;
-    int h = SurfaceTextureHeight;
+    int w = surfaceDesc.Width;
+    int h = surfaceDesc.Height;
 
     D3DLOCKED_RECT LockedRect;
     
@@ -445,6 +452,8 @@ public:
         // Remove hook
         instance->remove();
 
+        ThreadHookerUpdateThreads();
+
         // TAS routine
         if (GlobalSettings.config_tashook == "graphics")
         {
@@ -459,7 +468,6 @@ public:
 
         // Reinstall Hook
         instance->install();
-
         return Trampoline;
     }
 

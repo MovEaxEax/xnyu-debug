@@ -36,8 +36,69 @@ UINT RawInputSendHeaderBytesNeeded = 0;
 UINT RawInputSendDataBytesNeeded = 0;
 UINT RawInputSendPacketAmount = 0;
 
+HANDLE RawInputThreadMutex = CreateMutex(NULL, FALSE, NULL);
+
+bool RawInputTASSyncStateMouseSet()
+{
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.RawInputMouseSend || GetRawInputSendInformation;
+    ReleaseMutex(RawInputThreadMutex);
+    return finished;
+}
+
+bool RawInputTASSyncStateMouseGet()
+{
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.RawInputMouseGet || GetRawInputGetInformation;
+    ReleaseMutex(RawInputThreadMutex);
+    return finished;
+}
+
+bool RawInputTASSyncStateKeyboardSet()
+{
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.RawInputKeyboardSend || GetRawInputSendInformation;
+    ReleaseMutex(RawInputThreadMutex);
+    return finished;
+}
+
+bool RawInputTASSyncStateKeyboardGet()
+{
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.RawInputKeyboardGet || GetRawInputGetInformation;
+    ReleaseMutex(RawInputThreadMutex);
+    return finished;
+}
+
+bool RawInputTASSyncStateJoystickSet()
+{
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.RawInputJoystickSend || GetRawInputSendInformation;
+    ReleaseMutex(RawInputThreadMutex);
+    return finished;
+}
+
+bool RawInputTASSyncStateJoystickGet()
+{
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
+    bool finished = TASSynchronizer.RawInputJoystickGet || GetRawInputGetInformation;
+    ReleaseMutex(RawInputThreadMutex);
+    return finished;
+}
+
+void RawInputTLockMutex()
+{
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
+}
+
+void RawInputTReleaseMutex()
+{
+    ReleaseMutex(RawInputThreadMutex);
+}
+
 UINT __stdcall GetRawInputData_Hook(HRAWINPUT hRawInput, UINT uiCommand, LPVOID pData, PUINT pcbSize, UINT cbSizeHeader)
 {
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
     RawInputSubhook.Remove();
     
     UINT result = 0;
@@ -145,17 +206,21 @@ UINT __stdcall GetRawInputData_Hook(HRAWINPUT hRawInput, UINT uiCommand, LPVOID 
     if (sizeof(void*) == 8) RawInputSubhook.Install(RawInputOriginalAddress, RawInputHookAddress, subhook::HookFlags::HookFlag64BitOffset);
     if (sizeof(void*) == 4) RawInputSubhook.Install(RawInputOriginalAddress, RawInputHookAddress);
 
+    ReleaseMutex(RawInputThreadMutex);
     return result;
 }
 
 BOOL RawInputHookUninit()
 {
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
     RawInputSubhook.Remove();
+    ReleaseMutex(RawInputThreadMutex);
     return true;
 }
 
 void InitPlayRawInputTAS()
 {
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
     GetRawInputSendInformation = true;
     RawInputDisableForGame = true;
     RawInputBytesNeededBuffer = 0;
@@ -164,10 +229,12 @@ void InitPlayRawInputTAS()
     std::memset(&RawInputGameInputLast, 0x00, sizeof(GameInput));
     std::memset(RawInputBuffer, 0x00, 65000);
     std::memset(RawInputSendBuffer, 0x00, 65000);
+    ReleaseMutex(RawInputThreadMutex);
 }
 
 void UninitPlayRawInputTAS()
 {
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
     GetRawInputSendInformation = false;
     RawInputDisableForGame = false;
     RawInputBytesNeededBuffer = 0;
@@ -176,10 +243,12 @@ void UninitPlayRawInputTAS()
     std::memset(&RawInputGameInputLast, 0x00, sizeof(GameInput));
     std::memset(RawInputBuffer, 0x00, 65000);
     std::memset(RawInputSendBuffer, 0x00, 65000);
+    ReleaseMutex(RawInputThreadMutex);
 }
 
 void InitRecordRawInputTAS()
 {
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
     if (TASRecordFrameByFrameInputTrigger)
     {
         GetRawInputSendInformation = true;
@@ -191,10 +260,12 @@ void InitRecordRawInputTAS()
     std::memset(&RawInputGameInputLast, 0x00, sizeof(GameInput));
     std::memset(RawInputBuffer, 0x00, 65000);
     std::memset(RawInputSendBuffer, 0x00, 65000);
+    ReleaseMutex(RawInputThreadMutex);
 }
 
 void UninitRecordRawInputTAS()
 {
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
     if (TASRecordFrameByFrameInputTrigger)
     {
         GetRawInputSendInformation = false;
@@ -206,10 +277,12 @@ void UninitRecordRawInputTAS()
     std::memset(&RawInputGameInputLast, 0x00, sizeof(GameInput));
     std::memset(RawInputBuffer, 0x00, 65000);
     std::memset(RawInputSendBuffer, 0x00, 65000);
+    ReleaseMutex(RawInputThreadMutex);
 }
 
 void __stdcall GetRawInput(BOOL TAS, GameInput* DST, std::string device)
 {
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
     if (!GlobalSettings.config_rawinput_demand)
     {
         if (TAS)
@@ -220,6 +293,7 @@ void __stdcall GetRawInput(BOOL TAS, GameInput* DST, std::string device)
             else if (device == "joystick") GetRawInputDSTJoystick = DST;
 
             GetRawInputGetInformation = true;
+            ReleaseMutex(RawInputThreadMutex);
             return;
         }
     }
@@ -266,8 +340,8 @@ void __stdcall GetRawInput(BOOL TAS, GameInput* DST, std::string device)
                         if (buttonFlag & RI_MOUSE_BUTTON_5_UP) RawInputGameInputCurrent.ME2 = false;
                         if (buttonFlag & RI_MOUSE_WHEEL)
                         {
-                            if (mouse.usButtonData > (int)(USHRT_MAX / 2)) RawInputGameInputCurrent.WHEEL += -(int)(USHRT_MAX - mouse.usButtonData);
-                            if (mouse.usButtonData < 0) RawInputGameInputCurrent.WHEEL += (int)mouse.usButtonData;
+                            if (mouse.usButtonData > (USHRT_MAX / 2)) RawInputGameInputCurrent.WHEEL += -(int)(USHRT_MAX - mouse.usButtonData);
+                            if (mouse.usButtonData > 0 && mouse.usButtonData < (USHRT_MAX / 2)) RawInputGameInputCurrent.WHEEL += (int)mouse.usButtonData;
                         }
                         RawInputGameInputCurrent.MOUSEX += mouse.lLastX;
                         RawInputGameInputCurrent.MOUSEY += mouse.lLastY;
@@ -507,10 +581,12 @@ void __stdcall GetRawInput(BOOL TAS, GameInput* DST, std::string device)
     else if (device == "mouse") TASSynchronizer.RawInputMouseGet = false;
     else if (device == "keyboard") TASSynchronizer.RawInputKeyboardGet = false;
     else if (device == "joystick") TASSynchronizer.RawInputJoystickGet = false;
+    ReleaseMutex(RawInputThreadMutex);
 }
 
 void SetRawInput(GameInput RawInputGameInput, BOOL TAS)
 {
+    WaitForSingleObject(RawInputThreadMutex, INFINITE);
     GetRawInputSendInformation = true;
 
     if (RawInputSendBufferBytesNeeded > 60000)
@@ -1097,6 +1173,7 @@ void SetRawInput(GameInput RawInputGameInput, BOOL TAS)
     RawInputSendHeaderBytesNeeded = sizeof(RAWINPUTHEADER) * RawInputSendPacketAmount;
 
     std::memcpy(&RawInputGameInputLast, &RawInputGameInput, sizeof(GameInput));
+    ReleaseMutex(RawInputThreadMutex);
 }
 
 

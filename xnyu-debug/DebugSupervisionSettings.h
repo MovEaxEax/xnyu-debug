@@ -1,38 +1,12 @@
 #pragma once
 
-struct DebugAddress {
-    std::string nameParent;
-    std::string nameChild;
-    std::string nameFull;
-    std::vector<std::string> description;
-    Variable value;
-};
+std::vector<FeatureSettingParent> DebugSupervisionSettings;
 
-struct DebugAddressParent {
-    std::string nameParent;
-    std::vector<std::string> description;
-    std::vector<DebugAddress> addresses;
-};
-
-std::vector<DebugAddressParent> DebugAddresses;
-
-bool DebugAddressSortNameParent(DebugAddress a, DebugAddress b) {
-    return a.nameParent < b.nameParent;
-}
-
-bool DebugAddressSortNameChild(DebugAddress a, DebugAddress b) {
-    return a.nameChild < b.nameChild;
-}
-
-bool DebugAddressSortNameFull(DebugAddress a, DebugAddress b) {
-    return a.nameFull < b.nameFull;
-}
-
-bool LoadDebugAddresses()
+bool LoadSupervisionSettings()
 {
     try
     {
-        for (const auto& _file : std::filesystem::directory_iterator(GlobalSettings.config_debugaddress_directory))
+        for (const auto& _file : std::filesystem::directory_iterator(GlobalSettings.config_supervision_directory))
         {
             std::ifstream address_file = std::ifstream(_file.path());
             std::string fileText((std::istreambuf_iterator<char>(address_file)), std::istreambuf_iterator<char>());
@@ -50,7 +24,7 @@ bool LoadDebugAddresses()
             fileText.erase(std::remove(fileText.begin(), fileText.end(), '\n'), fileText.end());
             fileText.erase(std::remove(fileText.begin(), fileText.end(), '\r'), fileText.end());
 
-            DebugAddressParent debugAddressParent;
+            FeatureSettingParent debugSettingParent;
             while (!fileText.empty())
             {
                 size_t braceStart = fileText.find("{");
@@ -59,20 +33,20 @@ bool LoadDebugAddresses()
                 if (braceStart == std::string::npos || braceEnd == std::string::npos) break;
                 if (fileText[0] != ' ' && fileText[0] != '{')
                 {
-                    debugAddressParent = DebugAddressParent();
+                    debugSettingParent = FeatureSettingParent();
 
                     int descStart = fileText.find("[");
                     int descEnd = fileText.find("]");
                     if (descStart != std::string::npos && descEnd != std::string::npos && descStart == 0)
                     {
                         std::string descPayload = fileText.substr(descStart + 1, descEnd - (descStart + 1));
-                        splitStringVector(debugAddressParent.description, descPayload, "#");
+                        splitStringVector(debugSettingParent.description, descPayload, "#");
                         fileText.replace(descStart, (descEnd - descStart) + 1, "");
                     }
 
                     size_t nameStart = fileText.find_first_not_of(' ');
                     size_t nameEnd = fileText.find_first_of('{', nameStart) - 1;
-                    debugAddressParent.nameParent = fileText.substr(nameStart, nameEnd - nameStart + 1);
+                    debugSettingParent.nameParent = fileText.substr(nameStart, nameEnd - nameStart + 1);
                     fileText.erase(0, nameEnd + 2);
 
                     std::string children = fileText.substr(0, fileText.find("}"));
@@ -85,42 +59,63 @@ bool LoadDebugAddresses()
                         std::string childrenTarget = childrenSplitted[i];
                         if (childrenTarget.find("(") == std::string::npos || childrenTarget.find(")") == std::string::npos) return false;
 
-                        DebugAddress debugAddress = DebugAddress();
+                        FeatureSetting featureSetting = FeatureSetting();
                         int descStart = childrenTarget.find("[");
                         int descEnd = childrenTarget.find("]");
                         if (descStart != std::string::npos && descEnd != std::string::npos)
                         {
                             std::string descPayload = childrenTarget.substr(descStart + 1, descEnd - (descStart + 1));
-                            splitStringVector(debugAddress.description, descPayload, "#");
+                            splitStringVector(featureSetting.description, descPayload, "#");
                             childrenTarget.replace(descStart, (descEnd - descStart) + 1, "");
                         }
 
                         nameStart = childrenTarget.find_first_not_of(' ');
                         nameEnd = childrenTarget.find_first_of('(', nameStart) - 1;
-                        debugAddress.nameChild = childrenTarget.substr(nameStart, nameEnd - nameStart + 1);
-                        debugAddress.nameParent = debugAddressParent.nameParent;
-                        debugAddress.nameFull = debugAddressParent.nameParent + "." + debugAddress.nameChild;
+                        featureSetting.nameChild = childrenTarget.substr(nameStart, nameEnd - nameStart + 1);
+                        featureSetting.nameParent = debugSettingParent.nameParent;
+                        featureSetting.nameFull = debugSettingParent.nameParent + "." + featureSetting.nameChild;
 
                         std::string parameter = childrenTarget.substr(nameEnd + 2, childrenTarget.find(")") - (nameEnd + 2));
-                        if (parameter.find(",") != std::string::npos)
+
+                        std::vector<std::string> parameterSplitted;
+                        splitStringVector(parameterSplitted, parameter, ",");
+
+                        bool typeFound = false;
+                        bool widgetFound = false;
+
+                        for (int h = 0; h < parameterSplitted.size(); h++)
                         {
-                            std::vector<std::string> parameterSplitted;
-                            splitStringVector(parameterSplitted, parameter, ",");
-                            for (int h = 0; h < parameterSplitted.size(); h++)
+                            std::string instruction = parameterSplitted[h];
+                            if (!typeFound) if (instruction == "textbox" || instruction == "combobox" || instruction == "checkbox") typeFound = true;
+                            else if(!widgetFound) if (instruction != "textbox" && instruction != "combobox" && instruction != "checkbox") widgetFound = true;
+
+                            if (!typeFound)
                             {
-                                if (parameterSplitted[h] == "hex") debugAddress.value.forceHex = true;
-                                else debugAddress.value.type = parameterSplitted[h];
+                                featureSetting.value = Variable();
+                                featureSetting.value.type = instruction;
+                            }
+                            if (typeFound && !widgetFound && h == 0)
+                            {
+                                featureSetting.type = "checkbox";
+                                featureSetting.value = Variable();
+                                featureSetting.value.type = "bool";
+                            }
+                            if (typeFound && !widgetFound)
+                            {
+                                featureSetting.type = instruction;
+                            }
+                            if (typeFound && widgetFound)
+                            {
+                                Variable comboboxElement = Variable();
+                                comboboxElement.type = featureSetting.value.type;
+                                comboboxElement.value = instruction;
+                                featureSetting.comboboxValues.push_back(comboboxElement);
                             }
                         }
-                        else
-                        {
-                            debugAddress.value.forceHex = false;
-                            debugAddress.value.type = parameter;
-                        }
 
-                        debugAddressParent.addresses.push_back(debugAddress);
+                        debugSettingParent.settings.push_back(featureSetting);
                     }
-                    DebugAddresses.push_back(debugAddressParent);
+                    DebugSupervisionSettings.push_back(debugSettingParent);
                 }
                 if (fileText[0] == '{') return false;
                 fileText.erase(fileText.begin(), std::find_if(fileText.begin(), fileText.end(), [](unsigned char ch) { return !std::isspace(ch); }));

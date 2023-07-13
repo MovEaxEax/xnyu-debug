@@ -44,6 +44,9 @@ EXTERN_DLL_EXPORT int EjectDebugger(char* parameterRaw)
         // Remove the input hooks
         UninitInputHooks();
 
+        // Remove Threadhooker
+        UninitThreadhooker();
+
         // Disable the freezing settings
         SetThreadExecutionState(ES_CONTINUOUS);
 
@@ -183,6 +186,9 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         std::vector<std::string> params;
         splitStringVector(params, parameterString, ";");
 
+        // Hook Thread creation process
+        InitThreadhooker();
+
         // Get main window handle
         MainWindowHandle = find_main_window(GetCurrentProcessId());
 
@@ -194,28 +200,31 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         GlobalSettings.config_debugmod_directory = params[5];
         GlobalSettings.config_debugfunction_directory = params[6];
         GlobalSettings.config_debugaddress_directory = params[7];
-        GlobalSettings.config_inputmapping_directory = params[8];
-        GlobalSettings.config_savefile_directory = params[9];
-        GlobalSettings.config_debugconfig_directory = params[10];
+        GlobalSettings.config_editormode_settings_directory = params[8];
+        GlobalSettings.config_editormode_actions_directory = params[9];
+        GlobalSettings.config_supervision_directory = params[10];
+        GlobalSettings.config_inputmapping_directory = params[11];
+        GlobalSettings.config_savefile_directory = params[12];
+        GlobalSettings.config_debugconfig_directory = params[13];
 
-        GlobalSettings.config_mousedriver_set = params[11];
-        GlobalSettings.config_mousedriver_get = params[12];
-        GlobalSettings.config_keyboarddriver_set = params[13];
-        GlobalSettings.config_keyboarddriver_get = params[14];
-        GlobalSettings.config_joystickdriver_set = params[15];
-        GlobalSettings.config_joystickdriver_get = params[16];
-        GlobalSettings.config_graphicdriver = params[17];
-        GlobalSettings.config_d3d9_hook = params[18];
-        GlobalSettings.config_rawinput_demand = params[19] == "true";
+        GlobalSettings.config_mousedriver_set = params[14];
+        GlobalSettings.config_mousedriver_get = params[15];
+        GlobalSettings.config_keyboarddriver_set = params[16];
+        GlobalSettings.config_keyboarddriver_get = params[17];
+        GlobalSettings.config_joystickdriver_set = params[18];
+        GlobalSettings.config_joystickdriver_get = params[19];
+        GlobalSettings.config_graphicdriver = params[20];
+        GlobalSettings.config_d3d9_hook = params[21];
+        GlobalSettings.config_rawinput_demand = params[22] == "true";
         
-        GlobalSettings.config_modname = params[20];
-        GlobalSettings.config_processname = params[21];
-        GlobalSettings.config_version = params[22];
+        GlobalSettings.config_modname = params[23];
+        GlobalSettings.config_processname = params[24];
+        GlobalSettings.config_version = params[25];
 
-        GlobalSettings.config_tashook = params[23];
+        GlobalSettings.config_tashook = params[26];
 
-        GlobalSettings.config_frame_skip = std::stoi(params[24]);
-        GlobalSettings.config_tas_delay = std::stoi(params[25]);
+        GlobalSettings.config_frame_skip = std::stoi(params[27]);
+        GlobalSettings.config_tas_delay = std::stoi(params[28]);
 
         if (GlobalSettings.config_mousedriver_set == "rawinput") InputDriverMouseSet = InputDriverz::RAW1NPUT;
         if (GlobalSettings.config_mousedriver_set == "directinput8") InputDriverMouseSet = InputDriverz::DIRECT1NPUT8;
@@ -241,11 +250,11 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
 
         if (GlobalSettings.config_joystickdriver_set == "rawinput") InputDriverJoystickSet = InputDriverz::RAW1NPUT;
         if (GlobalSettings.config_joystickdriver_set == "directinput8") InputDriverJoystickSet = InputDriverz::DIRECT1NPUT8;
-        if (GlobalSettings.config_joystickdriver_set == "xinput1_4") InputDriverJoystickSet = InputDriverz::X1NPUT1_4;
+        if (GlobalSettings.config_joystickdriver_set == "xinput1_4" || GlobalSettings.config_joystickdriver_set == "xinput1_3") InputDriverJoystickSet = InputDriverz::X1NPUT1_4;
 
         if (GlobalSettings.config_joystickdriver_get == "rawinput") InputDriverJoystickGet = InputDriverz::RAW1NPUT;
         if (GlobalSettings.config_joystickdriver_get == "directinput8") InputDriverJoystickGet = InputDriverz::DIRECT1NPUT8;
-        if (GlobalSettings.config_joystickdriver_get == "xinput1_4") InputDriverJoystickGet = InputDriverz::X1NPUT1_4;
+        if (GlobalSettings.config_joystickdriver_get == "xinput1_4" || GlobalSettings.config_joystickdriver_get == "xinput1_3") InputDriverJoystickGet = InputDriverz::X1NPUT1_4;
 
         // Detect the maximum hooks
         std::vector<std::string> _allHooks;

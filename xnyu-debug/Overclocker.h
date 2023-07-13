@@ -261,8 +261,7 @@ bool InitOverclocker()
 	GetSystemTimeAsFileTime((LPFILETIME)&OriginalFileTime);
 	GetSystemTimePreciseAsFileTime((LPFILETIME)&OriginalPreciseFileTime);
 
-	SuspendOtherThreads();
-	Sleep(100);
+	ThreadHookerSuspendThreads(5);
 
 	// Detect the module handles
 	HMODULE Kernel32DLLHandle = GetModuleHandleA("Kernel32.dll");
@@ -335,7 +334,7 @@ bool InitOverclocker()
 
 	OverclockerIsActive = true;
 
-	ResumeOtherThreads();
+	ThreadHookerResumeThreads(5);
 
 	return true;
 }
@@ -346,8 +345,7 @@ void UninitOverclocker()
 	{
 		std::lock_guard<std::mutex> lock(OverclockerMutex);
 
-		SuspendOtherThreads();
-		Sleep(50);
+		ThreadHookerSuspendThreads(5);
 
 		bool deactivate = true;
 
@@ -399,11 +397,12 @@ void UninitOverclocker()
 			deactivate = false;
 		}
 
-		ResumeOtherThreads();
-		Sleep(50);
+		ThreadHookerResumeThreads(5);
 
 		if (deactivate) break;
 	}
 
 	OverclockerIsActive = false;
 }
+
+

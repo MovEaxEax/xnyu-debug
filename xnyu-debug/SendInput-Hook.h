@@ -29,7 +29,7 @@ void InitSendInputHook()
     SendInputAmount = 0;
     SendInputActive = false;
     SendInputThreadAlive = true;
-    SendInputThreadHandle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)SendInputThread, 0, 0, 0);
+    SendInputThreadHandle = ThreadHookerCreateThread(0, 0, (LPTHREAD_START_ROUTINE)SendInputThread, 0, 0, 0);
 }
 
 void SendInputHookUninit()

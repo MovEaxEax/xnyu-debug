@@ -129,6 +129,18 @@
     <ClInclude Include="xNyuHooks.h">
       <Filter>Headerdateien\libraries</Filter>
     </ClInclude>
+    <ClInclude Include="Threadhooker.h">
+      <Filter>Headerdateien\components</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugSupervisionSettings.h">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugSettings.h">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugEditorSettings.h">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

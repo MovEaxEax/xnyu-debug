@@ -4,12 +4,15 @@ struct DebugFunction {
     std::string nameParent;
     std::string nameChild;
     std::string nameFull;
+    std::vector<std::string> description;
+    std::string placeholder;
     bool rapid;
     std::vector<Variable> parameter;
 };
 
 struct DebugFunctionParent {
     std::string nameParent;
+    std::vector<std::string> description;
     std::vector<DebugFunction> functions;
 };
 
@@ -26,116 +29,94 @@ bool LoadDebugFunctions()
             address_file.close();
 
             // Delete comments
-            if (fileText.find("//") != std::string::npos) {
-                while (fileText.find("//") != std::string::npos) {
-                    int nIndex = fileText.find("\n", fileText.find("//"));
-                    if (nIndex == std::string::npos) fileText.replace(fileText.find("//"), fileText.length() - fileText.find("//"), "");
-                    else fileText.replace(fileText.find("//"), (nIndex + 1) - fileText.find("//"), "");
-                }
+            size_t commentStart;
+            while ((commentStart = fileText.find("//")) != std::string::npos) {
+                size_t lineEnd = fileText.find("\n", commentStart);
+                fileText.erase(commentStart, lineEnd != std::string::npos ? lineEnd - commentStart + 1 : std::string::npos);
             }
 
-            // Delete hashtags
-            if (fileText.find("#") != std::string::npos) {
-                while (fileText.find("#") != std::string::npos) {
-                    fileText.replace(fileText.find("#"), 1, "");
-                }
-            }
-
-            // Delete tabulators
-            if (fileText.find("\t") != std::string::npos) {
-                while (fileText.find("\t") != std::string::npos) {
-                    fileText.replace(fileText.find("\t"), 1, "");
-                }
-            }
-
-            // Delete line breaks
-            if (fileText.find("\n") != std::string::npos) {
-                while (fileText.find("\n") != std::string::npos) {
-                    fileText.replace(fileText.find("\n"), 1, "");
-                }
-            }
-
-            // Delete line breaks
-            if (fileText.find("\r") != std::string::npos) {
-                while (fileText.find("\r") != std::string::npos) {
-                    fileText.replace(fileText.find("\r"), 1, "");
-                }
-            }
+            // Delete tabs, line breaks, and carriage returns
+            fileText.erase(std::remove(fileText.begin(), fileText.end(), '\t'), fileText.end());
+            fileText.erase(std::remove(fileText.begin(), fileText.end(), '\n'), fileText.end());
+            fileText.erase(std::remove(fileText.begin(), fileText.end(), '\r'), fileText.end());
 
             DebugFunctionParent debugAddressParent;
-            while (fileText.length() > 0)
+            while (!fileText.empty())
             {
-                if (fileText.find("{") == std::string::npos || fileText.find("}") == std::string::npos) break;
+                size_t braceStart = fileText.find("{");
+                size_t braceEnd = fileText.find("}");
+
+                if (braceStart == std::string::npos || braceEnd == std::string::npos) break;
                 if (fileText[0] != ' ' && fileText[0] != '{')
                 {
-                    int index = 0;
-                    int lastCharacterIndex = -1;
-                    int startCharacterIndex = -1;
-                    while (true)
+                    debugAddressParent = DebugFunctionParent();
+
+                    int descStart = fileText.find("[");
+                    int descEnd = fileText.find("]");
+                    if (descStart != std::string::npos && descEnd != std::string::npos && descStart == 0)
                     {
-                        if (fileText[index] != '{' && fileText[index] != ' ' && startCharacterIndex == -1) startCharacterIndex = index;
-                        if (fileText[index] != '{' && fileText[index] != ' ') lastCharacterIndex = index;
-                        if (fileText[index] == '{')
-                        {
-                            if (startCharacterIndex == -1 || lastCharacterIndex == -1) return false;
-                            debugAddressParent = DebugFunctionParent();
-                            debugAddressParent.nameParent = fileText.substr(startCharacterIndex, lastCharacterIndex - startCharacterIndex + 1);
-                            fileText.replace(0, index + 1, "");
-                            break;
-                        }
-                        index++;
+                        std::string descPayload = fileText.substr(descStart + 1, descEnd - (descStart + 1));
+                        splitStringVector(debugAddressParent.description, descPayload, "#");
+                        fileText.replace(descStart, (descEnd - descStart) + 1, "");
                     }
+
+                    size_t nameStart = fileText.find_first_not_of(' ');
+                    size_t nameEnd = fileText.find_first_of('{', nameStart) - 1;
+                    debugAddressParent.nameParent = fileText.substr(nameStart, nameEnd - nameStart + 1);
+                    fileText.erase(0, nameEnd + 2);
+
                     std::string children = fileText.substr(0, fileText.find("}"));
-                    if (children.find(";") == std::string::npos) return false;
-                    fileText.replace(0, fileText.find("}") + 1, "");
+                    fileText.erase(0, children.size() + 1);
                     std::vector<std::string> childrenSplitted;
                     splitStringVector(childrenSplitted, children, ";");
+
                     for (int i = 0; i < childrenSplitted.size() - 1; i++)
                     {
                         std::string childrenTarget = childrenSplitted[i];
                         if (childrenTarget.find("(") == std::string::npos || childrenTarget.find(")") == std::string::npos) return false;
+
                         DebugFunction debugAddress = DebugFunction();
-                        index = 0;
-                        lastCharacterIndex = -1;
-                        startCharacterIndex = -1;
-                        while (true)
+                        int descStart = childrenTarget.find("[");
+                        int descEnd = childrenTarget.find("]");
+                        if (descStart != std::string::npos && descEnd != std::string::npos)
                         {
-                            if (childrenTarget[index] != '(' && childrenTarget[index] != ' ' && startCharacterIndex == -1) startCharacterIndex = index;
-                            if (childrenTarget[index] != '(' && childrenTarget[index] != ' ') lastCharacterIndex = index;
-                            if (childrenTarget[index] == '(')
-                            {
-                                if (startCharacterIndex == -1 || lastCharacterIndex == -1) return false;
-                                debugAddress.nameChild = childrenTarget.substr(startCharacterIndex, lastCharacterIndex - startCharacterIndex + 1);
-                                debugAddress.nameParent = debugAddressParent.nameParent;
-                                debugAddress.nameFull = debugAddressParent.nameParent + "." + debugAddress.nameChild;
-                                std::string types = childrenTarget.substr(index + 1, childrenTarget.find(")") - (index + 1));
-                                std::vector<std::string> typesSplitted;
-                                splitStringVector(typesSplitted, types, ",");
-                                for (int k = 0; k < typesSplitted.size(); k++)
-                                {
-                                    if (typesSplitted[k] == "rapid")
-                                    {
-                                        debugAddress.rapid = true;
-                                    }
-                                    else
-                                    {
-                                        Variable para = Variable();
-                                        para.type = typesSplitted[k];
-                                        debugAddress.parameter.push_back(para);
-                                    }
-                                }
-                                break;
-                            }
-                            index++;
+                            std::string descPayload = childrenTarget.substr(descStart + 1, descEnd - (descStart + 1));
+                            splitStringVector(debugAddress.description, descPayload, "#");
+                            childrenTarget.replace(descStart, (descEnd - descStart) + 1, "");
                         }
+
+                        nameStart = childrenTarget.find_first_not_of(' ');
+                        nameEnd = childrenTarget.find_first_of('(', nameStart) - 1;
+                        debugAddress.nameChild = childrenTarget.substr(nameStart, nameEnd - nameStart + 1);
+                        debugAddress.nameParent = debugAddressParent.nameParent;
+                        debugAddress.nameFull = debugAddressParent.nameParent + "." + debugAddress.nameChild;
+
+                        std::string types = childrenTarget.substr(nameEnd + 2, childrenTarget.find(")") - (nameEnd + 2));
+                        std::vector<std::string> typesSplitted;
+                        splitStringVector(typesSplitted, types, ",");
+
+                        for (int k = 0; k < typesSplitted.size(); k++)
+                        {
+                            if (typesSplitted[k] == "rapid")
+                            {
+                                debugAddress.rapid = true;
+                            }
+                            else
+                            {
+                                Variable para = Variable();
+                                para.type = typesSplitted[k];
+                                debugAddress.placeholder += para.type + (k + 1 < typesSplitted.size() && typesSplitted[k + 1] != "rapid" ? "," : "");
+                                debugAddress.parameter.push_back(para);
+                            }
+                        }
+                        debugAddress.placeholder += "...";
                         debugAddressParent.functions.push_back(debugAddress);
                     }
                     DebugFunctions.push_back(debugAddressParent);
                 }
                 if (fileText[0] == '{') return false;
-                if (fileText[0] == ' ') fileText.replace(0, 1, "");
+                fileText.erase(fileText.begin(), std::find_if(fileText.begin(), fileText.end(), [](unsigned char ch) { return !std::isspace(ch); }));
             }
-
         }
 
         // Add TAS specific functions
@@ -147,6 +128,13 @@ bool LoadDebugFunctions()
         TASPlayScript.parameter[0].type = "string";
         TASPlayScript.parameter[0].value = "none";
         TASPlayScript.rapid = false;
+        TASPlayScript.description.push_back("TAS.PlayScript(string)");
+        TASPlayScript.description.push_back("");
+        TASPlayScript.description.push_back("Run an existing NTL script");
+        TASPlayScript.description.push_back("The script has to be saved in the default script directory");
+        TASPlayScript.description.push_back("Use the '/' to define a subdirectory");
+        TASPlayScript.description.push_back("");
+        TASPlayScript.description.push_back("  - string: Name of the script that get's played");
 
         DebugFunction TASRecordScript = DebugFunction();
         TASRecordScript.nameChild = "RecordScript";
@@ -156,11 +144,22 @@ bool LoadDebugFunctions()
         TASRecordScript.parameter[0].type = "string";
         TASRecordScript.parameter[0].value = "none";
         TASRecordScript.rapid = false;
+        TASRecordScript.description.push_back("TAS.RecordScript(string)");
+        TASRecordScript.description.push_back("");
+        TASRecordScript.description.push_back("Start a new recording of a NTL script");
+        TASRecordScript.description.push_back("Scripts are saved in the default script directory");
+        TASRecordScript.description.push_back("Use the '/' to define a subdirectory");
+        TASRecordScript.description.push_back("If no name is defined, it uses the default name format (current time)");
+        TASRecordScript.description.push_back("");
+        TASRecordScript.description.push_back("  - string: Name of the script that get's recorded (Optional)");
 
         DebugFunctionParent TASParent = DebugFunctionParent();
         TASParent.nameParent = "TAS";
         TASParent.functions.push_back(TASPlayScript);
         TASParent.functions.push_back(TASRecordScript);
+        TASParent.description.push_back("- TAS -");
+        TASParent.description.push_back("");
+        TASParent.description.push_back("Communicate with the internal functions to control TAS");
         DebugFunctions.push_back(TASParent);
 
         // Add DebugMenu specific functions
@@ -172,6 +171,13 @@ bool LoadDebugFunctions()
         DBGSetHotkeySlot.parameter[0].type = "int32";
         DBGSetHotkeySlot.parameter[0].value = "none";
         DBGSetHotkeySlot.rapid = false;
+        DBGSetHotkeySlot.description.push_back("DebugMenu.SetHotkeySlot(int32)");
+        DBGSetHotkeySlot.description.push_back("");
+        DBGSetHotkeySlot.description.push_back("Set the current selected Hotkey slot to an absolute value");
+        DBGSetHotkeySlot.description.push_back("");
+        DBGSetHotkeySlot.description.push_back("Value must be between 1 and 8");
+        DBGSetHotkeySlot.description.push_back("");
+        DBGSetHotkeySlot.description.push_back("  - int32: The new slot index");
 
         DebugFunction DBGChangeHotkeySlot = DebugFunction();
         DBGChangeHotkeySlot.nameChild = "ChangeHotkeySlot";
@@ -181,6 +187,11 @@ bool LoadDebugFunctions()
         DBGChangeHotkeySlot.parameter[0].type = "int32";
         DBGChangeHotkeySlot.parameter[0].value = "none";
         DBGChangeHotkeySlot.rapid = false;
+        DBGChangeHotkeySlot.description.push_back("DebugMenu.ChangeHotkeySlot(int32)");
+        DBGChangeHotkeySlot.description.push_back("");
+        DBGChangeHotkeySlot.description.push_back("Change the current selected Hotkey slot by a relative value");
+        DBGChangeHotkeySlot.description.push_back("");
+        DBGChangeHotkeySlot.description.push_back("  - int32: The amount of slots you want to jump");
 
         DebugFunction DBGEnablePerformancemode = DebugFunction();
         DBGEnablePerformancemode.nameChild = "EnablePerformancemode";
@@ -190,6 +201,13 @@ bool LoadDebugFunctions()
         DBGEnablePerformancemode.parameter[0].type = "bool";
         DBGEnablePerformancemode.parameter[0].value = "none";
         DBGEnablePerformancemode.rapid = false;
+        DBGEnablePerformancemode.description.push_back("DebugMenu.EnablePerformancemode(bool)");
+        DBGEnablePerformancemode.description.push_back("");
+        DBGEnablePerformancemode.description.push_back("Enable/Disable the Performance mode");
+        DBGEnablePerformancemode.description.push_back("");
+        DBGEnablePerformancemode.description.push_back("If the boolean is blank, this function can be used as a toggle");
+        DBGEnablePerformancemode.description.push_back("");
+        DBGEnablePerformancemode.description.push_back("  - bool: Enable/Disable (Optional)");
 
         DebugFunction DBGEnableDebugValues = DebugFunction();
         DBGEnableDebugValues.nameChild = "EnableDebugValues";
@@ -199,6 +217,13 @@ bool LoadDebugFunctions()
         DBGEnableDebugValues.parameter[0].type = "bool";
         DBGEnableDebugValues.parameter[0].value = "none";
         DBGEnableDebugValues.rapid = false;
+        DBGEnableDebugValues.description.push_back("DebugMenu.EnableDebugValues(bool)");
+        DBGEnableDebugValues.description.push_back("");
+        DBGEnableDebugValues.description.push_back("Enable/Disable the Debug Values mode");
+        DBGEnableDebugValues.description.push_back("");
+        DBGEnableDebugValues.description.push_back("If the boolean is blank, this function can be used as a toggle");
+        DBGEnableDebugValues.description.push_back("");
+        DBGEnableDebugValues.description.push_back("  - bool: Enable/Disable (Optional)");
 
         DebugFunction DBGEnableCursorPosition = DebugFunction();
         DBGEnableCursorPosition.nameChild = "EnableCursorPosition";
@@ -208,6 +233,13 @@ bool LoadDebugFunctions()
         DBGEnableCursorPosition.parameter[0].type = "bool";
         DBGEnableCursorPosition.parameter[0].value = "none";
         DBGEnableCursorPosition.rapid = false;
+        DBGEnableCursorPosition.description.push_back("DebugMenu.CursorPosition(bool)");
+        DBGEnableCursorPosition.description.push_back("");
+        DBGEnableCursorPosition.description.push_back("Enable/Disable the Cursor Position mode");
+        DBGEnableCursorPosition.description.push_back("");
+        DBGEnableCursorPosition.description.push_back("If the boolean is blank, this function can be used as a toggle");
+        DBGEnableCursorPosition.description.push_back("");
+        DBGEnableCursorPosition.description.push_back("  - bool: Enable/Disable (Optional)");
 
         DebugFunction DBGEnableHotkeyOverlay = DebugFunction();
         DBGEnableHotkeyOverlay.nameChild = "EnableHotkeyOverlay";
@@ -217,6 +249,45 @@ bool LoadDebugFunctions()
         DBGEnableHotkeyOverlay.parameter[0].type = "bool";
         DBGEnableHotkeyOverlay.parameter[0].value = "none";
         DBGEnableHotkeyOverlay.rapid = false;
+        DBGEnableHotkeyOverlay.description.push_back("DebugMenu.HotkeyOverlay(bool)");
+        DBGEnableHotkeyOverlay.description.push_back("");
+        DBGEnableHotkeyOverlay.description.push_back("Enable/Disable the Hotkey overlay");
+        DBGEnableHotkeyOverlay.description.push_back("");
+        DBGEnableHotkeyOverlay.description.push_back("If the boolean is blank, this function can be used as a toggle");
+        DBGEnableHotkeyOverlay.description.push_back("");
+        DBGEnableHotkeyOverlay.description.push_back("  - bool: Enable/Disable (Optional)");
+
+        DebugFunction DBGEnableSupervision = DebugFunction();
+        DBGEnableSupervision.nameChild = "EnableSupervision";
+        DBGEnableSupervision.nameFull = "DebugMenu.EnableSupervision";
+        DBGEnableSupervision.nameParent = "DebugMenu";
+        DBGEnableSupervision.parameter.push_back(Variable());
+        DBGEnableSupervision.parameter[0].type = "bool";
+        DBGEnableSupervision.parameter[0].value = "none";
+        DBGEnableSupervision.rapid = false;
+        DBGEnableSupervision.description.push_back("DebugMenu.EnableSupervision(bool)");
+        DBGEnableSupervision.description.push_back("");
+        DBGEnableSupervision.description.push_back("Enable/Disable the Supervision mode");
+        DBGEnableSupervision.description.push_back("");
+        DBGEnableSupervision.description.push_back("If the boolean is blank, this function can be used as a toggle");
+        DBGEnableSupervision.description.push_back("");
+        DBGEnableSupervision.description.push_back("  - bool: Enable/Disable (Optional)");
+
+        DebugFunction DBGEnableEditorMode = DebugFunction();
+        DBGEnableEditorMode.nameChild = "EnableEditorMode";
+        DBGEnableEditorMode.nameFull = "DebugMenu.EnableEditorMode";
+        DBGEnableEditorMode.nameParent = "DebugMenu";
+        DBGEnableEditorMode.parameter.push_back(Variable());
+        DBGEnableEditorMode.parameter[0].type = "bool";
+        DBGEnableEditorMode.parameter[0].value = "none";
+        DBGEnableEditorMode.rapid = false;
+        DBGEnableEditorMode.description.push_back("DebugMenu.EnableEditorMode(bool)");
+        DBGEnableEditorMode.description.push_back("");
+        DBGEnableEditorMode.description.push_back("Enable/Disable the Editor mode");
+        DBGEnableEditorMode.description.push_back("");
+        DBGEnableEditorMode.description.push_back("If the boolean is blank, this function can be used as a toggle");
+        DBGEnableEditorMode.description.push_back("");
+        DBGEnableEditorMode.description.push_back("  - bool: Enable/Disable (Optional)");
 
         DebugFunctionParent DBGParent = DebugFunctionParent();
         DBGParent.nameParent = "DebugMenu";
@@ -226,8 +297,12 @@ bool LoadDebugFunctions()
         DBGParent.functions.push_back(DBGEnableDebugValues);
         DBGParent.functions.push_back(DBGEnableCursorPosition);
         DBGParent.functions.push_back(DBGEnableHotkeyOverlay);
+        DBGParent.functions.push_back(DBGEnableSupervision);
+        DBGParent.functions.push_back(DBGEnableEditorMode);
+        DBGParent.description.push_back("- DebugMenu -");
+        DBGParent.description.push_back("");
+        DBGParent.description.push_back("Communicate with the internal functions of the Debug Menu");
         DebugFunctions.push_back(DBGParent);
-
    }
     catch (const std::exception& e)
     {

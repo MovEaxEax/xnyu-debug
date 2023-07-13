@@ -1556,27 +1556,27 @@ bool __stdcall PlayScriptRoutine() {
         if (TASPlayScript && !TASPlayScriptUninit) {
             bool TASPlayCanExecute = true;
 
-            if (InputDriverMouseSet != InputDriverz::N0NE)
+            if (!TASIgnoreMouseInput && InputDriverMouseSet != InputDriverz::N0NE)
             {
-                if (InputDriverMouseSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputMouseSend || GetRawInputSendInformation)) TASPlayCanExecute = false;
-                if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8MouseSend || DirectInput8SendInformation)) TASPlayCanExecute = false;
+                if (InputDriverMouseSet == InputDriverz::RAW1NPUT && RawInputTASSyncStateMouseSet()) TASPlayCanExecute = false;
+                if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 && DirectInput8TASSyncStateMouseSet()) TASPlayCanExecute = false;
                 if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAMouseSend) TASPlayCanExecute = false;
                 if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWMouseSend) TASPlayCanExecute = false;
                 if (InputDriverMouseSet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputMouseSend) TASPlayCanExecute = false;
             }
             if (InputDriverKeyboardSet != InputDriverz::N0NE)
             {
-                if (InputDriverKeyboardSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputKeyboardSend || GetRawInputSendInformation)) TASPlayCanExecute = false;
-                if (InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8KeyboardSend || DirectInput8SendInformation)) TASPlayCanExecute = false;
+                if (InputDriverKeyboardSet == InputDriverz::RAW1NPUT && RawInputTASSyncStateKeyboardSet()) TASPlayCanExecute = false;
+                if (InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 && DirectInput8TASSyncStateKeyboardSet()) TASPlayCanExecute = false;
                 if (InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAKeyboardSend) TASPlayCanExecute = false;
                 if (InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWKeyboardSend) TASPlayCanExecute = false;
                 if (InputDriverKeyboardSet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputKeyboardSend) TASPlayCanExecute = false;
             }
             if (InputDriverJoystickSet != InputDriverz::N0NE)
             {
-                if (InputDriverJoystickSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputJoystickSend || GetRawInputSendInformation)) TASPlayCanExecute = false;
-                if (InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8JoystickSend || DirectInput8SendInformation)) TASPlayCanExecute = false;
-                if (InputDriverJoystickSet == InputDriverz::X1NPUT1_4 && (TASSynchronizer.XInput1_4JoystickSend || GetXInput1_4SendInformation)) TASPlayCanExecute = false;
+                if (InputDriverJoystickSet == InputDriverz::RAW1NPUT && RawInputTASSyncStateJoystickSet()) TASPlayCanExecute = false;
+                if (InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8 && DirectInput8TASSyncStateJoystickSet()) TASPlayCanExecute = false;
+                if (InputDriverJoystickSet == InputDriverz::X1NPUT1_4 && XInput1_4TASSyncStateJoystickSet()) TASPlayCanExecute = false;
             }
 
             if (TASPlaySkipFirstSync)
@@ -1587,6 +1587,8 @@ bool __stdcall PlayScriptRoutine() {
 
             if (TASPlayCanExecute)
             {
+                ThreadHookerSuspendThreads();
+
                 std::memcpy(&TASInputLast, &TASInputCurrent, sizeof(GameInput));
                 std::memset(&TASInputCurrent, 0x00, sizeof(GameInput));
                 std::memset(&TASInputMouse, 0x00, sizeof(GameInput));
@@ -1623,7 +1625,6 @@ bool __stdcall PlayScriptRoutine() {
                         TASSynchronizer.SendInputMouseSend = true;
 
                         SetTASInput(TASInputCurrent);
-                        Sleep(5);
 
                         break;
                     }
@@ -1645,7 +1646,9 @@ bool __stdcall PlayScriptRoutine() {
                 }
 
                 TASFramesPassed++;
+                ThreadHookerResumeThreads();
             }
+
             if (!TASPlayScriptUninit) return true;
         }
 
@@ -1729,35 +1732,34 @@ bool __stdcall RecordScriptRoutine() {
             TASRecordSkipFirstSync = true;
         }
 
+
         if (TASRecordScript && !TASRecordScriptUninit) {
 
             if (TASRecordFrameByFrame)
             {
                 bool TASRecordCanExecute = true;
 
-                Sleep(1);
-
-                if (InputDriverMouseSet != InputDriverz::N0NE)
+                if (!TASIgnoreMouseInput && InputDriverMouseSet != InputDriverz::N0NE)
                 {
-                    if (InputDriverMouseSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputMouseSend || GetRawInputSendInformation)) TASRecordCanExecute = false;
-                    if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8MouseSend || DirectInput8SendInformation)) TASRecordCanExecute = false;
+                    if (InputDriverMouseSet == InputDriverz::RAW1NPUT && RawInputTASSyncStateMouseSet()) TASRecordCanExecute = false;
+                    if (InputDriverMouseSet == InputDriverz::DIRECT1NPUT8 && DirectInput8TASSyncStateMouseSet()) TASRecordCanExecute = false;
                     if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAMouseSend) TASRecordCanExecute = false;
                     if (InputDriverMouseSet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWMouseSend) TASRecordCanExecute = false;
                     if (InputDriverMouseSet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputMouseSend) TASRecordCanExecute = false;
                 }
                 if (InputDriverKeyboardSet != InputDriverz::N0NE)
                 {
-                    if (InputDriverKeyboardSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputKeyboardSend || GetRawInputSendInformation)) TASRecordCanExecute = false;
-                    if (InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8KeyboardSend || DirectInput8SendInformation)) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardSet == InputDriverz::RAW1NPUT && RawInputTASSyncStateKeyboardSet()) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardSet == InputDriverz::DIRECT1NPUT8 && DirectInput8TASSyncStateKeyboardSet()) TASRecordCanExecute = false;
                     if (InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAKeyboardSend) TASRecordCanExecute = false;
                     if (InputDriverKeyboardSet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWKeyboardSend) TASRecordCanExecute = false;
                     if (InputDriverKeyboardSet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputKeyboardSend) TASRecordCanExecute = false;
                 }
                 if (InputDriverJoystickSet != InputDriverz::N0NE)
                 {
-                    if (InputDriverJoystickSet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputJoystickSend || GetRawInputSendInformation)) TASRecordCanExecute = false;
-                    if (InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8JoystickSend || DirectInput8SendInformation)) TASRecordCanExecute = false;
-                    if (InputDriverJoystickSet == InputDriverz::X1NPUT1_4 && (TASSynchronizer.XInput1_4JoystickSend || GetXInput1_4SendInformation)) TASRecordCanExecute = false;
+                    if (InputDriverJoystickSet == InputDriverz::RAW1NPUT && RawInputTASSyncStateJoystickSet()) TASRecordCanExecute = false;
+                    if (InputDriverJoystickSet == InputDriverz::DIRECT1NPUT8 && DirectInput8TASSyncStateJoystickSet()) TASRecordCanExecute = false;
+                    if (InputDriverJoystickSet == InputDriverz::X1NPUT1_4 && XInput1_4TASSyncStateJoystickSet()) TASRecordCanExecute = false;
                 }
 
                 if (TASPlaySkipFirstSync)
@@ -1768,6 +1770,8 @@ bool __stdcall RecordScriptRoutine() {
 
                 if (TASRecordCanExecute)
                 {
+                    ThreadHookerSuspendThreads();
+
                     while (TASRecordFrameReceived == "" && !TASRecordScriptUninit)
                     {
                         Sleep(3);
@@ -1849,7 +1853,6 @@ bool __stdcall RecordScriptRoutine() {
                         TASSynchronizer.SendInputMouseSend = true;
 
                         SetTASInput(TASInputCurrent);
-                        Sleep(5);
 
                         // Synchronize with the drivers
                         TASSynchronizerFinishedCurrent = 0;
@@ -1857,55 +1860,71 @@ bool __stdcall RecordScriptRoutine() {
                         TASRecordFrameReceived = "";
                         TASFramesPassed++;
                     }
+
+                    ThreadHookerResumeThreads();
                 }
             }
             else
             {
                 bool TASRecordCanExecute = true;
-                
+
                 if (!TASIgnoreMouseInput && InputDriverMouseGet != InputDriverz::N0NE)
                 {
-                    if (InputDriverMouseGet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputMouseGet || GetRawInputGetInformation)) TASRecordCanExecute = false;
-                    if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8MouseGet || DirectInput8GetInformation)) TASRecordCanExecute = false;
+                    if (InputDriverMouseGet == InputDriverz::RAW1NPUT && RawInputTASSyncStateMouseGet()) TASRecordCanExecute = false;
+                    if (InputDriverMouseGet == InputDriverz::DIRECT1NPUT8 && DirectInput8TASSyncStateMouseGet()) TASRecordCanExecute = false;
                     if (InputDriverMouseGet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAMouseGet) TASRecordCanExecute = false;
                     if (InputDriverMouseGet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWMouseGet) TASRecordCanExecute = false;
                     if (InputDriverMouseGet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputMouseGet) TASRecordCanExecute = false;
                 }
                 if (InputDriverKeyboardGet != InputDriverz::N0NE)
                 {
-                    if (InputDriverKeyboardGet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputKeyboardGet || GetRawInputGetInformation)) TASRecordCanExecute = false;
-                    if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8KeyboardGet || DirectInput8GetInformation)) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardGet == InputDriverz::RAW1NPUT && RawInputTASSyncStateKeyboardGet()) TASRecordCanExecute = false;
+                    if (InputDriverKeyboardGet == InputDriverz::DIRECT1NPUT8 && DirectInput8TASSyncStateKeyboardGet()) TASRecordCanExecute = false;
                     if (InputDriverKeyboardGet == InputDriverz::G3TM3SSAGEA && TASSynchronizer.GetMessageAKeyboardGet) TASRecordCanExecute = false;
                     if (InputDriverKeyboardGet == InputDriverz::G3TM3SSAGEW && TASSynchronizer.GetMessageWKeyboardGet) TASRecordCanExecute = false;
                     if (InputDriverKeyboardGet == InputDriverz::S3ND1NPUT && TASSynchronizer.SendInputKeyboardGet) TASRecordCanExecute = false;
                 }
                 if (InputDriverJoystickGet != InputDriverz::N0NE)
                 {
-                    if (InputDriverJoystickGet == InputDriverz::RAW1NPUT && (TASSynchronizer.RawInputJoystickGet || GetRawInputGetInformation)) TASRecordCanExecute = false;
-                    if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8 && (TASSynchronizer.DirectInput8JoystickGet || DirectInput8GetInformation)) TASRecordCanExecute = false;
-                    if (InputDriverJoystickGet == InputDriverz::X1NPUT1_4 && (TASSynchronizer.XInput1_4JoystickSend || XInput1_4GetInformation)) TASRecordCanExecute = false;
+                    if (InputDriverJoystickGet == InputDriverz::RAW1NPUT && RawInputTASSyncStateJoystickGet()) TASRecordCanExecute = false;
+                    if (InputDriverJoystickGet == InputDriverz::DIRECT1NPUT8 && DirectInput8TASSyncStateJoystickGet()) TASRecordCanExecute = false;
+                    if (InputDriverJoystickGet == InputDriverz::X1NPUT1_4 && XInput1_4TASSyncStateJoystickGet()) TASRecordCanExecute = false;
                 }
 
                 if (TASPlaySkipFirstSync)
                 {
                     TASRecordCanExecute = true;
-                    TASPlaySkipFirstSync = false;
                 }
                 else
                 {
                     if (TASRecordCanExecute)
                     {
+                        std::cout << "aaa" << std::endl;
+                        ThreadHookerSuspendThreads();
+                        std::cout << "bbb" << std::endl;
                         std::memcpy(&TASInputLast, &TASInputCurrent, sizeof(GameInput));
+                        std::cout << "ccc" << std::endl;
                         std::memset(&TASInputCurrent, 0x00, sizeof(GameInput));
+                        std::cout << "ddd" << std::endl;
                         MergeGameInputs(&TASInputCurrent, &TASInputMouse, &TASInputKeyboard, &TASInputJoystick);
+                        std::cout << "eee" << std::endl;
                         std::string RecordFrame = GameInputToFrame(&TASInputCurrent);
+                        std::cout << "fff" << std::endl;
                         TASRecordScriptStream << RecordFrame << std::endl;
+                        std::cout << "ggg" << std::endl;
                         TASFramesPassed++;
+                        std::cout << "hhh" << std::endl;
                     }
                 }
 
                 if (TASRecordCanExecute)
                 {
+                    if (TASPlaySkipFirstSync)
+                    {
+                        ThreadHookerSuspendThreads();
+                        TASPlaySkipFirstSync = false;
+                    }
+
                     TASSynchronizer.RawInputKeyboardGet = true;
                     TASSynchronizer.RawInputMouseGet = true;
                     TASSynchronizer.RawInputJoystickGet = true;
@@ -1921,12 +1940,17 @@ bool __stdcall RecordScriptRoutine() {
                     TASSynchronizer.SendInputMouseGet = true;
 
                     GetTASInput();
-                    Sleep(5);
+
+                    ThreadHookerResumeThreads();
                 }
             }
 
-            if (!TASRecordScriptUninit) return true;
+            if (!TASRecordScriptUninit)
+            {
+                return true;
+            }
         }
+
 
         if (TASRecordScriptUninit) {
             DebugConsoleOutput("TAS Record: Exit recording", false, "green");

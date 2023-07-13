@@ -22,9 +22,15 @@
 #include <thread>
 #include <mutex>
 #include <functional>
+#include <unordered_set>
+#include <regex>
+#include <optional>
 
 #include <mmsystem.h>
 #pragma comment (lib,"winmm.lib")
+
+#include <Processthreadsapi.h>
+#pragma comment(lib, "Kernel32.lib")
 
 #include <objidl.h>
 #include <gdiplus.h>
@@ -33,8 +39,6 @@
 #define SUBHOOK_STATIC
 #include <subhook.h>
 #include "subhook.c"
-#include <regex>
-
 
 
 
@@ -68,6 +72,9 @@ struct DebugSettings {
     std::string config_debugmod_directory;
     std::string config_debugfunction_directory;
     std::string config_debugaddress_directory;
+    std::string config_editormode_settings_directory;
+    std::string config_editormode_actions_directory;
+    std::string config_supervision_directory;
     std::string config_inputmapping_directory;
     std::string config_savefile_directory;
     std::string config_debugconfig_directory;
@@ -81,6 +88,7 @@ struct DebugFeatures
     bool debugFunction;
     bool savefileEditor;
     bool supervision;
+    bool editorMode;
 };
 
 struct DebugReferences
@@ -92,6 +100,41 @@ struct DebugReferences
     void* installGraphicsHook;
     void* removeGraphicsHook;
 };
+
+struct ThreadReferences
+{
+    void* ThreadHookerGetThreadCount;
+    void* ThreadHookerGetThreads;
+    void* ThreadHookerGetSafeThreadCount;
+    void* ThreadHookerGetSafeThreads;
+    void* ThreadHookerSuspendThreads;
+    void* ThreadHookerResumeThreads;
+    void* ThreadHookerCreateThread;
+    void* ThreadHookerCreateRemoteThread;
+    void* ThreadHookerCreateRemoteThreadEx;
+};
+
+struct Point
+{
+    float x;
+    float y;
+};
+
+Point PointConversion(POINT point)
+{
+    Point newPoint = Point();
+    newPoint.x = (float)point.x;
+    newPoint.y = (float)point.y;
+    return newPoint;
+}
+
+Point PointCreate(float x, float y)
+{
+    Point newPoint = Point();
+    newPoint.x = x;
+    newPoint.y = y;
+    return newPoint;
+}
 
 //
 // Globals -------------------------------------------------------------------------
@@ -120,6 +163,7 @@ BOOL MainWindowActive = false;
 
 DebugSettings GlobalSettings;
 DebugReferences GlobalReferences;
+ThreadReferences ThreadHookerReferences;
 int GlobalFrameSkipCurrent = 0;
 
 void __cdecl DebugConsoleOutput(std::string text, bool dev, std::string color = "white")
@@ -274,57 +318,6 @@ uintptr_t GetModuleBaseAddress(DWORD procId, const wchar_t* modName)
     return modBaseAddr;
 }
 
-void SuspendOtherThreads() {
-    DWORD currentThreadId = GetCurrentThreadId();
-    HANDLE hThreadSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-    if (hThreadSnapshot == INVALID_HANDLE_VALUE) {
-        return;
-    }
-
-    THREADENTRY32 threadEntry;
-    threadEntry.dwSize = sizeof(THREADENTRY32);
-
-    if (Thread32First(hThreadSnapshot, &threadEntry)) {
-        do {
-            if (threadEntry.th32OwnerProcessID == GetCurrentProcessId() &&
-                threadEntry.th32ThreadID != currentThreadId) {
-                HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadEntry.th32ThreadID);
-                if (hThread != NULL) {
-                    SuspendThread(hThread);
-                    CloseHandle(hThread);
-                }
-            }
-        } while (Thread32Next(hThreadSnapshot, &threadEntry));
-    }
-
-    CloseHandle(hThreadSnapshot);
-}
-
-void ResumeOtherThreads() {
-    DWORD currentThreadId = GetCurrentThreadId();
-    HANDLE hThreadSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-    if (hThreadSnapshot == INVALID_HANDLE_VALUE) {
-        return;
-    }
-
-    THREADENTRY32 threadEntry;
-    threadEntry.dwSize = sizeof(THREADENTRY32);
-
-    if (Thread32First(hThreadSnapshot, &threadEntry)) {
-        do {
-            if (threadEntry.th32OwnerProcessID == GetCurrentProcessId() &&
-                threadEntry.th32ThreadID != currentThreadId) {
-                HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadEntry.th32ThreadID);
-                if (hThread != NULL) {
-                    ResumeThread(hThread);
-                    CloseHandle(hThread);
-                }
-            }
-        } while (Thread32Next(hThreadSnapshot, &threadEntry));
-    }
-
-    CloseHandle(hThreadSnapshot);
-}
 
 
 //
@@ -957,13 +950,18 @@ std::string GetCurrentDateTime() {
 
 // Special
 #include "xNyuHooks.h"
+#include "Threadhooker.h"
 #include "WindowStayActive.h"
 #include "Overclocker.h"
 
 // Debug mod
 #include "xNyuVariables.h"
+#include "DebugSettings.h"
 #include "DebugAddresses.h"
 #include "DebugFunctions.h"
+#include "DebugSupervisionSettings.h"
+#include "DebugEditorSettings.h"
+#include "DebugAddresses.h"
 #include "SavefileEditor.h"
 #include "DebugModGlobals.h"
 
