@@ -1899,21 +1899,13 @@ bool __stdcall RecordScriptRoutine() {
                 {
                     if (TASRecordCanExecute)
                     {
-                        std::cout << "aaa" << std::endl;
                         ThreadHookerSuspendThreads();
-                        std::cout << "bbb" << std::endl;
                         std::memcpy(&TASInputLast, &TASInputCurrent, sizeof(GameInput));
-                        std::cout << "ccc" << std::endl;
                         std::memset(&TASInputCurrent, 0x00, sizeof(GameInput));
-                        std::cout << "ddd" << std::endl;
                         MergeGameInputs(&TASInputCurrent, &TASInputMouse, &TASInputKeyboard, &TASInputJoystick);
-                        std::cout << "eee" << std::endl;
                         std::string RecordFrame = GameInputToFrame(&TASInputCurrent);
-                        std::cout << "fff" << std::endl;
                         TASRecordScriptStream << RecordFrame << std::endl;
-                        std::cout << "ggg" << std::endl;
                         TASFramesPassed++;
-                        std::cout << "hhh" << std::endl;
                     }
                 }
 

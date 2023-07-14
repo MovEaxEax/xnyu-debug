@@ -135,6 +135,7 @@ bool LoadDebugFunctions()
         TASPlayScript.description.push_back("Use the '/' to define a subdirectory");
         TASPlayScript.description.push_back("");
         TASPlayScript.description.push_back("  - string: Name of the script that get's played");
+        TASPlayScript.placeholder = "string...";
 
         DebugFunction TASRecordScript = DebugFunction();
         TASRecordScript.nameChild = "RecordScript";
@@ -152,6 +153,7 @@ bool LoadDebugFunctions()
         TASRecordScript.description.push_back("If no name is defined, it uses the default name format (current time)");
         TASRecordScript.description.push_back("");
         TASRecordScript.description.push_back("  - string: Name of the script that get's recorded (Optional)");
+        TASRecordScript.placeholder = "string...";
 
         DebugFunctionParent TASParent = DebugFunctionParent();
         TASParent.nameParent = "TAS";
@@ -178,6 +180,7 @@ bool LoadDebugFunctions()
         DBGSetHotkeySlot.description.push_back("Value must be between 1 and 8");
         DBGSetHotkeySlot.description.push_back("");
         DBGSetHotkeySlot.description.push_back("  - int32: The new slot index");
+        DBGSetHotkeySlot.placeholder = "int32...";
 
         DebugFunction DBGChangeHotkeySlot = DebugFunction();
         DBGChangeHotkeySlot.nameChild = "ChangeHotkeySlot";
@@ -192,6 +195,7 @@ bool LoadDebugFunctions()
         DBGChangeHotkeySlot.description.push_back("Change the current selected Hotkey slot by a relative value");
         DBGChangeHotkeySlot.description.push_back("");
         DBGChangeHotkeySlot.description.push_back("  - int32: The amount of slots you want to jump");
+        DBGChangeHotkeySlot.placeholder = "int32...";
 
         DebugFunction DBGEnablePerformancemode = DebugFunction();
         DBGEnablePerformancemode.nameChild = "EnablePerformancemode";
@@ -208,6 +212,7 @@ bool LoadDebugFunctions()
         DBGEnablePerformancemode.description.push_back("If the boolean is blank, this function can be used as a toggle");
         DBGEnablePerformancemode.description.push_back("");
         DBGEnablePerformancemode.description.push_back("  - bool: Enable/Disable (Optional)");
+        DBGEnablePerformancemode.placeholder = "bool...";
 
         DebugFunction DBGEnableDebugValues = DebugFunction();
         DBGEnableDebugValues.nameChild = "EnableDebugValues";
@@ -224,6 +229,7 @@ bool LoadDebugFunctions()
         DBGEnableDebugValues.description.push_back("If the boolean is blank, this function can be used as a toggle");
         DBGEnableDebugValues.description.push_back("");
         DBGEnableDebugValues.description.push_back("  - bool: Enable/Disable (Optional)");
+        DBGEnableDebugValues.placeholder = "bool...";
 
         DebugFunction DBGEnableCursorPosition = DebugFunction();
         DBGEnableCursorPosition.nameChild = "EnableCursorPosition";
@@ -240,6 +246,7 @@ bool LoadDebugFunctions()
         DBGEnableCursorPosition.description.push_back("If the boolean is blank, this function can be used as a toggle");
         DBGEnableCursorPosition.description.push_back("");
         DBGEnableCursorPosition.description.push_back("  - bool: Enable/Disable (Optional)");
+        DBGEnableCursorPosition.placeholder = "bool...";
 
         DebugFunction DBGEnableHotkeyOverlay = DebugFunction();
         DBGEnableHotkeyOverlay.nameChild = "EnableHotkeyOverlay";
@@ -256,6 +263,7 @@ bool LoadDebugFunctions()
         DBGEnableHotkeyOverlay.description.push_back("If the boolean is blank, this function can be used as a toggle");
         DBGEnableHotkeyOverlay.description.push_back("");
         DBGEnableHotkeyOverlay.description.push_back("  - bool: Enable/Disable (Optional)");
+        DBGEnableHotkeyOverlay.placeholder = "bool...";
 
         DebugFunction DBGEnableSupervision = DebugFunction();
         DBGEnableSupervision.nameChild = "EnableSupervision";
@@ -272,6 +280,7 @@ bool LoadDebugFunctions()
         DBGEnableSupervision.description.push_back("If the boolean is blank, this function can be used as a toggle");
         DBGEnableSupervision.description.push_back("");
         DBGEnableSupervision.description.push_back("  - bool: Enable/Disable (Optional)");
+        DBGEnableSupervision.placeholder = "bool...";
 
         DebugFunction DBGEnableEditorMode = DebugFunction();
         DBGEnableEditorMode.nameChild = "EnableEditorMode";
@@ -288,6 +297,7 @@ bool LoadDebugFunctions()
         DBGEnableEditorMode.description.push_back("If the boolean is blank, this function can be used as a toggle");
         DBGEnableEditorMode.description.push_back("");
         DBGEnableEditorMode.description.push_back("  - bool: Enable/Disable (Optional)");
+        DBGEnableEditorMode.placeholder = "bool...";
 
         DebugFunctionParent DBGParent = DebugFunctionParent();
         DBGParent.nameParent = "DebugMenu";

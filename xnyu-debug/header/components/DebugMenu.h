@@ -949,14 +949,14 @@ void DebugMenuHandleClick(int id, bool left)
 			if (id == 3) if (GlobalDebugFeatures.supervision) DebugMenuSuperVisionMode = !DebugMenuSuperVisionMode;
 			if (id == 4) DebugMenuSettingsPerformanceMode = !DebugMenuSettingsPerformanceMode;
 
-			if (id - 16 >= 0 && (id - 16) % 2 == 0)
+			if (id - 19 >= 0 && (id - 19) % 2 == 0)
 			{
 				DebugFunction tmp;
 				tmp.nameFull = "- EMPTY -";
 				
-				DebugMenuHotkeys[DebugHotkeysActiveSlot][(id - 16) / 2] = tmp;
+				DebugMenuHotkeys[DebugHotkeysActiveSlot][(id - 19) / 2] = tmp;
 			}
-			if (id - 17 >= 0 && (id - 17) % 2 == 0) DebugMenuParameter[DebugHotkeysActiveSlot][(id - 17) / 2] = "";
+			if (id - 20 >= 0 && (id - 20) % 2 == 0) DebugMenuParameter[DebugHotkeysActiveSlot][(id - 20) / 2] = "";
 		}
 	}
 
