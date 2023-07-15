@@ -345,6 +345,7 @@ public:
 
         // Reinstall Hook
         instance->install();
+
         return Trampoline;
     }
 

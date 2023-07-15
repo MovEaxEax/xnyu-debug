@@ -139,6 +139,8 @@ typedef void(__cdecl* TASCommandT)(char* script);
 TASCommandT pTASPlayScript = nullptr;
 TASCommandT pTASRecordScript = nullptr;
 
+bool DebugModIsLoaded = false;
+
 void InitDebugMod()
 {
 	try
@@ -204,6 +206,8 @@ void InitDebugMod()
 			pOnInitDebugMod(GlobalSettings, &GlobalDebugFeatures, GlobalReferences, ThreadHookerReferences);
 			pInitSupervisionSettings(DebugSupervisionSettings);
 			pInitEditorModeSettings(DebugSupervisionSettings);
+
+			DebugModIsLoaded = true;
 		}
 	}
 	catch (std::exception e)
