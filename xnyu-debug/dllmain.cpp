@@ -598,7 +598,7 @@ DWORD MainThread()
     {
         // Probably needed...
         std::string tmp = ";";
-        toggleDevConsole((char*)tmp.c_str());
+        // toggleDevConsole((char*)tmp.c_str());
     }
     return 0;
 }

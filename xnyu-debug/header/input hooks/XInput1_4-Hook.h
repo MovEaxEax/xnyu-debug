@@ -76,7 +76,7 @@ DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
     if (XInput1_4PacketNumber > 0xDEADBEEF) XInput1_4PacketNumber = 0;
     pState->dwPacketNumber = XInput1_4PacketNumber;
 
-    if (GlobalSettings.config_tashook == "xinput1_4")
+    if (GlobalSettings.config_tashook == "xinput1_4" || GlobalSettings.config_tashook == "xinput1_3")
     {
         ReleaseMutex(XInput1_4ThreadMutex);
         pTASRoutine();
