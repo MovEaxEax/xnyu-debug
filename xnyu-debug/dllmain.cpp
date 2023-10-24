@@ -520,6 +520,7 @@ EXTERN_DLL_EXPORT int toggleDevConsole(char* parameterRaw)
 {
     try
     {
+        WaitForSingleObject(DebugConsoleOutputMutex, INFINITE);
         if (!ConsoleEnabled)
         {
             AllocConsole();
@@ -534,10 +535,12 @@ EXTERN_DLL_EXPORT int toggleDevConsole(char* parameterRaw)
             FreeConsole();
             ConsoleEnabled = false;
         }
+        ReleaseMutex(DebugConsoleOutputMutex);
     }
     catch (const std::exception e)
     {
         DebugConsoleOutput("Error in openDevConsole()", false, "red");
+        ReleaseMutex(DebugConsoleOutputMutex);
         return 0;
     }
     return 1;
@@ -598,7 +601,7 @@ DWORD MainThread()
     {
         // Probably needed...
         std::string tmp = ";";
-        // toggleDevConsole((char*)tmp.c_str());
+        toggleDevConsole((char*)tmp.c_str());
     }
     return 0;
 }

@@ -166,10 +166,21 @@ DebugReferences GlobalReferences;
 ThreadReferences ThreadHookerReferences;
 int GlobalFrameSkipCurrent = 0;
 
+HANDLE DebugConsoleOutputMutex = CreateMutex(NULL, FALSE, NULL);
+
 void __cdecl DebugConsoleOutput(std::string text, bool dev, std::string color = "white")
 {
-    if (!ConsoleEnabled) return;
-    if (dev && !DevMode) return;
+    WaitForSingleObject(DebugConsoleOutputMutex, INFINITE);
+    if (!ConsoleEnabled)
+    {
+        ReleaseMutex(DebugConsoleOutputMutex);
+        return;
+    }
+    if (dev && !DevMode)
+    {
+        ReleaseMutex(DebugConsoleOutputMutex);
+        return;
+    }
     WORD ForegroundColor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
     if (color == "red") ForegroundColor = FOREGROUND_RED | FOREGROUND_INTENSITY;
     if (color == "green") ForegroundColor = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
@@ -178,6 +189,7 @@ void __cdecl DebugConsoleOutput(std::string text, bool dev, std::string color = 
     if (color == "yellow") ForegroundColor = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
     SetConsoleTextAttribute(DebugConsoleHandle, ForegroundColor);
     std::cout << text << std::endl;
+    ReleaseMutex(DebugConsoleOutputMutex);
 }
 
 //
