@@ -156,6 +156,13 @@ void* GetLastInputInfoHookAddress;
 HANDLE pGetLastInputInfoMutex = CreateMutex(NULL, FALSE, NULL);
 LASTINPUTINFO GetLastInputInfoPlii;
 
+typedef BOOL(__stdcall* GetCursorPosT)(LPPOINT lpPoint);
+GetCursorPosT pGetCursorPos = nullptr;
+subhook::Hook GetCursorPosSubhook;
+void* GetCursorPosOriginalAddress;
+void* GetCursorPosHookAddress;
+HANDLE pGetCursorPosMutex = CreateMutex(NULL, FALSE, NULL);
+
 HWND __stdcall GetForegroundWindowHook()
 {
 	WaitForSingleObject(pGetForegroundWindowMutex, INFINITE);
@@ -774,8 +781,6 @@ SHORT __stdcall NtUserGetKeyStateHook(int nVirtKey) {
 BOOL __stdcall GetLastInputInfoHook(PLASTINPUTINFO plii) {
 	WaitForSingleObject(pGetLastInputInfoMutex, INFINITE);
 
-	DebugConsoleOutput("We here 123", false);
-
 	if (!GetLastInputInfoSubhook.IsInstalled()) return 0;
 	GetLastInputInfoSubhook.Remove();
 
@@ -789,7 +794,37 @@ BOOL __stdcall GetLastInputInfoHook(PLASTINPUTINFO plii) {
 	return result;
 }
 
+BOOL __stdcall GetCursorPosHook(LPPOINT lpPoint) {
+	WaitForSingleObject(pGetCursorPosMutex, INFINITE);
 
+	if (!GetCursorPosSubhook.IsInstalled()) return 0;
+	GetCursorPosSubhook.Remove();
+
+	POINT fakeData = POINT();
+	BOOL result = pGetCursorPos(&fakeData);
+
+	HWND hWnd = GetActiveWindow();
+
+	if (hWnd != NULL) {
+		RECT rect;
+		if (GetClientRect(hWnd, &rect)) {
+			POINT topLeft = { rect.left, rect.top };
+			POINT bottomRight = { rect.right, rect.bottom };
+			ClientToScreen(hWnd, &topLeft);
+			ClientToScreen(hWnd, &bottomRight);
+			fakeData.x = max(topLeft.x + 10, min(fakeData.x, bottomRight.x - 10));
+			fakeData.y = max(topLeft.y + 10, min(fakeData.y, bottomRight.y - 10));
+		}
+	}
+
+	std::memcpy(lpPoint, &fakeData, sizeof(POINT));
+
+	if (sizeof(void*) == 8) GetCursorPosSubhook.Install(GetCursorPosOriginalAddress, GetCursorPosHookAddress, subhook::HookFlags::HookFlag64BitOffset);
+	if (sizeof(void*) == 4) GetCursorPosSubhook.Install(GetCursorPosOriginalAddress, GetCursorPosHookAddress);
+
+	ReleaseMutex(pGetCursorPosMutex);
+	return result;
+}
 
 bool InitWindowStayActive()
 {
@@ -932,6 +967,12 @@ bool InitWindowStayActive()
 	if (sizeof(void*) == 8) GetLastInputInfoSubhook.Install(GetLastInputInfoOriginalAddress, GetLastInputInfoHookAddress, subhook::HookFlags::HookFlag64BitOffset);
 	if (sizeof(void*) == 4) GetLastInputInfoSubhook.Install(GetLastInputInfoOriginalAddress, GetLastInputInfoHookAddress);
 
+	GetCursorPosOriginalAddress = (void*)GetProcAddress(User32DLLHandle, "GetCursorPos");
+	GetCursorPosHookAddress = (void*)GetCursorPosHook;
+	pGetCursorPos = (GetCursorPosT)GetCursorPosOriginalAddress;
+	if (sizeof(void*) == 8) GetCursorPosSubhook.Install(GetCursorPosOriginalAddress, GetCursorPosHookAddress, subhook::HookFlags::HookFlag64BitOffset);
+	if (sizeof(void*) == 4) GetCursorPosSubhook.Install(GetCursorPosOriginalAddress, GetCursorPosHookAddress);
+
 	ThreadHookerResumeThreads(0);
 }
 
@@ -957,6 +998,7 @@ void UninitWindowStayActive()
 	WaitForSingleObject(pNtUserGetAsyncKeyStateMutex, INFINITE);
 	WaitForSingleObject(pNtUserGetKeyStateMutex, INFINITE);
 	WaitForSingleObject(pGetLastInputInfoMutex, INFINITE);
+	WaitForSingleObject(pGetCursorPosMutex, INFINITE);
 
 	ThreadHookerSuspendThreads(0);
 
@@ -981,6 +1023,7 @@ void UninitWindowStayActive()
 	if (NtUserGetAsyncKeyStateSubhook.IsInstalled()) NtUserGetAsyncKeyStateSubhook.Remove();
 	if (NtUserGetKeyStateSubhook.IsInstalled()) NtUserGetKeyStateSubhook.Remove();
 	if (GetLastInputInfoSubhook.IsInstalled()) GetLastInputInfoSubhook.Remove();
+	if (GetCursorPosSubhook.IsInstalled()) GetCursorPosSubhook.Remove();
 
 	ThreadHookerResumeThreads(0);
 
@@ -1004,6 +1047,7 @@ void UninitWindowStayActive()
 	ReleaseMutex(pNtUserGetAsyncKeyStateMutex);
 	ReleaseMutex(pNtUserGetKeyStateMutex);
 	ReleaseMutex(pGetLastInputInfoMutex);
+	ReleaseMutex(pGetCursorPosMutex);
 }
 
 
