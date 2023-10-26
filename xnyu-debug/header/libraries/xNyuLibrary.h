@@ -960,6 +960,34 @@ std::string GetCurrentDateTime() {
     return ss.str();
 }
 
+bool WriteMemory(void* address, const void* data, size_t size) {
+    // Change the protection of the memory area to ensure it is writable
+    DWORD oldProtect;
+    if (VirtualProtect(address, size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        // Copy the new bytes into the target memory location
+        memcpy(address, data, size);
+
+        // Restore the old protection on the memory area
+        VirtualProtect(address, size, oldProtect, &oldProtect);
+
+        // Flush the CPU cache to ensure it will read the modified instructions
+        FlushInstructionCache(GetCurrentProcess(), address, size);
+
+        return true;
+    }
+    return false;
+}
+
+// Memory
+#include "Regions.h"
+#include "BasePointer.h"
+#include "ReadMemory.h"
+#include "SigScan.h"
+#include "WriteMemory.h"
+
+// HackZ
+#include "NtUser.h"
+
 // Special
 #include "xNyuHooks.h"
 #include "Threadhooker.h"

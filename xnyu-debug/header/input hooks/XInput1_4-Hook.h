@@ -63,6 +63,7 @@ DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
 {
     // Remove hook to restore original function
     WaitForSingleObject(XInput1_4ThreadMutex, INFINITE);
+
     XInput1_4SubHook.Remove();
 
     // The return value of this function
@@ -122,6 +123,7 @@ DWORD __stdcall XInput1_4Hook(DWORD dwUserIndex, XINPUT_STATE* pState)
         if (sizeof(void*) == 8) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress, subhook::HookFlags::HookFlag64BitOffset);
         if (sizeof(void*) == 4) XInput1_4SubHook.Install(XInput1_4OriginalAddress, XInput1_4HookAddress);
     }
+
     ReleaseMutex(XInput1_4ThreadMutex);
 
     return result;

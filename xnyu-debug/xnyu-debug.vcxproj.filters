@@ -31,6 +31,9 @@
     <Filter Include="Headerdateien\components">
       <UniqueIdentifier>{7a77867c-8069-42c0-9311-ab5b78028343}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headerdateien\memory">
+      <UniqueIdentifier>{bf2f0e86-4813-49e6-b799-b3ea4ab0fd1d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -140,6 +143,24 @@
     </ClInclude>
     <ClInclude Include="DebugEditorSettings.h">
       <Filter>Headerdateien\debug mods</Filter>
+    </ClInclude>
+    <ClInclude Include="BasePointer.h">
+      <Filter>Headerdateien\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="ReadMemory.h">
+      <Filter>Headerdateien\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="SigScan.h">
+      <Filter>Headerdateien\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="WriteMemory.h">
+      <Filter>Headerdateien\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Regions.h">
+      <Filter>Headerdateien\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="NtUser.h">
+      <Filter>Headerdateien\components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

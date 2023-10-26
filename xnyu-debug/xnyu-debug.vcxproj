@@ -158,6 +158,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BasePointer.h" />
     <ClInclude Include="D3D9-Extra-Hooks.h" />
     <ClInclude Include="DebugEditorSettings.h" />
     <ClInclude Include="DebugModGlobals.h" />
@@ -168,9 +169,14 @@
     <ClInclude Include="DebugAddresses.h" />
     <ClInclude Include="DebugFunctions.h" />
     <ClInclude Include="GraphicsHookGlobals.h" />
+    <ClInclude Include="NtUser.h" />
     <ClInclude Include="Overclocker.h" />
+    <ClInclude Include="ReadMemory.h" />
+    <ClInclude Include="Regions.h" />
     <ClInclude Include="SavefileEditor.h" />
+    <ClInclude Include="SigScan.h" />
     <ClInclude Include="Threadhooker.h" />
+    <ClInclude Include="WriteMemory.h" />
     <ClInclude Include="xNyuVariables.h" />
     <ClInclude Include="SendInput-Hook.h" />
     <ClInclude Include="TAS.h" />

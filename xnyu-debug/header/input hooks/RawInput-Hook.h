@@ -561,10 +561,17 @@ void __stdcall GetRawInput(BOOL TAS, GameInput* DST, std::string device)
 
     if (!GlobalSettings.config_rawinput_demand)
     {
-        if (device == "all") std::memcpy(GetRawInputDSTAll, &RawInputGameInputCurrent, sizeof(GameInput));
-        else if (device == "mouse") std::memcpy(GetRawInputDSTMouse, &RawInputGameInputCurrent, sizeof(GameInput));
-        else if (device == "keyboard") std::memcpy(GetRawInputDSTKeyboard, &RawInputGameInputCurrent, sizeof(GameInput));
-        else if (device == "joystick") std::memcpy(GetRawInputDSTJoystick, &RawInputGameInputCurrent, sizeof(GameInput));
+        if (TAS)
+        {
+            if (device == "all") std::memcpy(GetRawInputDSTAll, &RawInputGameInputCurrent, sizeof(GameInput));
+            else if (device == "mouse") std::memcpy(GetRawInputDSTMouse, &RawInputGameInputCurrent, sizeof(GameInput));
+            else if (device == "keyboard") std::memcpy(GetRawInputDSTKeyboard, &RawInputGameInputCurrent, sizeof(GameInput));
+            else if (device == "joystick") std::memcpy(GetRawInputDSTJoystick, &RawInputGameInputCurrent, sizeof(GameInput));
+        }
+        else
+        {
+            std::memcpy(DST, &RawInputGameInputCurrent, sizeof(GameInput));
+        }
     }
     else
     {

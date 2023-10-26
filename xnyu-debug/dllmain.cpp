@@ -366,7 +366,10 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         LoadGameInputLayout(&TASInputLayout, GlobalSettings.config_inputmapping_directory + "InputMapping.ini");
 
         // Hook all the desired input functions
-        InitInputHooks();
+        // InitInputHooks();
+
+        // Get memory regions
+        GetMemoryRegions(memoryRegionsStart, memoryRegionsEnd, &memoryRegionsCounter);
 
         // Set thread fitting for freezing
         SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
@@ -601,7 +604,7 @@ DWORD MainThread()
     {
         // Probably needed...
         std::string tmp = ";";
-        // toggleDevConsole((char*)tmp.c_str());
+        toggleDevConsole((char*)tmp.c_str());
     }
     return 0;
 }
