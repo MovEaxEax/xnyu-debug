@@ -163,6 +163,71 @@ void* GetCursorPosOriginalAddress;
 void* GetCursorPosHookAddress;
 HANDLE pGetCursorPosMutex = CreateMutex(NULL, FALSE, NULL);
 
+typedef LONG(__stdcall* GetClassLongT)(HWND hWnd, int nIndex);
+GetClassLongT pGetClassLong = nullptr;
+subhook::Hook GetClassLongSubHook;
+void* GetClassLongOriginalAddress;
+void* GetClassLongHookAddress;
+bool GetClassLongReal = false;
+HANDLE pGetClassLongMutex = CreateMutex(NULL, FALSE, NULL);
+
+typedef LONG(__stdcall* GetWindowLongT)(HWND hWnd, int nIndex);
+GetWindowLongT pGetWindowLong = nullptr;
+subhook::Hook GetWindowLongSubHook;
+void* GetWindowLongOriginalAddress;
+void* GetWindowLongHookAddress;
+bool GetWindowLongReal = false;
+HANDLE pGetWindowLongMutex = CreateMutex(NULL, FALSE, NULL);
+
+
+
+// Big thanks to Kula for the WndProc idea
+WNDPROC OriginalWindowProcedure{};
+
+LRESULT CALLBACK WindowStayActiveWndProc(HWND WindowHandle, UINT Message, WPARAM WParam, LPARAM LParam) {
+	switch (Message)
+	{
+	case WM_ACTIVATE:
+		if (LOWORD(WParam) == WA_INACTIVE) return 0;
+		break;
+
+	case WM_ACTIVATEAPP:
+		if (WParam == FALSE) return 0;
+		break;
+
+	case WM_NCACTIVATE:
+		if (WParam == FALSE) return 0;
+		break;
+
+	case WM_SYSCOMMAND:
+		if ((WParam & 0xFFF0) == SC_MINIMIZE || (WParam & 0xFFF0) == SC_RESTORE) return 0;
+		break;
+
+	case WM_KILLFOCUS:
+	case WM_ENABLE:
+		return 0;
+		break;
+
+	default:
+		break;
+	}
+	auto OriginalResult = CallWindowProc(OriginalWindowProcedure, WindowHandle, Message, WParam, LParam);
+	return OriginalResult;
+}
+
+void WindowStayActiveWndProcHook(HWND WindowHandle) {
+	OriginalWindowProcedure = (WNDPROC)SetWindowLongPtr(WindowHandle, GWLP_WNDPROC, (LONG_PTR)WindowStayActiveWndProc);
+}
+
+void WindowStayActiveWndProcUnhook(HWND WindowHandle) {
+	if (OriginalWindowProcedure != NULL) {
+		SetWindowLongPtr(WindowHandle, GWLP_WNDPROC, (LONG_PTR)OriginalWindowProcedure);
+		OriginalWindowProcedure = NULL;
+	}
+}
+
+
+
 HWND __stdcall GetForegroundWindowHook()
 {
 	WaitForSingleObject(pGetForegroundWindowMutex, INFINITE);
@@ -444,13 +509,41 @@ LRESULT __stdcall DispatchMessageAHook(const MSG* lpMsg)
 	{
 		switch (lpMsg->message)
 		{
-		case WM_KILLFOCUS:
+		case WM_ACTIVATE:
+			if (LOWORD(lpMsg->wParam) == WA_INACTIVE)
+			{
+				blockMessage = true;
+			}
+			break;
+
 		case WM_ACTIVATEAPP:
+			if (lpMsg->wParam == FALSE)
+			{
+				blockMessage = true;
+			}
+			break;
+
 		case WM_NCACTIVATE:
-		case WM_SETFOCUS:
-		case WM_ENABLE:
+			if (lpMsg->wParam == FALSE)
+			{
+				blockMessage = true;
+			}
+			break;
+
 		case WM_SYSCOMMAND:
+			if ((lpMsg->wParam & 0xFFF0) == SC_MINIMIZE ||
+				(lpMsg->wParam & 0xFFF0) == SC_RESTORE)
+			{
+				blockMessage = true;
+			}
+			break;
+
+		case WM_KILLFOCUS:
+		case WM_ENABLE:
 			blockMessage = true;
+			break;
+
+		default:
 			break;
 		}
 	}
@@ -479,13 +572,41 @@ LRESULT __stdcall DispatchMessageWHook(const MSG* lpMsg)
 	{
 		switch (lpMsg->message)
 		{
-		case WM_KILLFOCUS:
+		case WM_ACTIVATE:
+			if (LOWORD(lpMsg->wParam) == WA_INACTIVE)
+			{
+				blockMessage = true;
+			}
+			break;
+
 		case WM_ACTIVATEAPP:
+			if (lpMsg->wParam == FALSE)
+			{
+				blockMessage = true;
+			}
+			break;
+
 		case WM_NCACTIVATE:
-		case WM_SETFOCUS:
-		case WM_ENABLE:
+			if (lpMsg->wParam == FALSE)
+			{
+				blockMessage = true;
+			}
+			break;
+
 		case WM_SYSCOMMAND:
+			if ((lpMsg->wParam & 0xFFF0) == SC_MINIMIZE ||
+				(lpMsg->wParam & 0xFFF0) == SC_RESTORE)
+			{
+				blockMessage = true;
+			}
+			break;
+
+		case WM_KILLFOCUS:
+		case WM_ENABLE:
 			blockMessage = true;
+			break;
+
+		default:
 			break;
 		}
 	}
@@ -509,22 +630,45 @@ BOOL __stdcall PeekMessageAHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT
 
 	BOOL result = pPeekMessageA(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
 
-	if (!result)
+	if (lpMsg != NULL)
 	{
 		switch (lpMsg->message)
 		{
-		case WM_KILLFOCUS:
-		case WM_ACTIVATEAPP:
-		case WM_NCACTIVATE:
-		case WM_ENABLE:
 		case WM_ACTIVATE:
-			lpMsg->message = WM_NULL;
-			break;
-		case WM_SYSCOMMAND:
-			if ((lpMsg->wParam & 0xFFF0) == SC_MINIMIZE || (lpMsg->wParam & 0xFFF0) == SC_RESTORE)
+			if (LOWORD(lpMsg->wParam) == WA_INACTIVE)
 			{
 				lpMsg->message = WM_NULL;
 			}
+			break;
+
+		case WM_ACTIVATEAPP:
+			if (lpMsg->wParam == FALSE)
+			{
+				lpMsg->message = WM_NULL;
+			}
+			break;
+
+		case WM_NCACTIVATE:
+			if (lpMsg->wParam == FALSE)
+			{
+				lpMsg->message = WM_NULL;
+			}
+			break;
+
+		case WM_SYSCOMMAND:
+			if ((lpMsg->wParam & 0xFFF0) == SC_MINIMIZE ||
+				(lpMsg->wParam & 0xFFF0) == SC_RESTORE)
+			{
+				lpMsg->message = WM_NULL;
+			}
+			break;
+
+		case WM_KILLFOCUS:
+		case WM_ENABLE:
+			lpMsg->message = WM_NULL;
+			break;
+
+		default:
 			break;
 		}
 	}
@@ -546,21 +690,45 @@ BOOL __stdcall PeekMessageWHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT
 
 	BOOL result = pPeekMessageW(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
 
-	if (result != FALSE)
+	if (lpMsg != NULL)
 	{
 		switch (lpMsg->message)
 		{
-		case WM_KILLFOCUS:
-		case WM_ACTIVATEAPP:
-		case WM_NCACTIVATE:
-		case WM_ENABLE:
-			lpMsg->message = WM_NULL;
-			break;
-		case WM_SYSCOMMAND:
-			if ((lpMsg->wParam & 0xFFF0) == SC_MINIMIZE || (lpMsg->wParam & 0xFFF0) == SC_RESTORE)
+		case WM_ACTIVATE:
+			if (LOWORD(lpMsg->wParam) == WA_INACTIVE)
 			{
 				lpMsg->message = WM_NULL;
 			}
+			break;
+
+		case WM_ACTIVATEAPP:
+			if (lpMsg->wParam == FALSE)
+			{
+				lpMsg->message = WM_NULL;
+			}
+			break;
+
+		case WM_NCACTIVATE:
+			if (lpMsg->wParam == FALSE)
+			{
+				lpMsg->message = WM_NULL;
+			}
+			break;
+
+		case WM_SYSCOMMAND:
+			if ((lpMsg->wParam & 0xFFF0) == SC_MINIMIZE ||
+				(lpMsg->wParam & 0xFFF0) == SC_RESTORE)
+			{
+				lpMsg->message = WM_NULL;
+			}
+			break;
+
+		case WM_KILLFOCUS:
+		case WM_ENABLE:
+			lpMsg->message = WM_NULL;
+			break;
+
+		default:
 			break;
 		}
 	}
@@ -589,42 +757,25 @@ BOOL __stdcall GetMessageAHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT 
 	{
 		switch (lpMessage->message)
 		{
-		case WM_KILLFOCUS:
-			lpMessage->message = WM_NULL;
-			break;
-
 		case WM_ACTIVATE:
 			if (LOWORD(lpMessage->wParam) == WA_INACTIVE)
 			{
-				lpMessage->wParam = MAKELONG(WA_ACTIVE, HIWORD(lpMessage->wParam));
+				lpMessage->message = WM_NULL;
 			}
 			break;
 
 		case WM_ACTIVATEAPP:
 			if (lpMessage->wParam == FALSE)
 			{
-				lpMessage->wParam = TRUE;
+				lpMessage->message = WM_NULL;
 			}
 			break;
 
 		case WM_NCACTIVATE:
 			if (lpMessage->wParam == FALSE)
 			{
-				lpMessage->wParam = TRUE;
+				lpMessage->message = WM_NULL;
 			}
-			break;
-
-		case WM_SETFOCUS:
-			lpMessage->message = WM_NULL;
-			break;
-
-		case WM_WINDOWPOSCHANGING:
-		case WM_WINDOWPOSCHANGED:
-			// Probably overkill
-			break;
-
-		case WM_ENABLE:
-			lpMessage->wParam = TRUE;
 			break;
 
 		case WM_SYSCOMMAND:
@@ -635,8 +786,9 @@ BOOL __stdcall GetMessageAHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT 
 			}
 			break;
 
-		case WM_PARENTNOTIFY:
-			// Probably overkill
+		case WM_KILLFOCUS:
+		case WM_ENABLE:
+			lpMessage->message = WM_NULL;
 			break;
 
 		default:
@@ -670,42 +822,25 @@ BOOL __stdcall GetMessageWHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT 
 	{
 		switch (lpMessage->message)
 		{
-		case WM_KILLFOCUS:
-			lpMessage->message = WM_NULL;
-			break;
-
 		case WM_ACTIVATE:
 			if (LOWORD(lpMessage->wParam) == WA_INACTIVE)
 			{
-				lpMessage->wParam = MAKELONG(WA_ACTIVE, HIWORD(lpMessage->wParam));
+				lpMessage->message = WM_NULL;
 			}
 			break;
 
 		case WM_ACTIVATEAPP:
 			if (lpMessage->wParam == FALSE)
 			{
-				lpMessage->wParam = TRUE;
+				lpMessage->message = WM_NULL;
 			}
 			break;
 
 		case WM_NCACTIVATE:
 			if (lpMessage->wParam == FALSE)
 			{
-				lpMessage->wParam = TRUE;
+				lpMessage->message = WM_NULL;
 			}
-			break;
-
-		case WM_SETFOCUS:
-			lpMessage->message = WM_NULL;
-			break;
-
-		case WM_WINDOWPOSCHANGING:
-		case WM_WINDOWPOSCHANGED:
-			// Probably overkill
-			break;
-
-		case WM_ENABLE:
-			lpMessage->wParam = TRUE;
 			break;
 
 		case WM_SYSCOMMAND:
@@ -716,8 +851,9 @@ BOOL __stdcall GetMessageWHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT 
 			}
 			break;
 
-		case WM_PARENTNOTIFY:
-			// Probably overkill
+		case WM_KILLFOCUS:
+		case WM_ENABLE:
+			lpMessage->message = WM_NULL;
 			break;
 
 		default:
@@ -966,6 +1102,8 @@ bool InitWindowStayActive()
 	if (sizeof(void*) == 8) GetCursorPosSubhook.Install(GetCursorPosOriginalAddress, GetCursorPosHookAddress, subhook::HookFlags::HookFlag64BitOffset);
 	if (sizeof(void*) == 4) GetCursorPosSubhook.Install(GetCursorPosOriginalAddress, GetCursorPosHookAddress);
 
+	WindowStayActiveWndProcHook(MainWindowHandle);
+
 	ThreadHookerResumeThreads(0);
 }
 
@@ -1017,6 +1155,8 @@ void UninitWindowStayActive()
 	if (NtUserGetKeyStateSubhook.IsInstalled()) NtUserGetKeyStateSubhook.Remove();
 	if (GetLastInputInfoSubhook.IsInstalled()) GetLastInputInfoSubhook.Remove();
 	if (GetCursorPosSubhook.IsInstalled()) GetCursorPosSubhook.Remove();
+
+	WindowStayActiveWndProcUnhook(MainWindowHandle);
 
 	ThreadHookerResumeThreads(0);
 
