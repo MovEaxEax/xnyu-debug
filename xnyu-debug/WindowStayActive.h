@@ -509,7 +509,7 @@ BOOL __stdcall PeekMessageAHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT
 
 	BOOL result = pPeekMessageA(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
 
-	if (result != FALSE)
+	if (!result)
 	{
 		switch (lpMsg->message)
 		{
@@ -517,6 +517,7 @@ BOOL __stdcall PeekMessageAHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT
 		case WM_ACTIVATEAPP:
 		case WM_NCACTIVATE:
 		case WM_ENABLE:
+		case WM_ACTIVATE:
 			lpMsg->message = WM_NULL;
 			break;
 		case WM_SYSCOMMAND:
