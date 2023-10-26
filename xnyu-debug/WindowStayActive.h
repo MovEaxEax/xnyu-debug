@@ -577,11 +577,9 @@ BOOL __stdcall GetMessageAHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT 
 {
 	WaitForSingleObject(pGetMessageAMutex, INFINITE);
 
-	// Remove hook to restore original function
 	if (!GetMessageASubhook.IsInstalled()) return FALSE;
 	GetMessageASubhook.Remove();
 
-	// The return value of this function
 	MSG message = MSG();
 	LPMSG lpMessage = &message;
 
@@ -592,7 +590,6 @@ BOOL __stdcall GetMessageAHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT 
 		switch (lpMessage->message)
 		{
 		case WM_KILLFOCUS:
-			// Neutralize the message
 			lpMessage->message = WM_NULL;
 			break;
 
@@ -611,10 +608,9 @@ BOOL __stdcall GetMessageAHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT 
 			break;
 
 		case WM_NCACTIVATE:
-			// If this is a deactivation message, prevent deactivation
 			if (lpMessage->wParam == FALSE)
 			{
-				lpMessage->wParam = TRUE; // Force it to stay active
+				lpMessage->wParam = TRUE;
 			}
 			break;
 
@@ -662,11 +658,9 @@ BOOL __stdcall GetMessageWHook(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT 
 {
 	WaitForSingleObject(pGetMessageWMutex, INFINITE);
 
-	// Remove hook to restore original function
 	if (!GetMessageWSubhook.IsInstalled()) return FALSE;
 	GetMessageWSubhook.Remove();
 
-	// The return value of this function
 	MSG message = MSG();
 	LPMSG lpMessage = &message;
 
@@ -835,11 +829,9 @@ bool InitWindowStayActive()
 	currentThreadId = GetCurrentThreadId();
 	currentProcessId = GetCurrentProcessId();
 
-	// Detect the XInput module handle
 	HMODULE User32DLLHandle = GetModuleHandleA("User32.dll");
 	if (User32DLLHandle == NULL) return false;
 
-	// Set the hook addresses
 	GetForegroundWindowOriginalAddress = (void*)GetProcAddress(User32DLLHandle, "GetForegroundWindow");
 	GetForegroundWindowHookAddress = (void*)GetForegroundWindowHook;
 	pGetForegroundWindow = (GetForegroundWindowT)GetForegroundWindowOriginalAddress;
