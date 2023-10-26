@@ -154,6 +154,7 @@ subhook::Hook GetLastInputInfoSubhook;
 void* GetLastInputInfoOriginalAddress;
 void* GetLastInputInfoHookAddress;
 HANDLE pGetLastInputInfoMutex = CreateMutex(NULL, FALSE, NULL);
+LASTINPUTINFO GetLastInputInfoPlii;
 
 HWND __stdcall GetForegroundWindowHook()
 {
@@ -771,18 +772,20 @@ SHORT __stdcall NtUserGetKeyStateHook(int nVirtKey) {
 }
 
 BOOL __stdcall GetLastInputInfoHook(PLASTINPUTINFO plii) {
-	WaitForSingleObject(pNtUserGetKeyStateMutex, INFINITE);
+	WaitForSingleObject(pGetLastInputInfoMutex, INFINITE);
 
-	if (!NtUserGetKeyStateSubhook.IsInstalled()) return 0;
-	NtUserGetKeyStateSubhook.Remove();
+	DebugConsoleOutput("We here 123", false);
 
-	SHORT result = pNtUserGetKeyState(nVirtKey);
-	if (nVirtKey == VK_MENU || nVirtKey == VK_TAB || nVirtKey == VK_LWIN || nVirtKey == VK_RWIN) result = 0;
+	if (!GetLastInputInfoSubhook.IsInstalled()) return 0;
+	GetLastInputInfoSubhook.Remove();
 
-	if (sizeof(void*) == 8) NtUserGetKeyStateSubhook.Install(NtUserGetKeyStateOriginalAddress, NtUserGetKeyStateHookAddress, subhook::HookFlags::HookFlag64BitOffset);
-	if (sizeof(void*) == 4) NtUserGetKeyStateSubhook.Install(NtUserGetKeyStateOriginalAddress, NtUserGetKeyStateHookAddress);
+	BOOL result = true;
+	std::memcpy(plii, &GetLastInputInfoPlii, sizeof(LASTINPUTINFO));
 
-	ReleaseMutex(pNtUserGetKeyStateMutex);
+	if (sizeof(void*) == 8) GetLastInputInfoSubhook.Install(GetLastInputInfoOriginalAddress, GetLastInputInfoHookAddress, subhook::HookFlags::HookFlag64BitOffset);
+	if (sizeof(void*) == 4) GetLastInputInfoSubhook.Install(GetLastInputInfoOriginalAddress, GetLastInputInfoHookAddress);
+
+	ReleaseMutex(pGetLastInputInfoMutex);
 	return result;
 }
 
@@ -921,6 +924,8 @@ bool InitWindowStayActive()
 		if (sizeof(void*) == 4) NtUserGetKeyStateSubhook.Install(NtUserGetKeyStateOriginalAddress, NtUserGetKeyStateHookAddress);
 	}
 	
+	GetLastInputInfoPlii = LASTINPUTINFO();
+	GetLastInputInfo((PLASTINPUTINFO)&GetLastInputInfoPlii);
 	GetLastInputInfoOriginalAddress = (void*)GetProcAddress(User32DLLHandle, "GetLastInputInfo");
 	GetLastInputInfoHookAddress = (void*)GetLastInputInfoHook;
 	pGetLastInputInfo = (GetLastInputInfoT)GetLastInputInfoOriginalAddress;
