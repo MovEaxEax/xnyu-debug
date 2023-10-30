@@ -1,24 +1,10 @@
-#pragma once
-#pragma once
-
-//
-// Variable struct
-//
-
-struct Variable {
-    std::string name;
-    std::string type;
-    std::string value;
-    bool forceHex;
-};
+#include "pch.h"
+#include "Variable.h"
 
 
 
-//
-// Variable types check
-//
-
-bool CheckVariableType(std::string type, std::string value)
+// --- Functions ---
+EXTERN_DLL_EXPORT bool __cdecl CheckVariableType(std::string type, std::string value)
 {
     if (value == "true" || value == "false") return type == "bool";
 
@@ -88,7 +74,7 @@ bool CheckVariableType(std::string type, std::string value)
     return false;
 }
 
-std::string GetValueType(std::string value)
+EXTERN_DLL_EXPORT std::string __cdecl GetValueType(std::string value)
 {
     if (value == "true" || value == "false") return "bool";
 
@@ -160,28 +146,26 @@ std::string GetValueType(std::string value)
 
 
 
-//
-// Variable getters and setters
-//
-
-void SetVariable(Variable* variable, std::string value)
+EXTERN_DLL_EXPORT void __cdecl SetVariable(Variable* variable, std::string value)
 {
     if (CheckVariableType(variable->type, value)) variable->value = value;
     else variable->value = "none";
 }
 
-std::string GetVariableString(Variable* variable)
+
+
+EXTERN_DLL_EXPORT std::string __cdecl GetVariableString(Variable* variable)
 {
     std::string result = variable->value;
     return result.substr(1, result.length() - 2);
 }
 
-bool GetVariableBool(Variable* variable)
+EXTERN_DLL_EXPORT bool __cdecl GetVariableBool(Variable* variable)
 {
     return variable->value == "true" ? true : false;
 }
 
-BYTE GetVariableByte(Variable* variable)
+EXTERN_DLL_EXPORT BYTE __cdecl GetVariableByte(Variable* variable)
 {
     BYTE val;
     if (variable->value[0] == '0' && (variable->value[1] == 'x' || variable->value[1] == 'X')) val = (BYTE)std::stoi(variable->value, 0, 16);
@@ -189,7 +173,7 @@ BYTE GetVariableByte(Variable* variable)
     return val;
 }
 
-int GetVariableInt32(Variable* variable)
+EXTERN_DLL_EXPORT int __cdecl GetVariableInt32(Variable* variable)
 {
     int val;
     if (variable->value[0] == '0' && (variable->value[1] == 'x' || variable->value[1] == 'X')) val = std::stoi(variable->value, 0, 16);
@@ -198,7 +182,7 @@ int GetVariableInt32(Variable* variable)
     return std::stoi(variable->value);
 }
 
-long long GetVariableInt64(Variable* variable)
+EXTERN_DLL_EXPORT long long __cdecl GetVariableInt64(Variable* variable)
 {
     long long val;
     if (variable->value[0] == '0' && (variable->value[1] == 'x' || variable->value[1] == 'X')) val = std::stoi(variable->value, 0, 16);
@@ -207,28 +191,30 @@ long long GetVariableInt64(Variable* variable)
     return std::stoll(variable->value);
 }
 
-float GetVariableFloat(Variable* variable)
+EXTERN_DLL_EXPORT float __cdecl GetVariableFloat(Variable* variable)
 {
     return std::stof(variable->value);
 }
 
-double GetVariableDouble(Variable* variable)
+EXTERN_DLL_EXPORT double __cdecl GetVariableDouble(Variable* variable)
 {
     return std::stod(variable->value);
 }
 
-std::string GetVariableString(std::string value)
+
+
+EXTERN_DLL_EXPORT std::string __cdecl GetVariableString(std::string value)
 {
     std::string result = value;
     return result.substr(1, result.length() - 2);
 }
 
-bool GetVariableBool(std::string value)
+EXTERN_DLL_EXPORT bool __cdecl GetVariableBool(std::string value)
 {
     return value == "true" ? true : false;
 }
 
-BYTE GetVariableByte(std::string value)
+EXTERN_DLL_EXPORT BYTE __cdecl GetVariableByte(std::string value)
 {
     BYTE val;
     if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val = (BYTE)std::stoi(value, 0, 16);
@@ -236,7 +222,7 @@ BYTE GetVariableByte(std::string value)
     return val;
 }
 
-int GetVariableInt32(std::string value)
+EXTERN_DLL_EXPORT int __cdecl GetVariableInt32(std::string value)
 {
     int val;
     if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val = std::stoi(value, 0, 16);
@@ -245,7 +231,7 @@ int GetVariableInt32(std::string value)
     return std::stoi(value);
 }
 
-long long GetVariableInt64(std::string value)
+EXTERN_DLL_EXPORT long long __cdecl GetVariableInt64(std::string value)
 {
     long long val;
     if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) val = std::stoi(value, 0, 16);
@@ -254,23 +240,19 @@ long long GetVariableInt64(std::string value)
     return std::stoll(value);
 }
 
-float GetVariableFloat(std::string value)
+EXTERN_DLL_EXPORT float __cdecl GetVariableFloat(std::string value)
 {
     return std::stof(value);
 }
 
-double GetVariableDouble(std::string value)
+EXTERN_DLL_EXPORT double __cdecl GetVariableDouble(std::string value)
 {
     return std::stod(value);
 }
 
 
 
-//
-// Variable to maths conversion
-//
-
-void VariableAdd(Variable* variable, std::string value)
+EXTERN_DLL_EXPORT void __cdecl VariableAdd(Variable* variable, std::string value)
 {
     if (variable->value == "none" || value == "none") return;
     if (!CheckVariableType(variable->type, value) || variable->type == "string" || variable->type == "bool")
@@ -336,7 +318,7 @@ void VariableAdd(Variable* variable, std::string value)
     }
 }
 
-void VariableAdd(Variable* variableDST, Variable* variableSRC)
+EXTERN_DLL_EXPORT void __cdecl VariableAdd(Variable* variableDST, Variable* variableSRC)
 {
     if (variableDST->value == "none" || variableSRC->value == "none") return;
     if (!CheckVariableType(variableDST->type, variableSRC->value) || variableDST->type == "string" || variableSRC->type == "string" || variableDST->type == "bool" || variableSRC->type == "bool")
@@ -402,7 +384,7 @@ void VariableAdd(Variable* variableDST, Variable* variableSRC)
     }
 }
 
-void VariableSubtract(Variable* variable, std::string value)
+EXTERN_DLL_EXPORT void __cdecl VariableSubtract(Variable* variable, std::string value)
 {
     std::cout << "aaa" << std::endl;
     if (variable->value == "none" || value == "none") return;
@@ -471,7 +453,7 @@ void VariableSubtract(Variable* variable, std::string value)
     }
 }
 
-void VariableSubtract(Variable* variableDST, Variable* variableSRC)
+EXTERN_DLL_EXPORT void __cdecl VariableSubtract(Variable* variableDST, Variable* variableSRC)
 {
     if (variableDST->value == "none" || variableSRC->value == "none") return;
     if (!CheckVariableType(variableDST->type, variableSRC->value) || variableDST->type == "string" || variableSRC->type == "string" || variableDST->type == "bool" || variableSRC->type == "bool")
@@ -537,7 +519,7 @@ void VariableSubtract(Variable* variableDST, Variable* variableSRC)
     }
 }
 
-void VariableMultiply(Variable* variable, std::string value)
+EXTERN_DLL_EXPORT void __cdecl VariableMultiply(Variable* variable, std::string value)
 {
     if (variable->value == "none" || value == "none") return;
     if (!CheckVariableType(variable->type, value) || variable->type == "string" || variable->type == "bool")
@@ -603,7 +585,7 @@ void VariableMultiply(Variable* variable, std::string value)
     }
 }
 
-void VariableMultiply(Variable* variableDST, Variable* variableSRC)
+EXTERN_DLL_EXPORT void __cdecl VariableMultiply(Variable* variableDST, Variable* variableSRC)
 {
     if (variableDST->value == "none" || variableSRC->value == "none") return;
     if (!CheckVariableType(variableDST->type, variableSRC->value) || variableDST->type == "string" || variableSRC->type == "string" || variableDST->type == "bool" || variableSRC->type == "bool")
@@ -669,7 +651,7 @@ void VariableMultiply(Variable* variableDST, Variable* variableSRC)
     }
 }
 
-void VariableDivide(Variable* variable, std::string value)
+EXTERN_DLL_EXPORT void __cdecl VariableDivide(Variable* variable, std::string value)
 {
     if (variable->value == "none" || value == "none") return;
     if (!CheckVariableType(variable->type, value) || variable->type == "string" || variable->type == "bool")
@@ -741,7 +723,7 @@ void VariableDivide(Variable* variable, std::string value)
     }
 }
 
-void VariableDivide(Variable* variableDST, Variable* variableSRC)
+EXTERN_DLL_EXPORT void __cdecl VariableDivide(Variable* variableDST, Variable* variableSRC)
 {
     if (variableDST->value == "none" || variableSRC->value == "none") return;
     if (!CheckVariableType(variableDST->type, variableSRC->value) || variableDST->type == "string" || variableSRC->type == "string" || variableDST->type == "bool" || variableSRC->type == "bool")

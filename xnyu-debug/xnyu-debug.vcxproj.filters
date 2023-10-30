@@ -34,11 +34,11 @@
     <Filter Include="Headerdateien\memory">
       <UniqueIdentifier>{bf2f0e86-4813-49e6-b799-b3ea4ab0fd1d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headerdateien\utility">
+      <UniqueIdentifier>{f22ebde4-ae1a-41e4-877f-77d20572c59d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -69,9 +69,6 @@
     <ClInclude Include="header\input hooks\XInput1_4-Hook.h">
       <Filter>Headerdateien\input hooks</Filter>
     </ClInclude>
-    <ClInclude Include="header\libraries\xNyuLibrary.h">
-      <Filter>Headerdateien\libraries</Filter>
-    </ClInclude>
     <ClInclude Include="header\technical\Exceptions.hpp">
       <Filter>Headerdateien\technical</Filter>
     </ClInclude>
@@ -81,7 +78,7 @@
     <ClInclude Include="Window.h">
       <Filter>Headerdateien\technical</Filter>
     </ClInclude>
-    <ClInclude Include="xNyuDrawingEssentials.h">
+    <ClInclude Include="DrawingEssentials.h">
       <Filter>Headerdateien\libraries</Filter>
     </ClInclude>
     <ClInclude Include="InputHookGlobals.h">
@@ -89,12 +86,6 @@
     </ClInclude>
     <ClInclude Include="TAS.h">
       <Filter>Headerdateien\components</Filter>
-    </ClInclude>
-    <ClInclude Include="GetMessageA-Hook.h">
-      <Filter>Headerdateien\input hooks</Filter>
-    </ClInclude>
-    <ClInclude Include="GetMessageW-Hook.h">
-      <Filter>Headerdateien\input hooks</Filter>
     </ClInclude>
     <ClInclude Include="SendInput-Hook.h">
       <Filter>Headerdateien\input hooks</Filter>
@@ -111,10 +102,10 @@
     <ClInclude Include="DebugModGlobals.h">
       <Filter>Headerdateien\debug mods</Filter>
     </ClInclude>
-    <ClInclude Include="WindowStayActive.h">
+    <ClInclude Include="Winactive.h">
       <Filter>Headerdateien\components</Filter>
     </ClInclude>
-    <ClInclude Include="xNyuVariables.h">
+    <ClInclude Include="Variable.h">
       <Filter>Headerdateien\libraries</Filter>
     </ClInclude>
     <ClInclude Include="SavefileEditor.h">
@@ -129,7 +120,7 @@
     <ClInclude Include="D3D9-Extra-Hooks.h">
       <Filter>Headerdateien\graphic hooks</Filter>
     </ClInclude>
-    <ClInclude Include="xNyuHooks.h">
+    <ClInclude Include="xNyuHook.h">
       <Filter>Headerdateien\libraries</Filter>
     </ClInclude>
     <ClInclude Include="Threadhooker.h">
@@ -156,11 +147,29 @@
     <ClInclude Include="WriteMemory.h">
       <Filter>Headerdateien\memory</Filter>
     </ClInclude>
-    <ClInclude Include="Regions.h">
+    <ClInclude Include="MemoryRegions.h">
       <Filter>Headerdateien\memory</Filter>
     </ClInclude>
     <ClInclude Include="NtUser.h">
       <Filter>Headerdateien\components</Filter>
+    </ClInclude>
+    <ClInclude Include="InputLayout.h">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="Conversions.h">
+      <Filter>Headerdateien\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Technical.h">
+      <Filter>Headerdateien\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging.h">
+      <Filter>Headerdateien\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalSettings.h">
+      <Filter>Headerdateien\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="dllmain.h">
+      <Filter>Quelldateien</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +178,132 @@
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Overclocker.cpp">
+      <Filter>Headerdateien\components</Filter>
+    </ClCompile>
+    <ClCompile Include="InputLayout.cpp">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="Conversions.cpp">
+      <Filter>Headerdateien\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Technical.cpp">
+      <Filter>Headerdateien\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Logging.cpp">
+      <Filter>Headerdateien\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalSettings.cpp">
+      <Filter>Headerdateien\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Variable.cpp">
+      <Filter>Headerdateien\libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="NtUser.cpp">
+      <Filter>Headerdateien\components</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugMenu.cpp">
+      <Filter>Headerdateien\components</Filter>
+    </ClCompile>
+    <ClCompile Include="TAS.cpp">
+      <Filter>Headerdateien\components</Filter>
+    </ClCompile>
+    <ClCompile Include="Threadhooker.cpp">
+      <Filter>Headerdateien\components</Filter>
+    </ClCompile>
+    <ClCompile Include="Winactive.cpp">
+      <Filter>Headerdateien\components</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugAddresses.cpp">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugEditorSettings.cpp">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugFunctions.cpp">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugModGlobals.cpp">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugSettings.cpp">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugSupervisionSettings.cpp">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClCompile>
+    <ClCompile Include="SavefileEditor.cpp">
+      <Filter>Headerdateien\debug mods</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D9-Extra-Hooks.cpp">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D9-Hook.cpp">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D10-Hook.cpp">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D11-Hook.cpp">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D12-Hook.cpp">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3DBase.cpp">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="DXGI.cpp">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicsHookGlobals.cpp">
+      <Filter>Headerdateien\graphic hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectInput8-Hook.cpp">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="InputHookGlobals.cpp">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="RawInput-Hook.cpp">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="SendInput-Hook.cpp">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="TASInputGlobals.cpp">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="XInput1_4-Hook.cpp">
+      <Filter>Headerdateien\input hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="DrawingEssentials.cpp">
+      <Filter>Headerdateien\libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="xNyuHook.cpp">
+      <Filter>Headerdateien\libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="BasePointer.cpp">
+      <Filter>Headerdateien\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="ReadMemory.cpp">
+      <Filter>Headerdateien\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryRegions.cpp">
+      <Filter>Headerdateien\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="SigScan.cpp">
+      <Filter>Headerdateien\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="WriteMemory.cpp">
+      <Filter>Headerdateien\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Exceptions.cpp">
+      <Filter>Headerdateien\technical</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Headerdateien\technical</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

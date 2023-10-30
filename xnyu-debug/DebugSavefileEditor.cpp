@@ -1,31 +1,32 @@
-#pragma once
+#include "pch.h"
+#include "Logging.h"
+#include "GlobalSettings.h"
+#include "Variable.h"
+#include "Conversions.h"
+#include "DebugSavefileEditor.h"
 
-struct SavefileField {
-    std::string nameParent;
-    std::string nameChild;
-    std::string nameFull;
-    Variable value;
-};
 
-struct SavefileParent {
-    std::string nameParent;
-    std::vector<SavefileField> fields;
-};
 
+// --- Variables ---
 std::vector<SavefileParent> SavefileParents;
-
 std::vector<std::string> SavefileFiles;
 std::string SavefileCurrentFile = "";
 int SavefileParentFocus = 0;
 int SavefileFielFocus = 0;
-
 char* SavefileFilesBuffer = new char[2048];
+HANDLE DebugSavefileEditorMutex = CreateMutex(NULL, FALSE, NULL);
 
+
+
+// --- Functions ---
 bool LoadSavefileLayouts()
 {
+    WaitForSingleObject(DebugSavefileEditorMutex, INFINITE);
     try
     {
-        for (const auto& _file : std::filesystem::directory_iterator(GlobalSettings.config_savefile_directory))
+        std::string debugSavefileDirectorySetting = GetGlobalSetting("config_savefile_directory");
+
+        for (const auto& _file : std::filesystem::directory_iterator(debugSavefileDirectorySetting))
         {
             std::ifstream address_file = std::ifstream(_file.path());
             std::string fileText((std::istreambuf_iterator<char>(address_file)), std::istreambuf_iterator<char>());
@@ -100,7 +101,7 @@ bool LoadSavefileLayouts()
                     {
                         std::string childrenTarget = childrenSplitted[i];
                         if (childrenTarget.find("(") == std::string::npos || childrenTarget.find(")") == std::string::npos) return false;
-                        
+
                         SavefileField savefileField = SavefileField();
                         index = 0;
                         lastCharacterIndex = -1;
@@ -125,16 +126,23 @@ bool LoadSavefileLayouts()
                     }
                     SavefileParents.push_back(savefileParent);
                 }
-                if (fileText[0] == '{') return false;
+                if (fileText[0] == '{')
+                {
+                    ReleaseMutex(DebugSavefileEditorMutex);
+                    return false;
+                }
                 if (fileText[0] == ' ') fileText.replace(0, 1, "");
             }
         }
     }
     catch (const std::exception& e)
     {
+        ReleaseMutex(DebugSavefileEditorMutex);
         DebugConsoleOutput(e.what(), false, "red");
+        return false;
     }
 
+    ReleaseMutex(DebugSavefileEditorMutex);
     return true;
 }
 

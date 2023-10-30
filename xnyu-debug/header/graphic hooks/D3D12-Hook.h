@@ -1,3 +1,4 @@
+#pragma once
 #define XM_NO_INTRINSICS
 
 #include <d3d12.h>
@@ -352,4 +353,9 @@ BOOL D3D12HookInit()
 	return false;
 }
 
+bool D3D12HookUninit()
+{
+	return true;
+
+}
 

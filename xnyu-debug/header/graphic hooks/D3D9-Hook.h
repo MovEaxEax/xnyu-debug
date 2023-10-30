@@ -1,3 +1,4 @@
+#pragma once
 namespace Direct3D9Hooking
 {
     class Direct3D9 : public Direct3DHooking::Direct3DBase
@@ -388,6 +389,12 @@ BOOL D3D9HookInit()
     }
 
     return false;
+}
+
+
+bool D3D9HookUninit()
+{
+    return true;
 }
 
 

@@ -1,20 +1,17 @@
-//Basic includes
 #include "pch.h"
-
-//Other includes
-#include "xNyuLibrary.h"
+#include "dllmain.h"
 
 
 
 DWORD __stdcall EjectDebug(LPVOID lpParameter) {
-    Sleep(100);
+    SleepExReal(100);
     DebugConsoleOutput("Eject debug!", false, "red");
     if (!ConsoleEnabled)
     {
         FreeConsole();
         fclose(fp);
     }
-    Sleep(100);
+    SleepExReal(100);
     FreeLibraryAndExitThread(dllHandle, 0);
     return 0;
 }
@@ -24,22 +21,10 @@ EXTERN_DLL_EXPORT int EjectDebugger(char* parameterRaw)
     try
     {
         // Remove graphics hook
-        if (D3D9_Subhook.IsInstalled())
-        {
-            D3D9_Subhook.Remove();
-        }
-        if (D3D10_Subhook.IsInstalled())
-        {
-            D3D10_Subhook.Remove();
-        }
-        if (D3D11_Subhook.IsInstalled())
-        {
-            D3D11_Subhook.Remove();
-        }
-        if (D3D12_Subhook.IsInstalled())
-        {
-            D3D12_Subhook.Remove();
-        }
+        D3D9HookUninit();
+        D3D10HookUninit();
+        D3D11HookUninit();
+        D3D12HookUninit();
 
         // Remove the input hooks
         UninitInputHooks();
@@ -186,6 +171,8 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         std::vector<std::string> params;
         splitStringVector(params, parameterString, ";");
 
+        pSleepExReal = (SleepExRealT)SleepExReal;
+
         // Hook Thread creation process
         InitThreadhooker();
 
@@ -215,16 +202,19 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         GlobalSettings.config_joystickdriver_get = params[19];
         GlobalSettings.config_graphicdriver = params[20];
         GlobalSettings.config_d3d9_hook = params[21];
-        GlobalSettings.config_rawinput_demand = params[22] == "true";
+        GlobalSettings.config_overclocker_hooks = params[22];
+        GlobalSettings.config_winactive_hooks = params[23];
+
+        GlobalSettings.config_rawinput_demand = params[24] == "true";
         
-        GlobalSettings.config_modname = params[23];
-        GlobalSettings.config_processname = params[24];
-        GlobalSettings.config_version = params[25];
+        GlobalSettings.config_modname = params[25];
+        GlobalSettings.config_processname = params[26];
+        GlobalSettings.config_version = params[27];
 
-        GlobalSettings.config_tashook = params[26];
+        GlobalSettings.config_tashook = params[28];
 
-        GlobalSettings.config_frame_skip = std::stoi(params[27]);
-        GlobalSettings.config_tas_delay = std::stoi(params[28]);
+        GlobalSettings.config_frame_skip = std::stoi(params[29]);
+        GlobalSettings.config_tas_delay = std::stoi(params[30]);
 
         if (GlobalSettings.config_mousedriver_set == "rawinput") InputDriverMouseSet = InputDriverz::RAW1NPUT;
         if (GlobalSettings.config_mousedriver_set == "directinput8") InputDriverMouseSet = InputDriverz::DIRECT1NPUT8;
@@ -369,7 +359,7 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         // InitInputHooks();
 
         // Get memory regions
-        GetMemoryRegions(memoryRegionsStart, memoryRegionsEnd, &memoryRegionsCounter);
+        GetMemoryRegions(MemoryRegionsStart, MemoryRegionsEnd, &MemoryRegionsCounter);
 
         // Set thread fitting for freezing
         SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
@@ -484,11 +474,11 @@ EXTERN_DLL_EXPORT int windowStayActive(char* parameterRaw)
 
         if (params[0] == "1")
         {
-            if (!GetForegroundWindowSubHook.IsInstalled()) InitWindowStayActive();
+            InitWindowStayActive();
         }
         else
         {
-            if (GetForegroundWindowSubHook.IsInstalled()) UninitWindowStayActive();
+            UninitWindowStayActive();
         }
     }
     catch (const std::exception e)
@@ -534,7 +524,7 @@ EXTERN_DLL_EXPORT int toggleDevConsole(char* parameterRaw)
         else
         {
             fclose(fp);
-            Sleep(10);
+            SleepExReal(10);
             FreeConsole();
             ConsoleEnabled = false;
         }
@@ -567,7 +557,7 @@ EXTERN_DLL_EXPORT int toggleOverclocker(char* parameterRaw)
 {
     try
     {
-        if (!OverclockerIsActive) InitOverclocker();
+        if (!OverclockerEnabled) InitOverclocker();
         else UninitOverclocker();
     }
     catch (const std::exception e)

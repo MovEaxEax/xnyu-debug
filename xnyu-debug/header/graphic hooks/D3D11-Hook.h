@@ -1,3 +1,4 @@
+#pragma once
 #include <d3d11.h>
 #include <D3DX11.h>
 #include <d2d1_1.h>
@@ -773,4 +774,9 @@ BOOL D3D11HookInit()
     return false;
 }
 
+bool D3D11HookUninit()
+{
+    return true;
+
+}
 

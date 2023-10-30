@@ -1,5 +1,7 @@
 #pragma once
 
+// --- Structs ---
+
 struct BasePointer
 {
 	void* baseAddress;
@@ -37,78 +39,21 @@ struct ParameterValue
 	BYTE _byte_value;
 	bool _bool_value;
 	BYTE* _byte_ptr;
+	bool _use_safe;
 };
 
-// Struct to handle the return values
-ReturnValue ret;
-ParameterValue par;
+
+
+// --- Variables ---
+extern ReturnValue ret;
+extern ParameterValue par;
+extern HANDLE MemoryMutex;
 
 
 
-bool IsValidMemoryAddress(uintptr_t address, uintptr_t* srcMemory, uintptr_t* dstMemory, int memoryCounter)
-{
-	for (int i = 0; i < memoryCounter; i++)
-	{
-		if (address >= srcMemory[i] && address <= (dstMemory[i] - sizeof(uintptr_t)))
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-void DbgResolveBasePointerUnsafe()
-{
-	__try
-	{
-		uintptr_t finalAddress = reinterpret_cast<uintptr_t>(par._basepointer.baseAddress);
-		finalAddress = *reinterpret_cast<uintptr_t*>(finalAddress);
-		for (int i = 0; i < par._basepointerOffsetSize; i++)
-		{
-			finalAddress += reinterpret_cast<uintptr_t>(par._basepointer.offsets[i]);
-			if (i + 1 < par._basepointerOffsetSize)
-			{
-				finalAddress = *reinterpret_cast<uintptr_t*>(finalAddress);
-			}
-		}
-		ret._void_ptr = reinterpret_cast<void*>(finalAddress);
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		ret._void_ptr = nullptr;
-	}
-}
-
-void DbgResolveBasePointerSafe()
-{
-	__try
-	{
-		uintptr_t finalAddress = reinterpret_cast<uintptr_t>(par._basepointer.baseAddress);
-		if (!IsValidMemoryAddress(finalAddress, memoryRegionsStart, memoryRegionsEnd, memoryRegionsCounter))
-		{
-			ret._void_ptr = nullptr;
-			return;
-		}
-		finalAddress = *reinterpret_cast<uintptr_t*>(finalAddress);
-		for (int i = 0; i < par._basepointerOffsetSize; i++)
-		{
-			finalAddress += reinterpret_cast<uintptr_t>(par._basepointer.offsets[i]);
-			if (i + 1 < par._basepointerOffsetSize)
-			{
-				if (!IsValidMemoryAddress(finalAddress, memoryRegionsStart, memoryRegionsEnd, memoryRegionsCounter))
-				{
-					ret._void_ptr = nullptr;
-					return;
-				}
-				finalAddress = *reinterpret_cast<uintptr_t*>(finalAddress);
-			}
-		}
-		ret._void_ptr = reinterpret_cast<void*>(finalAddress);
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		ret._void_ptr = nullptr;
-	}
-}
+// --- Functions ---
+bool IsValidMemoryAddress(uintptr_t address, uintptr_t* srcMemory, uintptr_t* dstMemory, int memoryCounter);
+void DbgResolveBasePointerUnsafe();
+void DbgResolveBasePointerSafe();
 
 

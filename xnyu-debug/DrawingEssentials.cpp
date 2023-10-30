@@ -1,5 +1,11 @@
-#pragma once
+#include "pch.h"
+#include "Logging.h"
+#include "GlobalSettings.h"
+#include "DrawingEssentials.h"
 
+
+
+// --- Variables ---
 const int FontTextureWidth = 400;
 const int FontTextureHeight = 100;
 const int FontTextureDimension = FontTextureWidth * FontTextureHeight * 4;
@@ -13,7 +19,6 @@ unsigned char SurfaceTextureRaw[SurfaceTextureDimension];
 const int FontTextureRGBBufferSize = FontTextureWidth * FontTextureHeight * 3;
 unsigned char* FontTextureRGBBuffer = new unsigned char[FontTextureRGBBufferSize];
 
-// Surface states
 unsigned char FormTextureOverview[SurfaceTextureDimension];
 unsigned char FormTextureDebugValues[SurfaceTextureDimension];
 unsigned char FormTextureDebugFunctions[SurfaceTextureDimension];
@@ -22,7 +27,6 @@ unsigned char FormTextureSavefileEditorSelect[SurfaceTextureDimension];
 unsigned char FormTextureSupervision[SurfaceTextureDimension];
 unsigned char FormTextureEditormode[SurfaceTextureDimension];
 
-// Cursor
 const int CustomCursorTextureWidth = 52;
 const int CustomCursorTextureHeight = 52;
 const int CustomCursorTextureDimension = CustomCursorTextureWidth * CustomCursorTextureHeight * 4;
@@ -54,16 +58,9 @@ unsigned char ColorCyan[4] = { 0, 255, 242 };
 
 HDC hdc = CreateCompatibleDC(0);
 
-enum DEBUGMENUFORM { 
-    FORM_NONE = -1,
-    FORM_OVERVIEW = 0,
-    FORM_DEBUGVALUES = 1,
-    FORM_DEBUGFUNCTIONS = 2,
-    FORM_SAVEFILEEDITOR = 3,
-    FORM_SUPERVISION = 4,
-    FORM_EDITORMODE = 5
-};
 
+
+// --- Functions ---
 void ClearSurface(DEBUGMENUFORM form, int subform)
 {
     if (form == DEBUGMENUFORM::FORM_NONE) memset(SurfaceTextureRaw, 0x00, SurfaceTextureDimension);
@@ -140,7 +137,7 @@ void DrawTextToTexture(int x, int y, std::string text, HFONT hFont, unsigned cha
             if (FontTextureRGBBuffer[((h * FontTextureWidth) + w) * 3] > 0x00)
             {
                 int wPix = 0;
-                if(align == "left") wPix = x + w;
+                if (align == "left") wPix = x + w;
                 if (align == "right") wPix = x + w - textSize.cx;
                 if (align == "center") wPix = x + w - (textSize.cx / 2);
                 if (wPix < 0) continue;
@@ -196,8 +193,10 @@ void DrawCursorToTexture(int x, int y)
 
 void LoadFormTextures()
 {
+    std::string csd = GetGlobalSetting("config_settings_directory");
+
     // Overview form
-    std::string fileNameOverview = GlobalSettings.config_settings_directory + "imgs\\" + "Overview.raw";
+    std::string fileNameOverview = csd + "imgs\\" + "Overview.raw";
     FILE* fileOverview = fopen(fileNameOverview.c_str(), "rb");
     unsigned char* dataOverview = (unsigned char*)malloc(SurfaceTextureDimension);
     fread(dataOverview, 1, SurfaceTextureDimension, fileOverview);
@@ -215,7 +214,7 @@ void LoadFormTextures()
     free(dataOverview);
 
     // Debug Values form
-    std::string fileNameDebugValues = GlobalSettings.config_settings_directory + "imgs\\" + "DebugValues.raw";
+    std::string fileNameDebugValues = csd + "imgs\\" + "DebugValues.raw";
     FILE* fileDebugValues = fopen(fileNameDebugValues.c_str(), "rb");
     unsigned char* dataDebugValues = (unsigned char*)malloc(SurfaceTextureDimension);
     fread(dataDebugValues, 1, SurfaceTextureDimension, fileDebugValues);
@@ -233,7 +232,7 @@ void LoadFormTextures()
     free(dataDebugValues);
 
     // Debug Functions form
-    std::string fileNameDebugFunctions = GlobalSettings.config_settings_directory + "imgs\\" + "DebugFunctions.raw";
+    std::string fileNameDebugFunctions = csd + "imgs\\" + "DebugFunctions.raw";
     FILE* fileDebugFunctions = fopen(fileNameDebugFunctions.c_str(), "rb");
     unsigned char* dataDebugFunctions = (unsigned char*)malloc(SurfaceTextureDimension);
     fread(dataDebugFunctions, 1, SurfaceTextureDimension, fileDebugFunctions);
@@ -251,7 +250,7 @@ void LoadFormTextures()
     free(dataDebugFunctions);
 
     // Savefile Editor form
-    std::string fileNameSavefileEditor = GlobalSettings.config_settings_directory + "imgs\\" + "SavefileEditor.raw";
+    std::string fileNameSavefileEditor = csd + "imgs\\" + "SavefileEditor.raw";
     FILE* fileSavefileEditor = fopen(fileNameSavefileEditor.c_str(), "rb");
     unsigned char* dataSavefileEditor = (unsigned char*)malloc(SurfaceTextureDimension);
     fread(dataSavefileEditor, 1, SurfaceTextureDimension, fileSavefileEditor);
@@ -269,7 +268,7 @@ void LoadFormTextures()
     free(dataSavefileEditor);
 
     // Savefile Editor Select form
-    std::string fileNameSavefileEditorSelect = GlobalSettings.config_settings_directory + "imgs\\" + "SavefileEditorSelect.raw";
+    std::string fileNameSavefileEditorSelect = csd + "imgs\\" + "SavefileEditorSelect.raw";
     FILE* fileSavefileEditorSelect = fopen(fileNameSavefileEditorSelect.c_str(), "rb");
     unsigned char* dataSavefileEditorSelect = (unsigned char*)malloc(SurfaceTextureDimension);
     fread(dataSavefileEditorSelect, 1, SurfaceTextureDimension, fileSavefileEditorSelect);
@@ -287,7 +286,7 @@ void LoadFormTextures()
     free(dataSavefileEditorSelect);
 
     // Supervision form
-    std::string fileNameSupervision = GlobalSettings.config_settings_directory + "imgs\\" + "Supervision.raw";
+    std::string fileNameSupervision = csd + "imgs\\" + "Supervision.raw";
     FILE* fileSupervision = fopen(fileNameSupervision.c_str(), "rb");
     unsigned char* dataSupervision = (unsigned char*)malloc(SurfaceTextureDimension);
     fread(dataSupervision, 1, SurfaceTextureDimension, fileSupervision);
@@ -305,7 +304,7 @@ void LoadFormTextures()
     free(dataSupervision);
 
     // Editor Mode form
-    std::string fileNameEditormode = GlobalSettings.config_settings_directory + "imgs\\" + "EditorMode.raw";
+    std::string fileNameEditormode = csd + "imgs\\" + "EditorMode.raw";
     FILE* fileEditormode = fopen(fileNameEditormode.c_str(), "rb");
     unsigned char* dataEditormode = (unsigned char*)malloc(SurfaceTextureDimension);
     fread(dataEditormode, 1, SurfaceTextureDimension, fileEditormode);
@@ -323,7 +322,7 @@ void LoadFormTextures()
     free(dataEditormode);
 
     // Custom cursor
-    std::string fileNameCustomCursor = GlobalSettings.config_settings_directory + "imgs\\" + "CustomCursor.raw";
+    std::string fileNameCustomCursor = csd + "imgs\\" + "CustomCursor.raw";
     FILE* fileCustomCursor = fopen(fileNameCustomCursor.c_str(), "rb");
     unsigned char* dataCustomCursor = (unsigned char*)malloc(CustomCursorTextureDimension);
     fread(dataCustomCursor, 1, CustomCursorTextureDimension, fileCustomCursor);

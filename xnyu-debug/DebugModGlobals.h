@@ -33,25 +33,25 @@ LoadSavefileT pLoadSavefile = nullptr;
 typedef void(__cdecl* UpdateSavefileT)(SavefileParent* savefileParent);
 UpdateSavefileT pUpdateSavefile = nullptr;
 
-typedef void(__cdecl* InitSupervisionSettingsT)(const std::vector<FeatureSettingParent>& settingParent);
+typedef void(__cdecl* InitSupervisionSettingsT)(const std::vector<DebugEditorFeatureSettingParent>& settingParent);
 InitSupervisionSettingsT pInitSupervisionSettings = nullptr;
 
-typedef void(__cdecl* GetSupervisionSettingsT)(FeatureSettingParent* settingParent);
+typedef void(__cdecl* GetSupervisionSettingsT)(DebugEditorFeatureSettingParent* settingParent);
 GetSupervisionSettingsT pGetSupervisionSettings = nullptr;
 
-typedef void(__cdecl* UpdateSupervisionSettingsT)(FeatureSettingParent* settingParent);
+typedef void(__cdecl* UpdateSupervisionSettingsT)(DebugEditorFeatureSettingParent* settingParent);
 UpdateSupervisionSettingsT pUpdateSupervisionSettings = nullptr;
 
 typedef void(__cdecl* ToggleSupervisionRoutineT)(bool isEnabled);
 ToggleSupervisionRoutineT pToggleSupervisionRoutine = nullptr;
 
-typedef void(__cdecl* InitEditorModeSettingsT)(const std::vector<FeatureSettingParent>& settingParent);
+typedef void(__cdecl* InitEditorModeSettingsT)(const std::vector<DebugEditorFeatureSettingParent>& settingParent);
 InitEditorModeSettingsT pInitEditorModeSettings = nullptr;
 
-typedef void(__cdecl* GetEditorModeSettingsT)(FeatureSettingParent* settingParent);
+typedef void(__cdecl* GetEditorModeSettingsT)(DebugEditorFeatureSettingParent* settingParent);
 GetEditorModeSettingsT pGetEditorModeSettings = nullptr;
 
-typedef void(__cdecl* UpdateEditorModeSettingsT)(FeatureSettingParent* settingParent);
+typedef void(__cdecl* UpdateEditorModeSettingsT)(DebugEditorFeatureSettingParent* settingParent);
 UpdateEditorModeSettingsT pUpdateEditorModeSettings = nullptr;
 
 typedef void(__cdecl* ToggleEditorModeRoutineT)(bool isEnabled);
@@ -115,7 +115,7 @@ EditorModeActionEnterMovingModeT pEditorModeActionEnterMovingMode = nullptr;
 typedef void(__cdecl* EditorModeActionHoldingShiftT)();
 EditorModeActionHoldingShiftT pEditorModeActionHoldingShift = nullptr;
 
-typedef void(__cdecl* EditorModeActionContextActionT)(EditorModeAction*);
+typedef void(__cdecl* EditorModeActionContextActionT)(DebugEditorModeAction*);
 EditorModeActionContextActionT pEditorModeActionContextAction = nullptr;
 
 typedef void(__cdecl* EditorModeActionUndoT)();

@@ -19,7 +19,7 @@ DWORD __stdcall SendInputThread() {
             SendInputAmount = 0;
             SendInputActive = false;
         }
-        Sleep(1);
+        SleepExReal(1);
     }
     return 0;
 }
@@ -768,7 +768,7 @@ void SetSendInput(GameInput SendInputGameInput, BOOL TAS)
     if (SendInputAmount > 0)
     {
         SendInputActive = true;
-        while (SendInputActive) Sleep(1);
+        while (SendInputActive) SleepExReal(1);
     }
 
     if (InputDriverMouseSet == InputDriverz::S3ND1NPUT) TASSynchronizer.SendInputMouseSend = false;

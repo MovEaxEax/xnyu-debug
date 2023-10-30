@@ -1,3 +1,4 @@
+#pragma once
 #include <dxgiformat.h>
 #include <d3d10_1.h>
 #include <d3d10.h>
@@ -303,4 +304,9 @@ BOOL D3D10HookInit()
     return false;
 }
 
+bool D3D10HookUninit()
+{
+    return true;
+
+}
 
