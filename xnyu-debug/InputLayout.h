@@ -1,5 +1,6 @@
 #pragma once
 
+// --- Structs ---
 struct GameInput
 {
     bool ESC;
@@ -227,5 +228,10 @@ struct GameInputLayout
     std::string JOYLS;
 };
 
+
+
+// --- Functions ---
 void MergeGameInputs(GameInput* DST, GameInput* MOUSE, GameInput* KEYBOARD, GameInput* JOYSTICK);
 void LoadGameInputLayout(GameInputLayout* DST, std::string fileName);
+
+

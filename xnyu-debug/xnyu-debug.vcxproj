@@ -163,7 +163,6 @@
     <ClInclude Include="D3D9-Extra-Hooks.h" />
     <ClInclude Include="DebugEditorSettings.h" />
     <ClInclude Include="DebugModGlobals.h" />
-    <ClInclude Include="DebugSettings.h" />
     <ClInclude Include="DebugSupervisionSettings.h" />
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="DebugAddresses.h" />
@@ -175,17 +174,16 @@
     <ClInclude Include="Overclocker.h" />
     <ClInclude Include="ReadMemory.h" />
     <ClInclude Include="MemoryRegions.h" />
-    <ClInclude Include="SavefileEditor.h" />
+    <ClInclude Include="DebugSavefileEditor.h" />
     <ClInclude Include="GlobalSettings.h" />
     <ClInclude Include="SigScan.h" />
     <ClInclude Include="Technical.h" />
     <ClInclude Include="Threadhooker.h" />
     <ClInclude Include="WriteMemory.h" />
     <ClInclude Include="Variable.h" />
-    <ClInclude Include="SendInput-Hook.h" />
+    <ClInclude Include="SendInputHook.h" />
     <ClInclude Include="TAS.h" />
-    <ClInclude Include="InputHookGlobals.h" />
-    <ClInclude Include="TASInputGlobals.h" />
+    <ClInclude Include="TASInputHooks.h" />
     <ClInclude Include="Winactive.h" />
     <ClInclude Include="DrawingEssentials.h" />
     <ClInclude Include="header\components\DebugMenu.h" />
@@ -195,13 +193,16 @@
     <ClInclude Include="header\graphic hooks\D3D9-Hook.h" />
     <ClInclude Include="header\graphic hooks\Direct3DBase.h" />
     <ClInclude Include="header\graphic hooks\DXGI.h" />
-    <ClInclude Include="header\input hooks\DirectInput8-Hook.h" />
-    <ClInclude Include="header\input hooks\RawInput-Hook.h" />
-    <ClInclude Include="header\input hooks\XInput1_4-Hook.h" />
+    <ClInclude Include="header\input hooks\DirectInput8Hook.h" />
+    <ClInclude Include="header\input hooks\RawInputHook.h" />
+    <ClInclude Include="header\input hooks\XInputHook.h" />
     <ClInclude Include="header\technical\Exceptions.hpp" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="xNyuHook.h" />
+    <ClInclude Include="xNyuTASLanguageCompiler.h" />
+    <ClInclude Include="xNyuTASLanguageCreateInstructions.h" />
+    <ClInclude Include="xNyuTASLanguageDatatypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasePointer.cpp" />
@@ -216,15 +217,13 @@
     <ClCompile Include="DebugFunctions.cpp" />
     <ClCompile Include="DebugMenu.cpp" />
     <ClCompile Include="DebugModGlobals.cpp" />
-    <ClCompile Include="DebugSettings.cpp" />
     <ClCompile Include="DebugSupervisionSettings.cpp" />
     <ClCompile Include="Direct3DBase.cpp" />
-    <ClCompile Include="DirectInput8-Hook.cpp" />
+    <ClCompile Include="DirectInput8Hook.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DXGI.cpp" />
     <ClCompile Include="Exceptions.cpp" />
     <ClCompile Include="GraphicsHookGlobals.cpp" />
-    <ClCompile Include="InputHookGlobals.cpp" />
     <ClCompile Include="InputLayout.cpp" />
     <ClCompile Include="Logging.cpp" />
     <ClCompile Include="NtUser.cpp" />
@@ -235,24 +234,26 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="RawInput-Hook.cpp" />
+    <ClCompile Include="RawInputHook.cpp" />
     <ClCompile Include="ReadMemory.cpp" />
     <ClCompile Include="MemoryRegions.cpp" />
-    <ClCompile Include="SavefileEditor.cpp" />
-    <ClCompile Include="SendInput-Hook.cpp" />
+    <ClCompile Include="DebugSavefileEditor.cpp" />
+    <ClCompile Include="SendInputHook.cpp" />
     <ClCompile Include="GlobalSettings.cpp" />
     <ClCompile Include="SigScan.cpp" />
     <ClCompile Include="TAS.cpp" />
-    <ClCompile Include="TASInputGlobals.cpp" />
+    <ClCompile Include="TASInputHooks.cpp" />
     <ClCompile Include="Technical.cpp" />
     <ClCompile Include="Threadhooker.cpp" />
     <ClCompile Include="Variable.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Winactive.cpp" />
     <ClCompile Include="WriteMemory.cpp" />
-    <ClCompile Include="XInput1_4-Hook.cpp" />
+    <ClCompile Include="XInputHook.cpp" />
     <ClCompile Include="DrawingEssentials.cpp" />
     <ClCompile Include="xNyuHook.cpp" />
+    <ClCompile Include="xNyuTASLanguageCompiler.cpp" />
+    <ClCompile Include="xNyuTASLanguageCreateInstructions.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

@@ -30,6 +30,8 @@
 #include <unordered_set>
 #include <regex>
 #include <optional>
+#include <chrono>
+#include <random>
 
 #include <mmsystem.h>
 #pragma comment (lib,"winmm.lib")
@@ -40,6 +42,14 @@
 #include <objidl.h>
 #include <gdiplus.h>
 #pragma comment (lib,"Gdiplus.lib")
+
+#include <dinput.h>
+#pragma comment(lib, "Dinput8.lib")
+
+#include <Xinput.h>
+#pragma comment(lib,"XInput.lib")
+
+#pragma comment(lib, "Dxguid.lib")
 
 #define SUBHOOK_STATIC
 #include <subhook.h>

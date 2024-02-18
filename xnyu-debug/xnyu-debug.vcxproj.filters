@@ -39,9 +39,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="header\graphic hooks\D3D9-Hook.h">
       <Filter>Headerdateien\graphic hooks</Filter>
     </ClInclude>
@@ -60,13 +57,13 @@
     <ClInclude Include="header\graphic hooks\DXGI.h">
       <Filter>Headerdateien\graphic hooks</Filter>
     </ClInclude>
-    <ClInclude Include="header\input hooks\DirectInput8-Hook.h">
+    <ClInclude Include="header\input hooks\DirectInput8Hook.h">
       <Filter>Headerdateien\input hooks</Filter>
     </ClInclude>
-    <ClInclude Include="header\input hooks\RawInput-Hook.h">
+    <ClInclude Include="header\input hooks\RawInputHook.h">
       <Filter>Headerdateien\input hooks</Filter>
     </ClInclude>
-    <ClInclude Include="header\input hooks\XInput1_4-Hook.h">
+    <ClInclude Include="header\input hooks\XInputHook.h">
       <Filter>Headerdateien\input hooks</Filter>
     </ClInclude>
     <ClInclude Include="header\technical\Exceptions.hpp">
@@ -81,16 +78,13 @@
     <ClInclude Include="DrawingEssentials.h">
       <Filter>Headerdateien\libraries</Filter>
     </ClInclude>
-    <ClInclude Include="InputHookGlobals.h">
-      <Filter>Headerdateien\input hooks</Filter>
-    </ClInclude>
     <ClInclude Include="TAS.h">
       <Filter>Headerdateien\components</Filter>
     </ClInclude>
-    <ClInclude Include="SendInput-Hook.h">
+    <ClInclude Include="SendInputHook.h">
       <Filter>Headerdateien\input hooks</Filter>
     </ClInclude>
-    <ClInclude Include="TASInputGlobals.h">
+    <ClInclude Include="TASInputHooks.h">
       <Filter>Headerdateien\input hooks</Filter>
     </ClInclude>
     <ClInclude Include="DebugFunctions.h">
@@ -108,7 +102,7 @@
     <ClInclude Include="Variable.h">
       <Filter>Headerdateien\libraries</Filter>
     </ClInclude>
-    <ClInclude Include="SavefileEditor.h">
+    <ClInclude Include="DebugSavefileEditor.h">
       <Filter>Headerdateien\debug mods</Filter>
     </ClInclude>
     <ClInclude Include="Overclocker.h">
@@ -127,9 +121,6 @@
       <Filter>Headerdateien\components</Filter>
     </ClInclude>
     <ClInclude Include="DebugSupervisionSettings.h">
-      <Filter>Headerdateien\debug mods</Filter>
-    </ClInclude>
-    <ClInclude Include="DebugSettings.h">
       <Filter>Headerdateien\debug mods</Filter>
     </ClInclude>
     <ClInclude Include="DebugEditorSettings.h">
@@ -170,6 +161,18 @@
     </ClInclude>
     <ClInclude Include="dllmain.h">
       <Filter>Quelldateien</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Quelldateien</Filter>
+    </ClInclude>
+    <ClInclude Include="xNyuTASLanguageCompiler.h">
+      <Filter>Headerdateien\components</Filter>
+    </ClInclude>
+    <ClInclude Include="xNyuTASLanguageCreateInstructions.h">
+      <Filter>Headerdateien\components</Filter>
+    </ClInclude>
+    <ClInclude Include="xNyuTASLanguageDatatypes.h">
+      <Filter>Headerdateien\components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -227,13 +230,10 @@
     <ClCompile Include="DebugModGlobals.cpp">
       <Filter>Headerdateien\debug mods</Filter>
     </ClCompile>
-    <ClCompile Include="DebugSettings.cpp">
-      <Filter>Headerdateien\debug mods</Filter>
-    </ClCompile>
     <ClCompile Include="DebugSupervisionSettings.cpp">
       <Filter>Headerdateien\debug mods</Filter>
     </ClCompile>
-    <ClCompile Include="SavefileEditor.cpp">
+    <ClCompile Include="DebugSavefileEditor.cpp">
       <Filter>Headerdateien\debug mods</Filter>
     </ClCompile>
     <ClCompile Include="D3D9-Extra-Hooks.cpp">
@@ -260,22 +260,19 @@
     <ClCompile Include="GraphicsHookGlobals.cpp">
       <Filter>Headerdateien\graphic hooks</Filter>
     </ClCompile>
-    <ClCompile Include="DirectInput8-Hook.cpp">
+    <ClCompile Include="DirectInput8Hook.cpp">
       <Filter>Headerdateien\input hooks</Filter>
     </ClCompile>
-    <ClCompile Include="InputHookGlobals.cpp">
+    <ClCompile Include="RawInputHook.cpp">
       <Filter>Headerdateien\input hooks</Filter>
     </ClCompile>
-    <ClCompile Include="RawInput-Hook.cpp">
+    <ClCompile Include="SendInputHook.cpp">
       <Filter>Headerdateien\input hooks</Filter>
     </ClCompile>
-    <ClCompile Include="SendInput-Hook.cpp">
+    <ClCompile Include="TASInputHooks.cpp">
       <Filter>Headerdateien\input hooks</Filter>
     </ClCompile>
-    <ClCompile Include="TASInputGlobals.cpp">
-      <Filter>Headerdateien\input hooks</Filter>
-    </ClCompile>
-    <ClCompile Include="XInput1_4-Hook.cpp">
+    <ClCompile Include="XInputHook.cpp">
       <Filter>Headerdateien\input hooks</Filter>
     </ClCompile>
     <ClCompile Include="DrawingEssentials.cpp">
@@ -304,6 +301,12 @@
     </ClCompile>
     <ClCompile Include="Window.cpp">
       <Filter>Headerdateien\technical</Filter>
+    </ClCompile>
+    <ClCompile Include="xNyuTASLanguageCompiler.cpp">
+      <Filter>Headerdateien\components</Filter>
+    </ClCompile>
+    <ClCompile Include="xNyuTASLanguageCreateInstructions.cpp">
+      <Filter>Headerdateien\components</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

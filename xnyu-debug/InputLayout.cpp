@@ -3,6 +3,7 @@
 
 
 
+// --- Functions ---
 void MergeGameInputs(GameInput* DST, GameInput* MOUSE, GameInput* KEYBOARD, GameInput* JOYSTICK)
 {
     DST->ESC = KEYBOARD->ESC;
