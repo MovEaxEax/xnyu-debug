@@ -185,7 +185,7 @@ public:
         instance->inputSetBufferSize += packet.header.dwSize;
     }
 
-    void SetMouse(GameInput input, GameInput inputLast)
+    void SetMouse(GameInput& input, GameInput& inputLast)
     {
         WaitForSingleObject(instance->inputDeviceMutex, INFINITE);
 
@@ -210,7 +210,7 @@ public:
         instance->inputSetBufferSize += packet.header.dwSize;
     }
 
-    void SetKeyboard(GameInput input, GameInput inputLast)
+    void SetKeyboard(GameInput& input, GameInput& inputLast)
     {
         WaitForSingleObject(instance->inputDeviceMutex, INFINITE);
 
@@ -283,75 +283,75 @@ public:
         return result;
     }
 
-    void GetMouse(GameInput* input)
+    void GetMouse(GameInput& input)
     {
         WaitForSingleObject(instance->inputDeviceMutex, INFINITE);
 
-        input->LMB = instance->inputstateDeviceCurrent.LMB;
-        input->RMB = instance->inputstateDeviceCurrent.RMB;
-        input->MB = instance->inputstateDeviceCurrent.MB;
-        input->ME1 = instance->inputstateDeviceCurrent.ME1;
-        input->ME2 = instance->inputstateDeviceCurrent.ME2;
-        input->WHEEL = instance->inputstateDeviceCurrent.WHEEL;
-        input->MOUSEX = instance->inputstateDeviceCurrent.MOUSEX;
-        input->MOUSEY = instance->inputstateDeviceCurrent.MOUSEY;
-        input->SETMOUSE = instance->inputstateDeviceCurrent.SETMOUSE;
+        input.LMB = instance->inputstateDeviceCurrent.LMB;
+        input.RMB = instance->inputstateDeviceCurrent.RMB;
+        input.MB = instance->inputstateDeviceCurrent.MB;
+        input.ME1 = instance->inputstateDeviceCurrent.ME1;
+        input.ME2 = instance->inputstateDeviceCurrent.ME2;
+        input.WHEEL = instance->inputstateDeviceCurrent.WHEEL;
+        input.MOUSEX = instance->inputstateDeviceCurrent.MOUSEX;
+        input.MOUSEY = instance->inputstateDeviceCurrent.MOUSEY;
+        input.SETMOUSE = instance->inputstateDeviceCurrent.SETMOUSE;
 
         ReleaseMutex(instance->inputDeviceMutex);
     }
-    void GetKeyboard(GameInput* input)
+    void GetKeyboard(GameInput& input)
     {
         WaitForSingleObject(instance->inputDeviceMutex, INFINITE);
 
-        input->ESC = instance->inputstateDeviceCurrent.ESC;
-        input->TAB = instance->inputstateDeviceCurrent.TAB;
-        input->LSHIFT = instance->inputstateDeviceCurrent.LSHIFT;
-        input->RSHIFT = instance->inputstateDeviceCurrent.RSHIFT;
-        input->CTRL = instance->inputstateDeviceCurrent.CTRL;
-        input->ALT = instance->inputstateDeviceCurrent.ALT;
-        input->BACK = instance->inputstateDeviceCurrent.BACK;
-        input->RETURN = instance->inputstateDeviceCurrent.RETURN;
-        input->SPACE = instance->inputstateDeviceCurrent.SPACE;
-        input->AUP = instance->inputstateDeviceCurrent.AUP;
-        input->ARIGHT = instance->inputstateDeviceCurrent.ARIGHT;
-        input->ADOWN = instance->inputstateDeviceCurrent.ADOWN;
-        input->ALEFT = instance->inputstateDeviceCurrent.ALEFT;
-        input->D0 = instance->inputstateDeviceCurrent.D0;
-        input->D1 = instance->inputstateDeviceCurrent.D1;
-        input->D2 = instance->inputstateDeviceCurrent.D2;
-        input->D3 = instance->inputstateDeviceCurrent.D3;
-        input->D4 = instance->inputstateDeviceCurrent.D4;
-        input->D5 = instance->inputstateDeviceCurrent.D5;
-        input->D6 = instance->inputstateDeviceCurrent.D6;
-        input->D7 = instance->inputstateDeviceCurrent.D7;
-        input->D8 = instance->inputstateDeviceCurrent.D8;
-        input->D9 = instance->inputstateDeviceCurrent.D9;
-        input->A = instance->inputstateDeviceCurrent.A;
-        input->B = instance->inputstateDeviceCurrent.B;
-        input->C = instance->inputstateDeviceCurrent.C;
-        input->D = instance->inputstateDeviceCurrent.D;
-        input->E = instance->inputstateDeviceCurrent.E;
-        input->F = instance->inputstateDeviceCurrent.F;
-        input->G = instance->inputstateDeviceCurrent.G;
-        input->H = instance->inputstateDeviceCurrent.H;
-        input->I = instance->inputstateDeviceCurrent.I;
-        input->J = instance->inputstateDeviceCurrent.J;
-        input->K = instance->inputstateDeviceCurrent.K;
-        input->L = instance->inputstateDeviceCurrent.L;
-        input->M = instance->inputstateDeviceCurrent.M;
-        input->N = instance->inputstateDeviceCurrent.N;
-        input->O = instance->inputstateDeviceCurrent.O;
-        input->P = instance->inputstateDeviceCurrent.P;
-        input->Q = instance->inputstateDeviceCurrent.Q;
-        input->R = instance->inputstateDeviceCurrent.R;
-        input->S = instance->inputstateDeviceCurrent.S;
-        input->T = instance->inputstateDeviceCurrent.T;
-        input->U = instance->inputstateDeviceCurrent.U;
-        input->V = instance->inputstateDeviceCurrent.V;
-        input->W = instance->inputstateDeviceCurrent.W;
-        input->X = instance->inputstateDeviceCurrent.X;
-        input->Y = instance->inputstateDeviceCurrent.Y;
-        input->Z = instance->inputstateDeviceCurrent.Z;
+        input.ESC = instance->inputstateDeviceCurrent.ESC;
+        input.TAB = instance->inputstateDeviceCurrent.TAB;
+        input.LSHIFT = instance->inputstateDeviceCurrent.LSHIFT;
+        input.RSHIFT = instance->inputstateDeviceCurrent.RSHIFT;
+        input.CTRL = instance->inputstateDeviceCurrent.CTRL;
+        input.ALT = instance->inputstateDeviceCurrent.ALT;
+        input.BACK = instance->inputstateDeviceCurrent.BACK;
+        input.RETURN = instance->inputstateDeviceCurrent.RETURN;
+        input.SPACE = instance->inputstateDeviceCurrent.SPACE;
+        input.AUP = instance->inputstateDeviceCurrent.AUP;
+        input.ARIGHT = instance->inputstateDeviceCurrent.ARIGHT;
+        input.ADOWN = instance->inputstateDeviceCurrent.ADOWN;
+        input.ALEFT = instance->inputstateDeviceCurrent.ALEFT;
+        input.D0 = instance->inputstateDeviceCurrent.D0;
+        input.D1 = instance->inputstateDeviceCurrent.D1;
+        input.D2 = instance->inputstateDeviceCurrent.D2;
+        input.D3 = instance->inputstateDeviceCurrent.D3;
+        input.D4 = instance->inputstateDeviceCurrent.D4;
+        input.D5 = instance->inputstateDeviceCurrent.D5;
+        input.D6 = instance->inputstateDeviceCurrent.D6;
+        input.D7 = instance->inputstateDeviceCurrent.D7;
+        input.D8 = instance->inputstateDeviceCurrent.D8;
+        input.D9 = instance->inputstateDeviceCurrent.D9;
+        input.A = instance->inputstateDeviceCurrent.A;
+        input.B = instance->inputstateDeviceCurrent.B;
+        input.C = instance->inputstateDeviceCurrent.C;
+        input.D = instance->inputstateDeviceCurrent.D;
+        input.E = instance->inputstateDeviceCurrent.E;
+        input.F = instance->inputstateDeviceCurrent.F;
+        input.G = instance->inputstateDeviceCurrent.G;
+        input.H = instance->inputstateDeviceCurrent.H;
+        input.I = instance->inputstateDeviceCurrent.I;
+        input.J = instance->inputstateDeviceCurrent.J;
+        input.K = instance->inputstateDeviceCurrent.K;
+        input.L = instance->inputstateDeviceCurrent.L;
+        input.M = instance->inputstateDeviceCurrent.M;
+        input.N = instance->inputstateDeviceCurrent.N;
+        input.O = instance->inputstateDeviceCurrent.O;
+        input.P = instance->inputstateDeviceCurrent.P;
+        input.Q = instance->inputstateDeviceCurrent.Q;
+        input.R = instance->inputstateDeviceCurrent.R;
+        input.S = instance->inputstateDeviceCurrent.S;
+        input.T = instance->inputstateDeviceCurrent.T;
+        input.U = instance->inputstateDeviceCurrent.U;
+        input.V = instance->inputstateDeviceCurrent.V;
+        input.W = instance->inputstateDeviceCurrent.W;
+        input.X = instance->inputstateDeviceCurrent.X;
+        input.Y = instance->inputstateDeviceCurrent.Y;
+        input.Z = instance->inputstateDeviceCurrent.Z;
 
         ReleaseMutex(instance->inputDeviceMutex);
     }

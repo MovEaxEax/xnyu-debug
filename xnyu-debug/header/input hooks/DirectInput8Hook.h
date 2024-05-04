@@ -242,7 +242,7 @@ public:
         return result;
     }
 
-    void SetJoystick(GameInput input, GameInput inputLast)
+    void SetJoystick(GameInput& input, GameInput& inputLast)
     {
         WaitForSingleObject(instance->inputAllMutex, INFINITE);
         std::memset(&instance->inputstateJoystickSet, 0x00, sizeof(DIJOYSTATE));
@@ -276,7 +276,7 @@ public:
 
         ReleaseMutex(instance->inputAllMutex);
     }
-    void SetMouse(GameInput input, GameInput inputLast)
+    void SetMouse(GameInput& input, GameInput& inputLast)
     {
         WaitForSingleObject(instance->inputAllMutex, INFINITE);
         std::memset(&instance->inputstateMouseSet, 0x00, sizeof(DIMOUSESTATE));
@@ -293,7 +293,7 @@ public:
 
         ReleaseMutex(instance->inputAllMutex);
     }
-    void SetKeyboard(GameInput input, GameInput inputLast)
+    void SetKeyboard(GameInput& input, GameInput& inputLast)
     {
         WaitForSingleObject(instance->inputAllMutex, INFINITE);
         std::memset(&instance->inputstateKeyboardSet, 0x00, sizeof(DIKEYBAORDSTATE));
@@ -385,7 +385,7 @@ public:
 
         ReleaseMutex(instance->inputAllMutex);
     }
-    void GetJoystick(GameInput* input)
+    void GetJoystick(GameInput& input)
     {
         WaitForSingleObject(instance->inputAllMutex, INFINITE);
         
@@ -396,130 +396,130 @@ public:
         int RAXISX = static_cast<int>(instance->inputstateJoystickGet.lRx);
         int RAXISY = static_cast<int>(instance->inputstateJoystickGet.lRy);
 
-        if (instance->inputstateJoystickGet.rgbButtons[0] == 0x80) input->JOYA = true;
-        if (instance->inputstateJoystickGet.rgbButtons[1] == 0x80) input->JOYB = true;
-        if (instance->inputstateJoystickGet.rgbButtons[2] == 0x80) input->JOYX = true;
-        if (instance->inputstateJoystickGet.rgbButtons[3] == 0x80) input->JOYY = true;
-        if (instance->inputstateJoystickGet.rgbButtons[4] == 0x80) input->JOYLB = true;
-        if (instance->inputstateJoystickGet.rgbButtons[5] == 0x80) input->JOYRB = true;
-        if (instance->inputstateJoystickGet.rgbButtons[6] == 0x80) input->JOYSELECT = true;
-        if (instance->inputstateJoystickGet.rgbButtons[7] == 0x80) input->JOYSTART = true;
-        if (instance->inputstateJoystickGet.rgbButtons[8] == 0x80) input->JOYLS = true;
-        if (instance->inputstateJoystickGet.rgbButtons[9] == 0x80) input->JOYRS = true;
-        if (instance->inputstateJoystickGet.rgdwPOV[0] == 0 || instance->inputstateJoystickGet.rgdwPOV[0] == 4500 || instance->inputstateJoystickGet.rgdwPOV[0] == 31500) input->JOYUP = true;
-        if (instance->inputstateJoystickGet.rgdwPOV[0] == 4500 || instance->inputstateJoystickGet.rgdwPOV[0] == 9000 || instance->inputstateJoystickGet.rgdwPOV[0] == 13500) input->JOYRIGHT = true;
-        if (instance->inputstateJoystickGet.rgdwPOV[0] == 13500 || instance->inputstateJoystickGet.rgdwPOV[0] == 18000 || instance->inputstateJoystickGet.rgdwPOV[0] == 22500) input->JOYDOWN = true;
-        if (instance->inputstateJoystickGet.rgdwPOV[0] == 22500 || instance->inputstateJoystickGet.rgdwPOV[0] == 27000 || instance->inputstateJoystickGet.rgdwPOV[0] == 31500) input->JOYLEFT = true;
-        if (LT > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) input->JOYLT = LT;
-        if (RT > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) input->JOYRT = RT;
-        if (LAXISX > 99 || LAXISX < -99) input->JOYLAXISX = LAXISX;
-        if (LAXISY > 99 || LAXISY < -99) input->JOYLAXISY = LAXISY;
-        if (RAXISX > 99 || RAXISX < -99) input->JOYRAXISX = RAXISX;
-        if (RAXISY > 99 || RAXISY < -99) input->JOYRAXISY = RAXISY;
+        if (instance->inputstateJoystickGet.rgbButtons[0] == 0x80) input.JOYA = true;
+        if (instance->inputstateJoystickGet.rgbButtons[1] == 0x80) input.JOYB = true;
+        if (instance->inputstateJoystickGet.rgbButtons[2] == 0x80) input.JOYX = true;
+        if (instance->inputstateJoystickGet.rgbButtons[3] == 0x80) input.JOYY = true;
+        if (instance->inputstateJoystickGet.rgbButtons[4] == 0x80) input.JOYLB = true;
+        if (instance->inputstateJoystickGet.rgbButtons[5] == 0x80) input.JOYRB = true;
+        if (instance->inputstateJoystickGet.rgbButtons[6] == 0x80) input.JOYSELECT = true;
+        if (instance->inputstateJoystickGet.rgbButtons[7] == 0x80) input.JOYSTART = true;
+        if (instance->inputstateJoystickGet.rgbButtons[8] == 0x80) input.JOYLS = true;
+        if (instance->inputstateJoystickGet.rgbButtons[9] == 0x80) input.JOYRS = true;
+        if (instance->inputstateJoystickGet.rgdwPOV[0] == 0 || instance->inputstateJoystickGet.rgdwPOV[0] == 4500 || instance->inputstateJoystickGet.rgdwPOV[0] == 31500) input.JOYUP = true;
+        if (instance->inputstateJoystickGet.rgdwPOV[0] == 4500 || instance->inputstateJoystickGet.rgdwPOV[0] == 9000 || instance->inputstateJoystickGet.rgdwPOV[0] == 13500) input.JOYRIGHT = true;
+        if (instance->inputstateJoystickGet.rgdwPOV[0] == 13500 || instance->inputstateJoystickGet.rgdwPOV[0] == 18000 || instance->inputstateJoystickGet.rgdwPOV[0] == 22500) input.JOYDOWN = true;
+        if (instance->inputstateJoystickGet.rgdwPOV[0] == 22500 || instance->inputstateJoystickGet.rgdwPOV[0] == 27000 || instance->inputstateJoystickGet.rgdwPOV[0] == 31500) input.JOYLEFT = true;
+        if (LT > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) input.JOYLT = LT;
+        if (RT > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) input.JOYRT = RT;
+        if (LAXISX > 99 || LAXISX < -99) input.JOYLAXISX = LAXISX;
+        if (LAXISY > 99 || LAXISY < -99) input.JOYLAXISY = LAXISY;
+        if (RAXISX > 99 || RAXISX < -99) input.JOYRAXISX = RAXISX;
+        if (RAXISY > 99 || RAXISY < -99) input.JOYRAXISY = RAXISY;
 
         ReleaseMutex(instance->inputAllMutex);
     }
-    void GetMouse(GameInput* input)
+    void GetMouse(GameInput& input)
     {
         WaitForSingleObject(instance->inputAllMutex, INFINITE);
 
-        input->MOUSEX = static_cast<int>(instance->inputstateMouseGet.lX);
-        input->MOUSEY = static_cast<int>(instance->inputstateMouseGet.lY);
-        input->WHEEL = static_cast<int>(instance->inputstateMouseGet.lZ);
-        if (instance->inputstateMouseGet.rgbButtons[0] & 0x80) input->LMB = true;
-        if (instance->inputstateMouseGet.rgbButtons[1] & 0x80) input->RMB = true;
-        if (instance->inputstateMouseGet.rgbButtons[2] & 0x80) input->MB = true;
-        if (instance->inputstateMouseGet.rgbButtons[3] & 0x80) input->ME1 = true;
-        if (instance->inputstateMouseGet.rgbButtons[4] & 0x80) input->ME2 = true;
+        input.MOUSEX = static_cast<int>(instance->inputstateMouseGet.lX);
+        input.MOUSEY = static_cast<int>(instance->inputstateMouseGet.lY);
+        input.WHEEL = static_cast<int>(instance->inputstateMouseGet.lZ);
+        if (instance->inputstateMouseGet.rgbButtons[0] & 0x80) input.LMB = true;
+        if (instance->inputstateMouseGet.rgbButtons[1] & 0x80) input.RMB = true;
+        if (instance->inputstateMouseGet.rgbButtons[2] & 0x80) input.MB = true;
+        if (instance->inputstateMouseGet.rgbButtons[3] & 0x80) input.ME1 = true;
+        if (instance->inputstateMouseGet.rgbButtons[4] & 0x80) input.ME2 = true;
 
         ReleaseMutex(instance->inputAllMutex);
     }
-    void GetKeyboard(GameInput* input)
+    void GetKeyboard(GameInput& input)
     {
         WaitForSingleObject(instance->inputAllMutex, INFINITE);
 
         for (int i = 0; i < 256; i++) {
             if (instance->inputstateKeyboardGet[i] & 0x80) {
-                if (i == DIK_ESCAPE) input->ESC = true;
-                if (i == DIK_TAB) input->TAB = true;
-                if (i == DIK_LSHIFT) input->LSHIFT = true;
-                if (i == DIK_RSHIFT) input->RSHIFT = true;
-                if (i == DIK_LCONTROL) input->CTRL = true;
-                if (i == DIK_BACK) input->BACK = true;
-                if (i == DIK_RETURN) input->RETURN = true;
-                if (i == DIK_SPACE) input->SPACE = true;
-                if (i == DIK_UP) input->AUP = true;
-                if (i == DIK_RIGHT) input->ARIGHT = true;
-                if (i == DIK_DOWN) input->ADOWN = true;
-                if (i == DIK_LEFT) input->ALEFT = true;
-                if (i == DIK_0) input->D0 = true;
-                if (i == DIK_1) input->D1 = true;
-                if (i == DIK_2) input->D2 = true;
-                if (i == DIK_3) input->D3 = true;
-                if (i == DIK_4) input->D4 = true;
-                if (i == DIK_5) input->D5 = true;
-                if (i == DIK_6) input->D6 = true;
-                if (i == DIK_7) input->D7 = true;
-                if (i == DIK_8) input->D8 = true;
-                if (i == DIK_9) input->D9 = true;
-                if (i == DIK_A) input->A = true;
-                if (i == DIK_B) input->B = true;
-                if (i == DIK_C) input->C = true;
-                if (i == DIK_D) input->D = true;
-                if (i == DIK_E) input->E = true;
-                if (i == DIK_F) input->F = true;
-                if (i == DIK_G) input->G = true;
-                if (i == DIK_H) input->H = true;
-                if (i == DIK_I) input->I = true;
-                if (i == DIK_J) input->J = true;
-                if (i == DIK_K) input->K = true;
-                if (i == DIK_L) input->L = true;
-                if (i == DIK_M) input->M = true;
-                if (i == DIK_N) input->N = true;
-                if (i == DIK_O) input->O = true;
-                if (i == DIK_P) input->P = true;
-                if (i == DIK_Q) input->Q = true;
-                if (i == DIK_R) input->R = true;
-                if (i == DIK_S) input->S = true;
-                if (i == DIK_T) input->T = true;
-                if (i == DIK_U) input->U = true;
-                if (i == DIK_V) input->V = true;
-                if (i == DIK_W) input->W = true;
-                if (i == DIK_X) input->X = true;
-                if (i == DIK_Y) input->Y = true;
-                if (i == DIK_Z) input->Z = true;
-                if (i == DIK_NUMPAD0) input->NUM0 = true;
-                if (i == DIK_NUMPAD1) input->NUM1 = true;
-                if (i == DIK_NUMPAD2) input->NUM2 = true;
-                if (i == DIK_NUMPAD3) input->NUM3 = true;
-                if (i == DIK_NUMPAD4) input->NUM4 = true;
-                if (i == DIK_NUMPAD5) input->NUM5 = true;
-                if (i == DIK_NUMPAD6) input->NUM6 = true;
-                if (i == DIK_NUMPAD7) input->NUM7 = true;
-                if (i == DIK_NUMPAD8) input->NUM8 = true;
-                if (i == DIK_NUMPAD9) input->NUM9 = true;
-                if (i == DIK_DIVIDE) input->NUMDIV = true;
-                if (i == DIK_MULTIPLY) input->NUMMUL = true;
-                if (i == DIK_SUBTRACT) input->NUMMIN = true;
-                if (i == DIK_ADD) input->NUMPLU = true;
-                if (i == DIK_NUMPADENTER) input->NUMRET = true;
-                if (i == DIK_NUMPADCOMMA) input->NUMDEL = true;
-                if (i == DIK_F1) input->F1 = true;
-                if (i == DIK_F2) input->F2 = true;
-                if (i == DIK_F3) input->F3 = true;
-                if (i == DIK_F4) input->F4 = true;
-                if (i == DIK_F5) input->F5 = true;
-                if (i == DIK_F6) input->F6 = true;
-                if (i == DIK_F7) input->F7 = true;
-                if (i == DIK_F8) input->F8 = true;
-                if (i == DIK_F9) input->F9 = true;
-                if (i == DIK_F10) input->F10 = true;
-                if (i == DIK_F11) input->F11 = true;
-                if (i == DIK_F12) input->F12 = true;
-                if (i == DIK_COMMA) input->COMMA = true;
-                if (i == DIK_PERIOD) input->DOT = true;
-                if (i == DIK_MINUS) input->F12 = true;
-                if (i == VK_OEM_PLUS) input->MINUS = true;
+                if (i == DIK_ESCAPE) input.ESC = true;
+                if (i == DIK_TAB) input.TAB = true;
+                if (i == DIK_LSHIFT) input.LSHIFT = true;
+                if (i == DIK_RSHIFT) input.RSHIFT = true;
+                if (i == DIK_LCONTROL) input.CTRL = true;
+                if (i == DIK_BACK) input.BACK = true;
+                if (i == DIK_RETURN) input.RETURN = true;
+                if (i == DIK_SPACE) input.SPACE = true;
+                if (i == DIK_UP) input.AUP = true;
+                if (i == DIK_RIGHT) input.ARIGHT = true;
+                if (i == DIK_DOWN) input.ADOWN = true;
+                if (i == DIK_LEFT) input.ALEFT = true;
+                if (i == DIK_0) input.D0 = true;
+                if (i == DIK_1) input.D1 = true;
+                if (i == DIK_2) input.D2 = true;
+                if (i == DIK_3) input.D3 = true;
+                if (i == DIK_4) input.D4 = true;
+                if (i == DIK_5) input.D5 = true;
+                if (i == DIK_6) input.D6 = true;
+                if (i == DIK_7) input.D7 = true;
+                if (i == DIK_8) input.D8 = true;
+                if (i == DIK_9) input.D9 = true;
+                if (i == DIK_A) input.A = true;
+                if (i == DIK_B) input.B = true;
+                if (i == DIK_C) input.C = true;
+                if (i == DIK_D) input.D = true;
+                if (i == DIK_E) input.E = true;
+                if (i == DIK_F) input.F = true;
+                if (i == DIK_G) input.G = true;
+                if (i == DIK_H) input.H = true;
+                if (i == DIK_I) input.I = true;
+                if (i == DIK_J) input.J = true;
+                if (i == DIK_K) input.K = true;
+                if (i == DIK_L) input.L = true;
+                if (i == DIK_M) input.M = true;
+                if (i == DIK_N) input.N = true;
+                if (i == DIK_O) input.O = true;
+                if (i == DIK_P) input.P = true;
+                if (i == DIK_Q) input.Q = true;
+                if (i == DIK_R) input.R = true;
+                if (i == DIK_S) input.S = true;
+                if (i == DIK_T) input.T = true;
+                if (i == DIK_U) input.U = true;
+                if (i == DIK_V) input.V = true;
+                if (i == DIK_W) input.W = true;
+                if (i == DIK_X) input.X = true;
+                if (i == DIK_Y) input.Y = true;
+                if (i == DIK_Z) input.Z = true;
+                if (i == DIK_NUMPAD0) input.NUM0 = true;
+                if (i == DIK_NUMPAD1) input.NUM1 = true;
+                if (i == DIK_NUMPAD2) input.NUM2 = true;
+                if (i == DIK_NUMPAD3) input.NUM3 = true;
+                if (i == DIK_NUMPAD4) input.NUM4 = true;
+                if (i == DIK_NUMPAD5) input.NUM5 = true;
+                if (i == DIK_NUMPAD6) input.NUM6 = true;
+                if (i == DIK_NUMPAD7) input.NUM7 = true;
+                if (i == DIK_NUMPAD8) input.NUM8 = true;
+                if (i == DIK_NUMPAD9) input.NUM9 = true;
+                if (i == DIK_DIVIDE) input.NUMDIV = true;
+                if (i == DIK_MULTIPLY) input.NUMMUL = true;
+                if (i == DIK_SUBTRACT) input.NUMMIN = true;
+                if (i == DIK_ADD) input.NUMPLU = true;
+                if (i == DIK_NUMPADENTER) input.NUMRET = true;
+                if (i == DIK_NUMPADCOMMA) input.NUMDEL = true;
+                if (i == DIK_F1) input.F1 = true;
+                if (i == DIK_F2) input.F2 = true;
+                if (i == DIK_F3) input.F3 = true;
+                if (i == DIK_F4) input.F4 = true;
+                if (i == DIK_F5) input.F5 = true;
+                if (i == DIK_F6) input.F6 = true;
+                if (i == DIK_F7) input.F7 = true;
+                if (i == DIK_F8) input.F8 = true;
+                if (i == DIK_F9) input.F9 = true;
+                if (i == DIK_F10) input.F10 = true;
+                if (i == DIK_F11) input.F11 = true;
+                if (i == DIK_F12) input.F12 = true;
+                if (i == DIK_COMMA) input.COMMA = true;
+                if (i == DIK_PERIOD) input.DOT = true;
+                if (i == DIK_MINUS) input.F12 = true;
+                if (i == VK_OEM_PLUS) input.MINUS = true;
             }
         }
 

@@ -12,7 +12,7 @@ HANDLE MemoryMutex = CreateMutex(NULL, FALSE, NULL);
 
 
 // --- Functions ---
-bool IsValidMemoryAddress(uintptr_t address, uintptr_t* srcMemory, uintptr_t* dstMemory, int memoryCounter)
+bool MemoryIsValidAddress(uintptr_t address, uintptr_t* srcMemory, uintptr_t* dstMemory, int memoryCounter)
 {
 	for (int i = 0; i < memoryCounter; i++)
 	{
@@ -24,7 +24,7 @@ bool IsValidMemoryAddress(uintptr_t address, uintptr_t* srcMemory, uintptr_t* ds
 	return false;
 }
 
-void DbgResolveBasePointerUnsafe()
+void MemoryResolveBasePointerUnsafe()
 {
 	__try
 	{
@@ -46,12 +46,12 @@ void DbgResolveBasePointerUnsafe()
 	}
 }
 
-void DbgResolveBasePointerSafe()
+void MemoryResolveBasePointerSafe()
 {
 	__try
 	{
 		uintptr_t finalAddress = reinterpret_cast<uintptr_t>(par._basepointer.baseAddress);
-		if (!IsValidMemoryAddress(finalAddress, MemoryRegionsStart, MemoryRegionsEnd, MemoryRegionsCounter))
+		if (!MemoryIsValidAddress(finalAddress, MemoryRegionsStart, MemoryRegionsEnd, MemoryRegionsCounter))
 		{
 			ret._void_ptr = nullptr;
 			return;
@@ -62,7 +62,7 @@ void DbgResolveBasePointerSafe()
 			finalAddress += reinterpret_cast<uintptr_t>(par._basepointer.offsets[i]);
 			if (i + 1 < par._basepointerOffsetSize)
 			{
-				if (!IsValidMemoryAddress(finalAddress, MemoryRegionsStart, MemoryRegionsEnd, MemoryRegionsCounter))
+				if (!MemoryIsValidAddress(finalAddress, MemoryRegionsStart, MemoryRegionsEnd, MemoryRegionsCounter))
 				{
 					ret._void_ptr = nullptr;
 					return;

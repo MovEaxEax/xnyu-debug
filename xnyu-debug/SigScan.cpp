@@ -11,7 +11,7 @@ SigScanParameter ssp = SigScanParameter();
 
 
 // --- Functions ---
-void _DbgSigScanFromTo()
+void _MemorySigScanFromTo()
 {
 	__try
 	{
@@ -54,7 +54,7 @@ void _DbgSigScanFromTo()
 	}
 }
 
-bool SigScanPatternConversion(std::string pattern)
+bool MemorySigScanPatternConversion(std::string pattern)
 {
 	try
 	{
@@ -113,20 +113,20 @@ bool SigScanPatternConversion(std::string pattern)
 	}
 }
 
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, std::string pattern)
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT1(void* src, std::string pattern)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	ssp._pattern_mask = (BYTE*)malloc(1024);
 	ssp._bytes_scan = (BYTE*)malloc(1024);
 	ssp._bytes_check = (BYTE*)malloc(1024);
-	if (!SigScanPatternConversion(pattern))
+	if (!MemorySigScanPatternConversion(pattern))
 	{
 		ReleaseMutex(MemoryMutex);
 		return nullptr;
 	}
 	ssp._start = src;
 	ssp._end = (void*)0xFFFFFFFFFFFFFFFF;
-	_DbgSigScanFromTo();
+	_MemorySigScanFromTo();
 	free(ssp._pattern_mask);
 	free(ssp._bytes_scan);
 	free(ssp._bytes_check);
@@ -135,20 +135,25 @@ EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, std::string pattern)
 	return result;
 }
 
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, void* dst, std::string pattern)
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScan(void* src, std::string pattern)
+{
+	return MemorySigScanT1(src, pattern);
+}
+
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT2(void* src, void* dst, std::string pattern)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	ssp._pattern_mask = (BYTE*)malloc(1024);
 	ssp._bytes_scan = (BYTE*)malloc(1024);
 	ssp._bytes_check = (BYTE*)malloc(1024);
-	if (!SigScanPatternConversion(pattern))
+	if (!MemorySigScanPatternConversion(pattern))
 	{
 		ReleaseMutex(MemoryMutex);
 		return nullptr;
 	}
 	ssp._start = src;
 	ssp._end = dst;
-	_DbgSigScanFromTo();
+	_MemorySigScanFromTo();
 	free(ssp._pattern_mask);
 	free(ssp._bytes_scan);
 	free(ssp._bytes_check);
@@ -157,20 +162,25 @@ EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, void* dst, std::string pat
 	return result;
 }
 
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, int amount, std::string pattern)
+void* __stdcall MemorySigScan(void* src, void* dst, std::string pattern)
+{
+	return MemorySigScanT2(src, dst, pattern);
+}
+
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT3(void* src, int amount, std::string pattern)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	ssp._pattern_mask = (BYTE*)malloc(1024);
 	ssp._bytes_scan = (BYTE*)malloc(1024);
 	ssp._bytes_check = (BYTE*)malloc(1024);
-	if (!SigScanPatternConversion(pattern))
+	if (!MemorySigScanPatternConversion(pattern))
 	{
 		ReleaseMutex(MemoryMutex);
 		return nullptr;
 	}
 	ssp._start = src;
 	ssp._end = (void*)((long long)src + (long long)amount);
-	_DbgSigScanFromTo();
+	_MemorySigScanFromTo();
 	free(ssp._pattern_mask);
 	free(ssp._bytes_scan);
 	free(ssp._bytes_check);
@@ -179,20 +189,25 @@ EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, int amount, std::string pa
 	return result;
 }
 
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, long long amount, std::string pattern)
+void* __stdcall MemorySigScan(void* src, int amount, std::string pattern)
+{
+	return MemorySigScanT3(src, amount, pattern);
+}
+
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT4(void* src, long long amount, std::string pattern)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	ssp._pattern_mask = (BYTE*)malloc(1024);
 	ssp._bytes_scan = (BYTE*)malloc(1024);
 	ssp._bytes_check = (BYTE*)malloc(1024);
-	if (!SigScanPatternConversion(pattern))
+	if (!MemorySigScanPatternConversion(pattern))
 	{
 		ReleaseMutex(MemoryMutex);
 		return nullptr;
 	}
 	ssp._start = src;
 	ssp._end = (void*)((long long)src + amount);
-	_DbgSigScanFromTo();
+	_MemorySigScanFromTo();
 	free(ssp._pattern_mask);
 	free(ssp._bytes_scan);
 	free(ssp._bytes_check);
@@ -201,13 +216,18 @@ EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, long long amount, std::str
 	return result;
 }
 
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(std::string pattern)
+void* __stdcall MemorySigScan(void* src, long long amount, std::string pattern)
+{
+	return MemorySigScanT4(src, amount, pattern);
+}
+
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT5(std::string pattern)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	ssp._pattern_mask = (BYTE*)malloc(1024);
 	ssp._bytes_scan = (BYTE*)malloc(1024);
 	ssp._bytes_check = (BYTE*)malloc(1024);
-	if (!SigScanPatternConversion(pattern))
+	if (!MemorySigScanPatternConversion(pattern))
 	{
 		ReleaseMutex(MemoryMutex);
 		return nullptr;
@@ -216,7 +236,7 @@ EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(std::string pattern)
 	{
 		ssp._start = (void*)MemoryRegionsStart[i];
 		ssp._end = (void*)MemoryRegionsEnd[i];
-		_DbgSigScanFromTo();
+		_MemorySigScanFromTo();
 		if (ssp._success) break;
 	}
 	free(ssp._pattern_mask);
@@ -225,6 +245,11 @@ EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(std::string pattern)
 	void* result = ssp._finding;
 	ReleaseMutex(MemoryMutex);
 	return result;
+}
+
+void* __stdcall MemorySigScan(std::string pattern)
+{
+	return MemorySigScanT5(pattern);
 }
 
 

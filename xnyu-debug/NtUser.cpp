@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "SigScan.h"
 #include "NtUser.h"
 
 
@@ -16,12 +17,12 @@ void* GetProcAddressNt(std::string name)
 		if (name == "NtUserGetKeyState")
 		{
 			long long Win32UDLLHandleAddressEnd = Win32UDLLHandleAddressStart + 8000;
-			return DbgSigScan((void*)Win32UDLLHandleAddressStart, (void*)Win32UDLLHandleAddressEnd, "X 8B D1 B8 03 10 00 00 F6 04 25 08 03 FE 7F 01");
+			return MemorySigScan((void*)Win32UDLLHandleAddressStart, (void*)Win32UDLLHandleAddressEnd, "X 8B D1 B8 03 10 00 00 F6 04 25 08 03 FE 7F 01");
 		}
 		if (name == "NtUserGetAsyncKeyState")
 		{
 			long long Win32UDLLHandleAddressEnd = Win32UDLLHandleAddressStart + 8000;
-			return DbgSigScan((void*)Win32UDLLHandleAddressStart, (void*)Win32UDLLHandleAddressEnd, "X 8B D1 B8 44 10 00 00 F6 04 25 08 03 FE 7F 01");
+			return MemorySigScan((void*)Win32UDLLHandleAddressStart, (void*)Win32UDLLHandleAddressEnd, "X 8B D1 B8 44 10 00 00 F6 04 25 08 03 FE 7F 01");
 		}
 	}
 

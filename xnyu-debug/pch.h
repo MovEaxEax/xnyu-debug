@@ -32,6 +32,8 @@
 #include <optional>
 #include <chrono>
 #include <random>
+#include <variant>
+#include <Python.h>
 
 #include <mmsystem.h>
 #pragma comment (lib,"winmm.lib")
@@ -51,11 +53,15 @@
 
 #pragma comment(lib, "Dxguid.lib")
 
+#include <Shlobj.h>
+#pragma comment(lib, "shell32.lib")
+
 #define SUBHOOK_STATIC
 #include <subhook.h>
 #include "subhook.c"
 
 #define EXTERN_DLL_EXPORT extern "C" __declspec(dllexport)
+#define EXTERN_DLL_IMPORT extern "C" __declspec(dllimport)
 #define WIN32_LEAN_AND_MEAN 
 
 #endif //PCH_H

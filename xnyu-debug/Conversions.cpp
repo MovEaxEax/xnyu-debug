@@ -19,6 +19,31 @@ int splitStringVector(std::vector<std::string>& vector, std::string str, std::st
     return 1;
 }
 
+std::vector<std::string> splitStringVector(std::string str, std::string del)
+{
+    std::vector<std::string> result;
+    while (str.find(del) != std::string::npos)
+    {
+        int index = str.find(del);
+        result.push_back(str.substr(0, index));
+        str = str.substr(index + 1, str.length() - 1);
+    }
+    result.push_back(str);
+    return result;
+}
+
+std::wstring s2ws(const std::string& s)
+{
+    int len;
+    int slength = (int)s.length() + 1;
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+    wchar_t* buf = new wchar_t[len];
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+    std::wstring r(buf);
+    delete[] buf;
+    return r;
+}
+
 bool containsDouble(const std::string& str)
 {
     std::regex double_regex(R"([-+]?[0-9]*\.?[0-9]+)");
@@ -35,12 +60,6 @@ std::string GetCurrentDateTime() {
 
 bool stringVectorContains(const std::vector<std::string>& vec, const std::string& value) {
     return std::find(vec.begin(), vec.end(), value) != vec.end();
-}
-
-bool variableVectorContainsName(const std::vector<Variable>* vec, const std::string& name) {
-    if (name.find("_arg") != std::string::npos || name.find("_ret") != std::string::npos || name.find("repeatertmpvarindicies") != std::string::npos) return true;
-    for (int i = 0; i < vec->size(); i++) if (vec->data()[i].name == name) return true;
-    return false;
 }
 
 std::string subtringFromTo(const std::string& s, size_t startIdx, size_t endIdx) {
@@ -63,6 +82,31 @@ bool isDigit(char c) {
 
 bool isLetter(char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
+
+void stringReplaceAll(std::string& source, std::string find, std::string replace)
+{
+    int pos = 0;
+    while ((pos = source.find(find, pos)) != std::string::npos)
+    {
+        source.replace(pos, find.length(), replace);
+        pos += replace.length();
+    }
+}
+
+std::string generateRandomID()
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 15);
+    std::uniform_int_distribution<> dis2(8, 11);
+    std::stringstream ss;
+
+    ss << std::hex;
+    ss << "id";
+    for (int i = 0; i < 16; i++) ss << dis2(gen);
+
+    return ss.str();
 }
 
 

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "BasePointer.h"
+#include "Variable.h"
 #include "ReadMemory.h"
 
 
@@ -12,7 +13,7 @@ void _DbgReadPointerBD()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		void* finalAddress = ret._void_ptr;
 		if (ret._void_ptr != nullptr)
 		{
@@ -30,7 +31,7 @@ void _DbgReadPointerB()
 {
 	__try
 	{
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -38,7 +39,7 @@ void _DbgReadPointerB()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadPointer(BasePointer address, void** dst, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadPointerT1(BasePointer address, void** dst, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -51,7 +52,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadPointer(BasePointer address, void** dst, b
 	return result;
 }
 
-EXTERN_DLL_EXPORT void* __cdecl DbgReadPointer(BasePointer address, bool safe)
+bool __stdcall MemoryReadPointer(BasePointer address, void** dst, bool safe)
+{
+	return MemoryReadPointerT1(address, dst, safe);
+}
+
+EXTERN_DLL_EXPORT void* __stdcall MemoryReadPointerT2(BasePointer address, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -63,13 +69,18 @@ EXTERN_DLL_EXPORT void* __cdecl DbgReadPointer(BasePointer address, bool safe)
 	return result;
 }
 
+void* __stdcall MemoryReadPointer(BasePointer address, bool safe)
+{
+	return MemoryReadPointerT2(address, safe);
+}
+
 // FLOAT
 void _DbgReadFloatBD()
 {
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		void* finalAddress = ret._void_ptr;
 		if (finalAddress != nullptr)
 		{
@@ -100,7 +111,7 @@ void _DbgReadFloatB()
 {
 	__try
 	{
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		void* finalAddress = ret._void_ptr;
 		if (ret._void_ptr != nullptr)
 		{
@@ -129,7 +140,7 @@ void _DbgReadFloatA()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadFloat(BasePointer address, void* dst, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadFloatT3(BasePointer address, void* dst, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -142,7 +153,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadFloat(BasePointer address, void* dst, bool
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadFloat(void* address, void* dst)
+bool __stdcall MemoryReadFloat(BasePointer address, void* dst, bool safe)
+{
+	return MemoryReadFloatT3(address, dst, safe);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadFloatT4(void* address, void* dst)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -153,7 +169,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadFloat(void* address, void* dst)
 	return result;
 }
 
-EXTERN_DLL_EXPORT float __cdecl DbgReadFloat(BasePointer address, bool safe)
+bool __stdcall MemoryReadFloat(void* address, void* dst)
+{
+	return MemoryReadFloatT4(address, dst);
+}
+
+EXTERN_DLL_EXPORT float __stdcall MemoryReadFloatT5(BasePointer address, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -165,7 +186,12 @@ EXTERN_DLL_EXPORT float __cdecl DbgReadFloat(BasePointer address, bool safe)
 	return result;
 }
 
-EXTERN_DLL_EXPORT float __cdecl DbgReadFloat(void* address)
+float __stdcall MemoryReadFloat(BasePointer address, bool safe)
+{
+	return MemoryReadFloatT5(address, safe);
+}
+
+EXTERN_DLL_EXPORT float __stdcall MemoryReadFloatT6(void* address)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -175,13 +201,18 @@ EXTERN_DLL_EXPORT float __cdecl DbgReadFloat(void* address)
 	return result;
 }
 
+float __stdcall MemoryReadFloat(void* address)
+{
+	return MemoryReadFloatT6(address);
+}
+
 // DOUBLE
 void _DbgReadDoubleBD()
 {
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		void* finalAddress = ret._void_ptr;
 		if (ret._void_ptr != nullptr)
 		{
@@ -212,7 +243,7 @@ void _DbgReadDoubleB()
 {
 	__try
 	{
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		void* finalAddress = ret._void_ptr;
 		if (ret._void_ptr != nullptr)
 		{
@@ -241,7 +272,7 @@ void _DbgReadDoubleA()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadDouble(BasePointer address, void* dst, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadDoubleT7(BasePointer address, void* dst, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -254,7 +285,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadDouble(BasePointer address, void* dst, boo
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadDouble(void* address, void* dst)
+bool __stdcall MemoryReadDouble(BasePointer address, void* dst, bool safe)
+{
+	return MemoryReadDoubleT7(address, dst, safe);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadDoubleT8(void* address, void* dst)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -265,7 +301,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadDouble(void* address, void* dst)
 	return result;
 }
 
-EXTERN_DLL_EXPORT double __cdecl DbgReadDouble(BasePointer address, bool safe)
+bool __stdcall MemoryReadDouble(void* address, void* dst)
+{
+	return MemoryReadDoubleT8(address, dst);
+}
+
+EXTERN_DLL_EXPORT double __stdcall MemoryReadDoubleT9(BasePointer address, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -277,7 +318,12 @@ EXTERN_DLL_EXPORT double __cdecl DbgReadDouble(BasePointer address, bool safe)
 	return result;
 }
 
-EXTERN_DLL_EXPORT double __cdecl DbgReadDouble(void* address)
+double __stdcall MemoryReadDouble(BasePointer address, bool safe)
+{
+	return MemoryReadDoubleT9(address, safe);
+}
+
+EXTERN_DLL_EXPORT double __stdcall MemoryReadDoubleT10(void* address)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -287,13 +333,18 @@ EXTERN_DLL_EXPORT double __cdecl DbgReadDouble(void* address)
 	return result;
 }
 
+double __stdcall MemoryReadDouble(void* address)
+{
+	return MemoryReadDoubleT10(address);
+}
+
 // INT32
 void _DbgReadInt32BD()
 {
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -324,7 +375,7 @@ void _DbgReadInt32B()
 {
 	__try
 	{
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -353,7 +404,7 @@ void _DbgReadInt32A()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadInt32(BasePointer address, void* dst, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadInt32T11(BasePointer address, void* dst, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -366,7 +417,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadInt32(BasePointer address, void* dst, bool
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadInt32(void* address, void* dst)
+bool __stdcall MemoryReadInt32(BasePointer address, void* dst, bool safe)
+{
+	return MemoryReadInt32T11(address, dst, safe);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadInt32T12(void* address, void* dst)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -377,7 +433,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadInt32(void* address, void* dst)
 	return result;
 }
 
-EXTERN_DLL_EXPORT int __cdecl DbgReadInt32(BasePointer address, bool safe)
+bool __stdcall MemoryReadInt32(void* address, void* dst)
+{
+	return MemoryReadInt32T12(address, dst);
+}
+
+EXTERN_DLL_EXPORT int __stdcall MemoryReadInt32T13(BasePointer address, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -389,7 +450,12 @@ EXTERN_DLL_EXPORT int __cdecl DbgReadInt32(BasePointer address, bool safe)
 	return result;
 }
 
-EXTERN_DLL_EXPORT int __cdecl DbgReadInt32(void* address)
+int __stdcall MemoryReadInt32(BasePointer address, bool safe)
+{
+	return MemoryReadInt32T13(address, safe);
+}
+
+EXTERN_DLL_EXPORT int __stdcall MemoryReadInt32T14(void* address)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -399,13 +465,18 @@ EXTERN_DLL_EXPORT int __cdecl DbgReadInt32(void* address)
 	return result;
 }
 
+int __stdcall MemoryReadInt32(void* address)
+{
+	return MemoryReadInt32T14(address);
+}
+
 // INT64
 void _DbgReadInt64BD()
 {
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -436,7 +507,7 @@ void _DbgReadInt64B()
 {
 	__try
 	{
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -465,7 +536,7 @@ void _DbgReadInt64A()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadInt64(BasePointer address, void* dst, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadInt64T15(BasePointer address, void* dst, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -478,7 +549,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadInt64(BasePointer address, void* dst, bool
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadInt64(void* address, void* dst)
+bool __stdcall MemoryReadInt64(BasePointer address, void* dst, bool safe)
+{
+	return MemoryReadInt64T15(address, dst, safe);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadInt64T16(void* address, void* dst)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -489,7 +565,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadInt64(void* address, void* dst)
 	return result;
 }
 
-EXTERN_DLL_EXPORT long long __cdecl DbgReadInt64(BasePointer address, bool safe)
+bool __stdcall MemoryReadInt64(void* address, void* dst)
+{
+	return MemoryReadInt64T16(address, dst);
+}
+
+EXTERN_DLL_EXPORT long long __stdcall MemoryReadInt64T17(BasePointer address, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -501,7 +582,12 @@ EXTERN_DLL_EXPORT long long __cdecl DbgReadInt64(BasePointer address, bool safe)
 	return result;
 }
 
-EXTERN_DLL_EXPORT long long __cdecl DbgReadInt64(void* address)
+long long __stdcall MemoryReadInt64(BasePointer address, bool safe)
+{
+	return MemoryReadInt64T17(address, safe);
+}
+
+EXTERN_DLL_EXPORT long long __stdcall MemoryReadInt64T18(void* address)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -511,13 +597,18 @@ EXTERN_DLL_EXPORT long long __cdecl DbgReadInt64(void* address)
 	return result;
 }
 
+long long __stdcall MemoryReadInt64(void* address)
+{
+	return MemoryReadInt64T18(address);
+}
+
 // STRING
 void _DbgReadStringBD()
 {
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -560,7 +651,7 @@ void _DbgReadStringB()
 {
 	__try
 	{
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -603,7 +694,7 @@ void _DbgReadStringA()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadString(BasePointer address, void* dst, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadStringT19(BasePointer address, void* dst, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -616,7 +707,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadString(BasePointer address, void* dst, boo
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadString(void* address, void* dst)
+bool __stdcall MemoryReadString(BasePointer address, void* dst, bool safe)
+{
+	return MemoryReadStringT19(address, dst, safe);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadStringT20(void* address, void* dst)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -627,7 +723,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadString(void* address, void* dst)
 	return result;
 }
 
-EXTERN_DLL_EXPORT std::string __cdecl DbgReadString(BasePointer address, bool safe)
+bool __stdcall MemoryReadString(void* address, void* dst)
+{
+	return MemoryReadStringT20(address, dst);
+}
+
+EXTERN_DLL_EXPORT std::string __stdcall MemoryReadStringT21(BasePointer address, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -639,7 +740,12 @@ EXTERN_DLL_EXPORT std::string __cdecl DbgReadString(BasePointer address, bool sa
 	return result;
 }
 
-EXTERN_DLL_EXPORT std::string __cdecl DbgReadString(void* address)
+std::string __stdcall MemoryReadString(BasePointer address, bool safe)
+{
+	return MemoryReadStringT21(address, safe);
+}
+
+EXTERN_DLL_EXPORT std::string __stdcall MemoryReadStringT22(void* address)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -649,13 +755,18 @@ EXTERN_DLL_EXPORT std::string __cdecl DbgReadString(void* address)
 	return result;
 }
 
+std::string __stdcall MemoryReadString(void* address)
+{
+	return MemoryReadStringT22(address);
+}
+
 // BOOL
 void _DbgReadBoolBD()
 {
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -687,7 +798,7 @@ void _DbgReadBoolB()
 	__try
 	{
 		ret._bool_value = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -716,7 +827,7 @@ void _DbgReadBoolA()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadBool(BasePointer address, void* dst, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadBoolT23(BasePointer address, void* dst, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -729,7 +840,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadBool(BasePointer address, void* dst, bool 
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadBool(void* address, void* dst)
+bool __stdcall MemoryReadBool(BasePointer address, void* dst, bool safe)
+{
+	return MemoryReadBoolT23(address, dst, safe);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadBoolT24(void* address, void* dst)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -740,7 +856,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadBool(void* address, void* dst)
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadBool(BasePointer address, bool safe)
+bool __stdcall MemoryReadBool(void* address, void* dst)
+{
+	return MemoryReadBoolT24(address, dst);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadBoolT25(BasePointer address, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -752,7 +873,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadBool(BasePointer address, bool safe)
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadBool(void* address)
+bool __stdcall MemoryReadBool(BasePointer address, bool safe)
+{
+	return MemoryReadBoolT25(address, safe);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadBoolT26(void* address)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -762,13 +888,18 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadBool(void* address)
 	return result;
 }
 
+bool __stdcall MemoryReadBool(void* address)
+{
+	return MemoryReadBoolT26(address);
+}
+
 // BYTE
 void _DbgReadByteBD()
 {
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -799,7 +930,7 @@ void _DbgReadByteB()
 {
 	__try
 	{
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -828,7 +959,7 @@ void _DbgReadByteA()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadByte(BasePointer address, void* dst, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadByteT27(BasePointer address, void* dst, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -841,7 +972,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadByte(BasePointer address, void* dst, bool 
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadByte(void* address, void* dst)
+bool __stdcall MemoryReadByte(BasePointer address, void* dst, bool safe)
+{
+	return MemoryReadByteT27(address, dst, safe);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadByteT28(void* address, void* dst)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -852,7 +988,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadByte(void* address, void* dst)
 	return result;
 }
 
-EXTERN_DLL_EXPORT BYTE __cdecl DbgReadByte(BasePointer address, bool safe)
+bool __stdcall MemoryReadByte(void* address, void* dst)
+{
+	return MemoryReadByteT28(address, dst);
+}
+
+EXTERN_DLL_EXPORT BYTE __stdcall MemoryReadByteT29(BasePointer address, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -864,7 +1005,12 @@ EXTERN_DLL_EXPORT BYTE __cdecl DbgReadByte(BasePointer address, bool safe)
 	return result;
 }
 
-EXTERN_DLL_EXPORT BYTE __cdecl DbgReadByte(void* address)
+BYTE __stdcall MemoryReadByte(BasePointer address, bool safe)
+{
+	return MemoryReadByteT29(address, safe);
+}
+
+EXTERN_DLL_EXPORT BYTE __stdcall MemoryReadByteT30(void* address)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -874,13 +1020,18 @@ EXTERN_DLL_EXPORT BYTE __cdecl DbgReadByte(void* address)
 	return result;
 }
 
+BYTE __stdcall MemoryReadByte(void* address)
+{
+	return MemoryReadByteT30(address);
+}
+
 // BYTES
 void _DbgReadBytesBD()
 {
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -911,7 +1062,7 @@ void _DbgReadBytesB()
 {
 	__try
 	{
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -940,7 +1091,7 @@ void _DbgReadBytesA()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadBytes(BasePointer address, void* dst, int amount, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadBytesT31(BasePointer address, void* dst, int amount, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -954,7 +1105,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadBytes(BasePointer address, void* dst, int 
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgReadBytes(void* address, void* dst, int amount)
+bool __stdcall MemoryReadBytes(BasePointer address, void* dst, int amount, bool safe)
+{
+	return MemoryReadBytesT31(address, dst, amount, safe);
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryReadBytesT32(void* address, void* dst, int amount)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -966,7 +1122,12 @@ EXTERN_DLL_EXPORT bool __cdecl DbgReadBytes(void* address, void* dst, int amount
 	return result;
 }
 
-EXTERN_DLL_EXPORT BYTE* __cdecl DbgReadBytes(BasePointer address, int amount, bool safe)
+bool __stdcall MemoryReadBytes(void* address, void* dst, int amount)
+{
+	return MemoryReadBytesT32(address, dst, amount);
+}
+
+EXTERN_DLL_EXPORT BYTE* __stdcall MemoryReadBytesT33(BasePointer address, int amount, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -979,7 +1140,12 @@ EXTERN_DLL_EXPORT BYTE* __cdecl DbgReadBytes(BasePointer address, int amount, bo
 	return result;
 }
 
-EXTERN_DLL_EXPORT BYTE* __cdecl DbgReadBytes(void* address, int amount)
+BYTE* __stdcall MemoryReadBytes(BasePointer address, int amount, bool safe)
+{
+	return MemoryReadBytesT33(address, amount, safe);
+}
+
+EXTERN_DLL_EXPORT BYTE* __stdcall MemoryReadBytesT34(void* address, int amount)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -988,6 +1154,85 @@ EXTERN_DLL_EXPORT BYTE* __cdecl DbgReadBytes(void* address, int amount)
 	BYTE* result = ret._byte_ptr;
 	ReleaseMutex(MemoryMutex);
 	return result;
+}
+
+BYTE* __stdcall MemoryReadBytes(void* address, int amount)
+{
+	return MemoryReadBytesT34(address, amount);
+}
+
+EXTERN_DLL_EXPORT void __stdcall MemoryReadVariableT35(BasePointer address, Variable& src, bool safe)
+{
+	WaitForSingleObject(MemoryMutex, INFINITE);
+	switch (src.getType())
+	{
+	case VariableType::BOOL:
+		src.setValue(MemoryReadBool(address));
+		break;
+	case VariableType::BYTE:
+		src.setValue(MemoryReadByte(address));
+		break;
+	case VariableType::INT32:
+		src.setValue(MemoryReadInt32(address));
+		break;
+	case VariableType::INT64:
+		src.setValue(MemoryReadInt64(address));
+		break;
+	case VariableType::FLOAT:
+		src.setValue(MemoryReadFloat(address));
+		break;
+	case VariableType::DOUBLE:
+		src.setValue(MemoryReadDouble(address));
+		break;
+	case VariableType::STRING:
+		src.setValue(MemoryReadString(address));
+		break;
+	default:
+		break;
+	}
+	ReleaseMutex(MemoryMutex);
+}
+
+void __stdcall MemoryReadVariable(BasePointer address, Variable& src, bool safe)
+{
+	MemoryReadVariableT35(address, src, safe);
+}
+
+EXTERN_DLL_EXPORT void __stdcall MemoryReadVariableT36(void* address, Variable& src)
+{
+	WaitForSingleObject(MemoryMutex, INFINITE);
+	switch (src.getType())
+	{
+	case VariableType::BOOL:
+		src.setValue(MemoryReadBool(address));
+		break;
+	case VariableType::BYTE:
+		src.setValue(MemoryReadByte(address));
+		break;
+	case VariableType::INT32:
+		src.setValue(MemoryReadInt32(address));
+		break;
+	case VariableType::INT64:
+		src.setValue(MemoryReadInt64(address));
+		break;
+	case VariableType::FLOAT:
+		src.setValue(MemoryReadFloat(address));
+		break;
+	case VariableType::DOUBLE:
+		src.setValue(MemoryReadDouble(address));
+		break;
+	case VariableType::STRING:
+		src.setValue(MemoryReadString(address));
+		break;
+	default:
+		break;
+	}
+	ReleaseMutex(MemoryMutex);
+}
+
+void __stdcall MemoryReadVariable(void* address, Variable& src)
+{
+	MemoryReadVariableT36(address, src);
 }
 
 

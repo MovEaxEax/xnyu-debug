@@ -23,49 +23,32 @@ struct Stack {
 
 // --- Variables ---
 extern std::string TASScript;
-extern bool TASPlayScript;
-extern bool TASPlayScriptDone;
-extern bool TASPlayScriptInit;
-extern bool TASPlayScriptUninit;
-extern bool TASPlayScriptThenRecord;
-extern bool TASPlayStartedSignal;
-extern bool TASPlaySkipFirstSync;
-extern std::ifstream TASPlayScriptStream;
-extern bool TASRecordScript;
-extern bool TASRecordScriptDone;
-extern bool TASRecordScriptInit;
-extern bool TASRecordScriptUninit;
-extern bool TASRecordFrameByFrame;
-extern bool TASRecordStartedSignal;
-extern bool TASRecordSkipFirstSync;
+
+extern bool TASPlayingActive;
+extern bool TASPlayingInit;
+extern bool TASPlayingUnInit;
+
+extern bool TASRecordingActive;
+extern bool TASRecordingInit;
+extern bool TASRecordingUnInit;
+
 extern std::string TASRecordFrameReceived;
 extern std::ofstream TASRecordScriptStream;
+
+extern GameInputLayout TASInputLayout;
 extern GameInput TASInputCurrent;
 extern GameInput TASInputLast;
-extern std::string TASLastError;
-extern GameInputLayout TASInputLayout;
-extern std::vector<Function> TASScriptFunctions;
-extern std::vector<Variable> TASScriptVariables;
-extern std::vector<Stack> TASStack;
-extern Stack TASCurrentStack;
-extern int TASFunctionId;
-extern int TASRepeatNamer;
 extern long long TASFramesPassed;
+
+extern HANDLE PythonInterpreterThread = nullptr;
+extern HANDLE PythonInterpreterThreadMutex = CreateMutex(NULL, FALSE, NULL);
+extern FILE* PythonInterpreterScript = nullptr;
+extern bool PythonInterpreterThreadAlive = true;
+extern std::string PythonInterpreterLineToExecute;
 
 
 
 // --- Functions ---
-std::string ReadScript(std::string file_path);
-int ParseInstructions(std::vector<Instruction>& functions, std::string content);
-int ParseFunction(std::vector<Function>& functions, std::string script);
-void AddFunctionLifecycles(std::vector<Function>& functions, std::vector<Stack>& stack, Stack* currentStack);
-void AddFunctionReturn(std::vector<Function>& functions);
-std::string GameInputToFrame(GameInput* SRC);
-void GameInputSetFrame(GameInput* SRC, std::string key, std::vector<std::string> parameter);
-bool FindDebugFunction(std::string parentName, std::string childName, DebugFunction* debugFunction);
-bool FindDebugAddress(std::string parentName, std::string childName, DebugAddress* debugAddress);
-bool VariableCondition(std::string condition);
-int PlayInstruction(Instruction instruction);
 bool __stdcall PlayScriptRoutine();
 bool __stdcall RecordScriptRoutine();
 void __stdcall TASRoutine();

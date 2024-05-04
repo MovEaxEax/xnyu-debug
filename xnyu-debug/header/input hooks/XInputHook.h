@@ -109,7 +109,7 @@ public:
         return result;
     }
 
-    void SetJoystick(GameInput input, GameInput inputLast)
+    void SetJoystick(GameInput& input, GameInput& inputLast)
     {
         WaitForSingleObject(instance->inputJoystickMutex, INFINITE);
         std::memset(&instance->inputstateJoystickSet, 0x00, sizeof(DIJOYSTATE));
@@ -143,7 +143,7 @@ public:
 
         ReleaseMutex(instance->inputJoystickMutex);
     }
-    void GetJoystick(GameInput* input)
+    void GetJoystick(GameInput& input)
     {
         WaitForSingleObject(instance->inputJoystickMutex, INFINITE);
 
@@ -153,26 +153,26 @@ public:
         int LAXISX = static_cast<int>((static_cast<float>(inputstateJoystickGet.Gamepad.sThumbLX) / 32767.0f) * 1000.0f);
         int LAXISY = static_cast<int>((static_cast<float>(inputstateJoystickGet.Gamepad.sThumbLY) / 32767.0f) * 1000.0f);
 
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_A) input->JOYA = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_B) input->JOYB = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_X) input->JOYX = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_Y) input->JOYY = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) input->JOYRB = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) input->JOYLB = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_START) input->JOYSTART = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) input->JOYSELECT = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) input->JOYUP = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) input->JOYDOWN = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) input->JOYLEFT = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) input->JOYRIGHT = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB) input->JOYRS = true;
-        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB) input->JOYLS = true;
-        if (inputstateJoystickGet.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) input->JOYRT = inputstateJoystickGet.Gamepad.bRightTrigger;
-        if (inputstateJoystickGet.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) input->JOYLT = inputstateJoystickGet.Gamepad.bLeftTrigger;
-        if (RAXISX > 99 || RAXISX < -99) input->JOYRAXISX = RAXISX;
-        if (RAXISY > 99 || RAXISY < -99) input->JOYRAXISY = RAXISY;
-        if (LAXISX > 99 || LAXISX < -99) input->JOYLAXISX = LAXISX;
-        if (LAXISY > 99 || LAXISY < -99) input->JOYLAXISY = LAXISY;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_A) input.JOYA = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_B) input.JOYB = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_X) input.JOYX = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_Y) input.JOYY = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) input.JOYRB = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) input.JOYLB = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_START) input.JOYSTART = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_BACK) input.JOYSELECT = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) input.JOYUP = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) input.JOYDOWN = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) input.JOYLEFT = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) input.JOYRIGHT = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB) input.JOYRS = true;
+        if (inputstateJoystickGet.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB) input.JOYLS = true;
+        if (inputstateJoystickGet.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) input.JOYRT = inputstateJoystickGet.Gamepad.bRightTrigger;
+        if (inputstateJoystickGet.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) input.JOYLT = inputstateJoystickGet.Gamepad.bLeftTrigger;
+        if (RAXISX > 99 || RAXISX < -99) input.JOYRAXISX = RAXISX;
+        if (RAXISY > 99 || RAXISY < -99) input.JOYRAXISY = RAXISY;
+        if (LAXISX > 99 || LAXISX < -99) input.JOYLAXISX = LAXISX;
+        if (LAXISY > 99 || LAXISY < -99) input.JOYLAXISY = LAXISY;
 
         ReleaseMutex(instance->inputJoystickMutex);
     }

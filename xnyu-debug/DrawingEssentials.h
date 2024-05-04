@@ -1,6 +1,6 @@
 #pragma once
 
-// --- Enums ---
+// --- Structs ---
 enum DEBUGMENUFORM : short {
     FORM_NONE = -1,
     FORM_OVERVIEW = 0,
@@ -10,8 +10,6 @@ enum DEBUGMENUFORM : short {
     FORM_SUPERVISION = 4,
     FORM_EDITORMODE = 5
 };
-
-
 
 // --- Variables ---
 extern const int FontTextureWidth;

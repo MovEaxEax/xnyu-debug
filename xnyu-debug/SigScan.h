@@ -23,12 +23,16 @@ extern SigScanParameter ssp;
 
 
 // --- Functions ---
-void _DbgSigScanFromTo();
-bool SigScanPatternConversion(std::string pattern);
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, std::string pattern);
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, void* dst, std::string pattern);
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, int amount, std::string pattern);
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(void* src, long long amount, std::string pattern);
-EXTERN_DLL_EXPORT void* __cdecl DbgSigScan(std::string pattern);
-
+void _MemorySigScanFromTo();
+bool MemorySigScanPatternConversion(std::string pattern);
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT1(void* src, std::string pattern);
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT2(void* src, void* dst, std::string pattern);
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT3(void* src, int amount, std::string pattern);
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT4(void* src, long long amount, std::string pattern);
+EXTERN_DLL_EXPORT void* __stdcall MemorySigScanT5(std::string pattern);
+void* __stdcall MemorySigScan(void* src, std::string pattern);
+void* __stdcall MemorySigScan(void* src, void* dst, std::string pattern);
+void* __stdcall MemorySigScan(void* src, int amount, std::string pattern);
+void* __stdcall MemorySigScan(void* src, long long amount, std::string pattern);
+void* __stdcall MemorySigScan(std::string pattern);
 

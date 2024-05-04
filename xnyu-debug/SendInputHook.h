@@ -19,8 +19,8 @@ extern HANDLE SendInputAliveMutex;
 // -- Functions ---
 void SetSendInputThreadAlive(bool value);
 bool IsSendInputThreadAlive();
-void SetKeyboard(GameInput input);
-void SetMouse(GameInput input);
+void SendInputSetKeyboard(GameInput& input, GameInput& inputLast);
+void SendInputSetMouse(GameInput& input, GameInput& inputLast);
 bool SendInputHookInit();
 bool SendInputHookUninit();
 bool IsSendInputHookActive();

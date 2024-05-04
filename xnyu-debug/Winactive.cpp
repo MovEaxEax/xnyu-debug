@@ -11,7 +11,8 @@
 WNDPROC OriginalWindowProcedure{};
 
 bool WndProcInfoTrigger = false;
-LRESULT CALLBACK WinActiveWndProc(HWND WindowHandle, UINT Message, WPARAM WParam, LPARAM LParam) {
+LRESULT CALLBACK WinActiveWndProc(HWND WindowHandle, UINT Message, WPARAM WParam, LPARAM LParam)
+{
 	if (WndProcInfoTrigger)
 	{
 		DebugConsoleOutput("WndProc() Hook active...", true, "yellow");
@@ -297,7 +298,7 @@ bool InitWindowStayActive()
 
 	std::string winactiveHooks = GetGlobalSetting("config_overclocker_hooks");
 
-	if (winactiveHooks.find("wndproc") != std::string::npos || winactiveHooks.find("all") != std::string::npos) OriginalWindowProcedure = (WNDPROC)SetWindowLongPtr(GetMainWindow(), GWLP_WNDPROC, (LONG_PTR)WinActiveWndProc);
+	if (winactiveHooks.find("wndproc") != std::string::npos || winactiveHooks.find("all") != std::string::npos) OriginalWindowProcedure = (WNDPROC)SetWindowLongPtr(GetMainWindowHandle(), GWLP_WNDPROC, (LONG_PTR)WinActiveWndProc);
 	if (GetForegroundWindowHook<GetForegroundWindowT>::instance) GetForegroundWindowHook<GetForegroundWindowT>::instance->install();
 	if (GetActiveWindowHook<GetActiveWindowT>::instance) GetActiveWindowHook<GetActiveWindowT>::instance->install();
 	if (GetFocusHook<GetFocusT>::instance) GetFocusHook<GetFocusT>::instance->install();
@@ -333,7 +334,7 @@ void UninitWindowStayActive()
 
 	if (OriginalWindowProcedure)
 	{
-		SetWindowLongPtr(GetMainWindow(), GWLP_WNDPROC, (LONG_PTR)OriginalWindowProcedure);
+		SetWindowLongPtr(GetMainWindowHandle(), GWLP_WNDPROC, (LONG_PTR)OriginalWindowProcedure);
 		OriginalWindowProcedure = NULL;
 	}
 	if (GetForegroundWindowHook<GetForegroundWindowT>::instance && GetForegroundWindowHook<GetForegroundWindowT>::instance->isActive()) GetForegroundWindowHook<GetForegroundWindowT>::instance->remove();

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "InputLayout.h"
+#include "Conversions.h"
 
 
 
@@ -249,4 +250,239 @@ void LoadGameInputLayout(GameInputLayout* DST, std::string fileName)
     }
 }
 
+std::string GameInputToFrame(GameInput& SRC, GameInputLayout& layout)
+{
+    std::string frame = "frame(";
 
+    if (SRC.ESC) frame += (frame.length() > 6 ? ", '" : "'") + layout.ESC + "'";
+    if (SRC.TAB) frame += (frame.length() > 6 ? ", '" : "'") + layout.TAB + "'";
+    if (SRC.LSHIFT) frame += (frame.length() > 6 ? ", '" : "'") + layout.LSHIFT + "'";
+    if (SRC.RSHIFT) frame += (frame.length() > 6 ? ", '" : "'") + layout.RSHIFT + "'";
+    if (SRC.CTRL) frame += (frame.length() > 6 ? ", '" : "'") + layout.CTRL + "'";
+    if (SRC.ALT) frame += (frame.length() > 6 ? ", '" : "'") + layout.ALT + "'";
+    if (SRC.BACK) frame += (frame.length() > 6 ? ", '" : "'") + layout.BACK + "'";
+    if (SRC.RETURN) frame += (frame.length() > 6 ? ", '" : "'") + layout.RETURN + "'";
+    if (SRC.SPACE) frame += (frame.length() > 6 ? ", '" : "'") + layout.SPACE + "'";
+    if (SRC.AUP) frame += (frame.length() > 6 ? ", '" : "'") + layout.AUP + "'";
+    if (SRC.ARIGHT) frame += (frame.length() > 6 ? ", '" : "'") + layout.ARIGHT + "'";
+    if (SRC.ADOWN) frame += (frame.length() > 6 ? ", '" : "'") + layout.ADOWN + "'";
+    if (SRC.ALEFT) frame += (frame.length() > 6 ? ", '" : "'") + layout.ALEFT + "'";
+    if (SRC.D0) frame += (frame.length() > 6 ? ", '" : "'") + layout.D0 + "'";
+    if (SRC.D1) frame += (frame.length() > 6 ? ", '" : "'") + layout.D1 + "'";
+    if (SRC.D2) frame += (frame.length() > 6 ? ", '" : "'") + layout.D2 + "'";
+    if (SRC.D3) frame += (frame.length() > 6 ? ", '" : "'") + layout.D3 + "'";
+    if (SRC.D4) frame += (frame.length() > 6 ? ", '" : "'") + layout.D4 + "'";
+    if (SRC.D5) frame += (frame.length() > 6 ? ", '" : "'") + layout.D5 + "'";
+    if (SRC.D6) frame += (frame.length() > 6 ? ", '" : "'") + layout.D6 + "'";
+    if (SRC.D7) frame += (frame.length() > 6 ? ", '" : "'") + layout.D7 + "'";
+    if (SRC.D8) frame += (frame.length() > 6 ? ", '" : "'") + layout.D8 + "'";
+    if (SRC.D9) frame += (frame.length() > 6 ? ", '" : "'") + layout.D9 + "'";
+    if (SRC.A) frame += (frame.length() > 6 ? ", '" : "'") + layout.A + "'";
+    if (SRC.B) frame += (frame.length() > 6 ? ", '" : "'") + layout.B + "'";
+    if (SRC.C) frame += (frame.length() > 6 ? ", '" : "'") + layout.C + "'";
+    if (SRC.D) frame += (frame.length() > 6 ? ", '" : "'") + layout.D + "'";
+    if (SRC.E) frame += (frame.length() > 6 ? ", '" : "'") + layout.E + "'";
+    if (SRC.F) frame += (frame.length() > 6 ? ", '" : "'") + layout.F + "'";
+    if (SRC.G) frame += (frame.length() > 6 ? ", '" : "'") + layout.G + "'";
+    if (SRC.H) frame += (frame.length() > 6 ? ", '" : "'") + layout.H + "'";
+    if (SRC.I) frame += (frame.length() > 6 ? ", '" : "'") + layout.I + "'";
+    if (SRC.J) frame += (frame.length() > 6 ? ", '" : "'") + layout.J + "'";
+    if (SRC.K) frame += (frame.length() > 6 ? ", '" : "'") + layout.K + "'";
+    if (SRC.L) frame += (frame.length() > 6 ? ", '" : "'") + layout.L + "'";
+    if (SRC.M) frame += (frame.length() > 6 ? ", '" : "'") + layout.M + "'";
+    if (SRC.N) frame += (frame.length() > 6 ? ", '" : "'") + layout.N + "'";
+    if (SRC.O) frame += (frame.length() > 6 ? ", '" : "'") + layout.O + "'";
+    if (SRC.P) frame += (frame.length() > 6 ? ", '" : "'") + layout.P + "'";
+    if (SRC.Q) frame += (frame.length() > 6 ? ", '" : "'") + layout.Q + "'";
+    if (SRC.R) frame += (frame.length() > 6 ? ", '" : "'") + layout.R + "'";
+    if (SRC.S) frame += (frame.length() > 6 ? ", '" : "'") + layout.S + "'";
+    if (SRC.T) frame += (frame.length() > 6 ? ", '" : "'") + layout.T + "'";
+    if (SRC.U) frame += (frame.length() > 6 ? ", '" : "'") + layout.U + "'";
+    if (SRC.V) frame += (frame.length() > 6 ? ", '" : "'") + layout.V + "'";
+    if (SRC.W) frame += (frame.length() > 6 ? ", '" : "'") + layout.W + "'";
+    if (SRC.X) frame += (frame.length() > 6 ? ", '" : "'") + layout.X + "'";
+    if (SRC.Y) frame += (frame.length() > 6 ? ", '" : "'") + layout.Y + "'";
+    if (SRC.Z) frame += (frame.length() > 6 ? ", '" : "'") + layout.Z + "'";
+    if (SRC.NUM0) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM0 + "'";
+    if (SRC.NUM1) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM1 + "'";
+    if (SRC.NUM2) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM2 + "'";
+    if (SRC.NUM3) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM3 + "'";
+    if (SRC.NUM4) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM4 + "'";
+    if (SRC.NUM5) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM5 + "'";
+    if (SRC.NUM6) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM6 + "'";
+    if (SRC.NUM7) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM7 + "'";
+    if (SRC.NUM8) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM8 + "'";
+    if (SRC.NUM9) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUM9 + "'";
+    if (SRC.NUMDIV) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUMDIV + "'";
+    if (SRC.NUMMUL) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUMMUL + "'";
+    if (SRC.NUMMIN) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUMMIN + "'";
+    if (SRC.NUMPLU) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUMPLU + "'";
+    if (SRC.NUMRET) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUMRET + "'";
+    if (SRC.NUMDEL) frame += (frame.length() > 6 ? ", '" : "'") + layout.NUMDEL + "'";
+    if (SRC.F1) frame += (frame.length() > 6 ? ", '" : "'") + layout.F1 + "'";
+    if (SRC.F2) frame += (frame.length() > 6 ? ", '" : "'") + layout.F2 + "'";
+    if (SRC.F3) frame += (frame.length() > 6 ? ", '" : "'") + layout.F3 + "'";
+    if (SRC.F4) frame += (frame.length() > 6 ? ", '" : "'") + layout.F4 + "'";
+    if (SRC.F5) frame += (frame.length() > 6 ? ", '" : "'") + layout.F5 + "'";
+    if (SRC.F6) frame += (frame.length() > 6 ? ", '" : "'") + layout.F6 + "'";
+    if (SRC.F7) frame += (frame.length() > 6 ? ", '" : "'") + layout.F7 + "'";
+    if (SRC.F8) frame += (frame.length() > 6 ? ", '" : "'") + layout.F8 + "'";
+    if (SRC.F9) frame += (frame.length() > 6 ? ", '" : "'") + layout.F9 + "'";
+    if (SRC.F10) frame += (frame.length() > 6 ? ", '" : "'") + layout.F10 + "'";
+    if (SRC.F11) frame += (frame.length() > 6 ? ", '" : "'") + layout.F11 + "'";
+    if (SRC.F12) frame += (frame.length() > 6 ? ", '" : "'") + layout.F12 + "'";
+    if (SRC.COMMA) frame += (frame.length() > 6 ? ", '" : "'") + layout.COMMA + "'";
+    if (SRC.DOT) frame += (frame.length() > 6 ? ", '" : "'") + layout.DOT + "'";
+    if (SRC.PLUS) frame += (frame.length() > 6 ? ", '" : "'") + layout.PLUS + "'";
+    if (SRC.MINUS) frame += (frame.length() > 6 ? ", '" : "'") + layout.MINUS + "'";
+    if (SRC.LMB) frame += (frame.length() > 6 ? ", '" : "'") + layout.LMB + "'";
+    if (SRC.RMB) frame += (frame.length() > 6 ? ", '" : "'") + layout.RMB + "'";
+    if (SRC.MB) frame += (frame.length() > 6 ? ", '" : "'") + layout.MB + "'";
+    if (SRC.ME1) frame += (frame.length() > 6 ? ", '" : "'") + layout.ME1 + "'";
+    if (SRC.ME2) frame += (frame.length() > 6 ? ", '" : "'") + layout.ME2 + "'";
+    if (SRC.WHEEL != 0) frame += (frame.length() > 6 ? ", '" : "'") + layout.WHEEL + " " + std::to_string(SRC.WHEEL) + "'";
+    if (SRC.MOUSEX != 0) frame += (frame.length() > 6 ? ", '" : "'") + layout.MOUSEX + " " + std::to_string(SRC.MOUSEX) + "'";
+    if (SRC.MOUSEY != 0) frame += (frame.length() > 6 ? ", '" : "'") + layout.MOUSEY + " " + std::to_string(SRC.MOUSEY) + "'";
+    if (SRC.JOYA) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYA + "'";
+    if (SRC.JOYB) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYB + "'";
+    if (SRC.JOYX) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYX + "'";
+    if (SRC.JOYY) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYY + "'";
+    if (SRC.JOYSTART) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYSTART + "'";
+    if (SRC.JOYSELECT) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYSELECT + "'";
+    if (SRC.JOYRB) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYRB + "'";
+    if (SRC.JOYLB) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYLB + "'";
+    if (SRC.JOYUP) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYUP + "'";
+    if (SRC.JOYDOWN) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYDOWN + "'";
+    if (SRC.JOYRIGHT) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYRIGHT + "'";
+    if (SRC.JOYLEFT) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYLEFT + "'";
+    if (SRC.JOYRT) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYRT + " " + std::to_string(SRC.JOYRT) + "'";
+    if (SRC.JOYLT) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYLT + " " + std::to_string(SRC.JOYLT) + "'";
+    if (SRC.JOYRAXISX != 0) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYRAXISX + " " + std::to_string(SRC.JOYRAXISX) + "'";
+    if (SRC.JOYRAXISY != 0) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYRAXISY + " " + std::to_string(SRC.JOYRAXISY) + "'";
+    if (SRC.JOYLAXISX != 0) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYLAXISX + " " + std::to_string(SRC.JOYLAXISX) + "'";
+    if (SRC.JOYLAXISY != 0) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYLAXISY + " " + std::to_string(SRC.JOYLAXISY) + "'";
+    if (SRC.JOYRS != 0) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYRS + "'";
+    if (SRC.JOYLS != 0) frame += (frame.length() > 6 ? ", '" : "'") + layout.JOYLS + "'";
+
+    frame += ")";
+    return frame;
+}
+
+void GameInputSetFrame(GameInput& SRC, GameInputLayout& layout, std::vector<std::string>& parameter)
+{
+    for (int i = 0; i < parameter.size(); i++)
+    {
+        std::vector<std::string> parameterSplitted = splitStringVector(parameter[i], " ");
+
+        if (parameterSplitted[0] == layout.ESC) SRC.ESC = true;
+        if (parameterSplitted[0] == layout.TAB) SRC.TAB = true;
+        if (parameterSplitted[0] == layout.LSHIFT) SRC.LSHIFT = true;
+        if (parameterSplitted[0] == layout.RSHIFT) SRC.RSHIFT = true;
+        if (parameterSplitted[0] == layout.CTRL) SRC.CTRL = true;
+        if (parameterSplitted[0] == layout.ALT) SRC.ALT = true;
+        if (parameterSplitted[0] == layout.BACK) SRC.BACK = true;
+        if (parameterSplitted[0] == layout.RETURN) SRC.RETURN = true;
+        if (parameterSplitted[0] == layout.SPACE) SRC.SPACE = true;
+        if (parameterSplitted[0] == layout.AUP) SRC.AUP = true;
+        if (parameterSplitted[0] == layout.ARIGHT) SRC.ARIGHT = true;
+        if (parameterSplitted[0] == layout.ADOWN) SRC.ADOWN = true;
+        if (parameterSplitted[0] == layout.ALEFT) SRC.ALEFT = true;
+        if (parameterSplitted[0] == layout.D0) SRC.D0 = true;
+        if (parameterSplitted[0] == layout.D1) SRC.D1 = true;
+        if (parameterSplitted[0] == layout.D2) SRC.D2 = true;
+        if (parameterSplitted[0] == layout.D3) SRC.D3 = true;
+        if (parameterSplitted[0] == layout.D4) SRC.D4 = true;
+        if (parameterSplitted[0] == layout.D5) SRC.D5 = true;
+        if (parameterSplitted[0] == layout.D6) SRC.D6 = true;
+        if (parameterSplitted[0] == layout.D7) SRC.D7 = true;
+        if (parameterSplitted[0] == layout.D8) SRC.D8 = true;
+        if (parameterSplitted[0] == layout.D9) SRC.D9 = true;
+        if (parameterSplitted[0] == layout.A) SRC.A = true;
+        if (parameterSplitted[0] == layout.B) SRC.B = true;
+        if (parameterSplitted[0] == layout.C) SRC.C = true;
+        if (parameterSplitted[0] == layout.D) SRC.D = true;
+        if (parameterSplitted[0] == layout.E) SRC.E = true;
+        if (parameterSplitted[0] == layout.F) SRC.F = true;
+        if (parameterSplitted[0] == layout.G) SRC.G = true;
+        if (parameterSplitted[0] == layout.H) SRC.H = true;
+        if (parameterSplitted[0] == layout.I) SRC.I = true;
+        if (parameterSplitted[0] == layout.J) SRC.J = true;
+        if (parameterSplitted[0] == layout.K) SRC.K = true;
+        if (parameterSplitted[0] == layout.L) SRC.L = true;
+        if (parameterSplitted[0] == layout.M) SRC.M = true;
+        if (parameterSplitted[0] == layout.N) SRC.N = true;
+        if (parameterSplitted[0] == layout.O) SRC.O = true;
+        if (parameterSplitted[0] == layout.P) SRC.P = true;
+        if (parameterSplitted[0] == layout.Q) SRC.Q = true;
+        if (parameterSplitted[0] == layout.R) SRC.R = true;
+        if (parameterSplitted[0] == layout.S) SRC.S = true;
+        if (parameterSplitted[0] == layout.T) SRC.T = true;
+        if (parameterSplitted[0] == layout.U) SRC.U = true;
+        if (parameterSplitted[0] == layout.V) SRC.V = true;
+        if (parameterSplitted[0] == layout.W) SRC.W = true;
+        if (parameterSplitted[0] == layout.X) SRC.X = true;
+        if (parameterSplitted[0] == layout.Y) SRC.Y = true;
+        if (parameterSplitted[0] == layout.Z) SRC.Z = true;
+        if (parameterSplitted[0] == layout.NUM0) SRC.NUM0 = true;
+        if (parameterSplitted[0] == layout.NUM1) SRC.NUM1 = true;
+        if (parameterSplitted[0] == layout.NUM2) SRC.NUM2 = true;
+        if (parameterSplitted[0] == layout.NUM3) SRC.NUM3 = true;
+        if (parameterSplitted[0] == layout.NUM4) SRC.NUM4 = true;
+        if (parameterSplitted[0] == layout.NUM5) SRC.NUM5 = true;
+        if (parameterSplitted[0] == layout.NUM6) SRC.NUM6 = true;
+        if (parameterSplitted[0] == layout.NUM7) SRC.NUM7 = true;
+        if (parameterSplitted[0] == layout.NUM8) SRC.NUM8 = true;
+        if (parameterSplitted[0] == layout.NUM9) SRC.NUM9 = true;
+        if (parameterSplitted[0] == layout.NUMDIV) SRC.NUMDIV = true;
+        if (parameterSplitted[0] == layout.NUMMUL) SRC.NUMMUL = true;
+        if (parameterSplitted[0] == layout.NUMMIN) SRC.NUMMIN = true;
+        if (parameterSplitted[0] == layout.NUMPLU) SRC.NUMPLU = true;
+        if (parameterSplitted[0] == layout.NUMRET) SRC.NUMRET = true;
+        if (parameterSplitted[0] == layout.NUMDEL) SRC.NUMDEL = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.F1) SRC.F1 = true;
+        if (parameterSplitted[0] == layout.COMMA) SRC.COMMA = true;
+        if (parameterSplitted[0] == layout.DOT) SRC.DOT = true;
+        if (parameterSplitted[0] == layout.PLUS) SRC.PLUS = true;
+        if (parameterSplitted[0] == layout.MINUS) SRC.MINUS = true;
+        if (parameterSplitted[0] == layout.LMB) SRC.LMB = true;
+        if (parameterSplitted[0] == layout.RMB) SRC.RMB = true;
+        if (parameterSplitted[0] == layout.MB) SRC.MB = true;
+        if (parameterSplitted[0] == layout.ME1) SRC.ME1 = true;
+        if (parameterSplitted[0] == layout.ME2) SRC.ME2 = true;
+        if (parameterSplitted[0] == layout.WHEEL && parameterSplitted[1] != "0") SRC.WHEEL = std::stoi(parameterSplitted[1]);
+        if (parameterSplitted[0] == layout.MOUSEX && parameterSplitted[1] != "0") SRC.MOUSEX = std::stoi(parameterSplitted[1]);
+        if (parameterSplitted[0] == layout.MOUSEY && parameterSplitted[1] != "0") SRC.MOUSEY = std::stoi(parameterSplitted[1]);
+        if (parameterSplitted[0] == layout.JOYA) SRC.JOYA = true;
+        if (parameterSplitted[0] == layout.JOYB) SRC.JOYB = true;
+        if (parameterSplitted[0] == layout.JOYX) SRC.JOYX = true;
+        if (parameterSplitted[0] == layout.JOYY) SRC.JOYY = true;
+        if (parameterSplitted[0] == layout.JOYSTART) SRC.JOYSTART = true;
+        if (parameterSplitted[0] == layout.JOYSELECT) SRC.JOYSELECT = true;
+        if (parameterSplitted[0] == layout.JOYRB) SRC.JOYRB = true;
+        if (parameterSplitted[0] == layout.JOYLB) SRC.JOYLB = true;
+        if (parameterSplitted[0] == layout.JOYUP) SRC.JOYUP = true;
+        if (parameterSplitted[0] == layout.JOYDOWN) SRC.JOYDOWN = true;
+        if (parameterSplitted[0] == layout.JOYRIGHT) SRC.JOYRIGHT = true;
+        if (parameterSplitted[0] == layout.JOYLEFT) SRC.JOYLEFT = true;
+        if (parameterSplitted[0] == layout.JOYRT && parameterSplitted[1] != "0") SRC.JOYRT = std::stoi(parameterSplitted[1]);
+        if (parameterSplitted[0] == layout.JOYLT && parameterSplitted[1] != "0") SRC.JOYLT = std::stoi(parameterSplitted[1]);
+        if (parameterSplitted[0] == layout.JOYRAXISX && parameterSplitted[1] != "0") SRC.JOYRAXISX = std::stoi(parameterSplitted[1]);
+        if (parameterSplitted[0] == layout.JOYRAXISY && parameterSplitted[1] != "0") SRC.JOYRAXISY = std::stoi(parameterSplitted[1]);
+        if (parameterSplitted[0] == layout.JOYLAXISX && parameterSplitted[1] != "0") SRC.JOYLAXISX = std::stoi(parameterSplitted[1]);
+        if (parameterSplitted[0] == layout.JOYLAXISY && parameterSplitted[1] != "0") SRC.JOYLAXISY = std::stoi(parameterSplitted[1]);
+        if (parameterSplitted[0] == layout.JOYRS) SRC.JOYRS = true;
+        if (parameterSplitted[0] == layout.JOYLS) SRC.JOYLS = true;
+        if (parameter.size() > 2) if (parameter[2] == "set") SRC.SETMOUSE = true;
+    }
+}

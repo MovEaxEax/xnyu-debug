@@ -23,9 +23,7 @@ SOFTWARE.
 
 class Window
 {
-    WNDCLASSEX window_class{};
-    HWND temp_window;
-    std::string window_class_name;
+
 public:
     Window(std::string windowClassName);
     HWND windowHandle() const;
@@ -35,28 +33,12 @@ public:
 
 using namespace Indicium::Core::Exceptions;
 
-std::wstring s2ws(const std::string& s)
-{
-    int len;
-    int slength = (int)s.length() + 1;
-    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
-    wchar_t* buf = new wchar_t[len];
-    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
-    std::wstring r(buf);
-    delete[] buf;
-    return r;
-}
+
 
 Window::Window(std::string windowClassName) : temp_window(nullptr), window_class_name(std::move(windowClassName))
 {
-    ZeroMemory(&window_class, sizeof(WNDCLASSEX));
 
-    window_class.cbSize = sizeof(WNDCLASSEX);
-    window_class.style = CS_HREDRAW | CS_VREDRAW;
-    window_class.lpfnWndProc = DefWindowProc;
-    window_class.lpszClassName = s2ws(window_class_name).c_str();
 
-    window_class.hInstance = GetModuleHandle(nullptr);
     if (window_class.hInstance == nullptr)
     {
         throw GenericWinAPIException("Could not get the instance handle");
@@ -67,13 +49,23 @@ Window::Window(std::string windowClassName) : temp_window(nullptr), window_class
         throw GenericWinAPIException("Could not get register the window class");
     }
 
-    temp_window = CreateWindow(window_class.lpszClassName, L"Temporary DirectX Overlay Window", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, NULL, NULL, window_class.hInstance, NULL);
+
     if (temp_window == nullptr)
     {
         throw GenericWinAPIException("Could not get create the temporary window");
     }
 }
-
+WNDCLASSEX tmpWindowClass{};
+HWND tmpWindow;
+ZeroMemory(&tmpWindowClass, sizeof(WNDCLASSEX));
+tmpWindowClass.cbSize = sizeof(WNDCLASSEX);
+tmpWindowClass.style = CS_HREDRAW | CS_VREDRAW;
+tmpWindowClass.lpfnWndProc = DefWindowProc;
+tmpWindowClass.lpszClassName = s2ws("ThrowAwayWindow").c_str();
+tmpWindowClass.hInstance = GetModuleHandle(nullptr);
+tmpWindow = CreateWindow(tmpWindowClass.lpszClassName, L"ThrowAwayWindow", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, NULL, NULL, window_class.hInstance, NULL);
+DestroyWindow(tmpWindow);
+UnregisterClass(tmpWindowClass.lpszClassName, tmpWindowClass.hInstance);
 Window::~Window()
 {
     if (temp_window)

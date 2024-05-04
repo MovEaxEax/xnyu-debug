@@ -1,44 +1,150 @@
 #pragma once
 
-// --- Structs ---
-struct Variable {
-    std::string name;
-    std::string type;
-    std::string value;
-    bool forceHex;
+#undef VOID
+enum class VariableType : int
+{
+    UNKNOWN = 0,
+    BYTE = 1,
+    BOOL = 2,
+    INT32 = 3,
+    INT64 = 4,
+    FLOAT = 5,
+    DOUBLE = 6,
+    STRING = 7,
+    VOID = 8
 };
 
+using VariableData = std::variant<byte, bool, int, long long, float, double, std::string>;
+class Variable {
+public:
+    template<typename T>
+    Variable(T value) : data(value)
+    {
+        null = false;
+        setType<T>();
+    }
 
+    Variable(VariableType _type)
+    {
+        null = true;
+        type = _type;
+    }
 
-// --- Functions ---
-EXTERN_DLL_EXPORT bool __cdecl CheckVariableType(std::string type, std::string value);
-EXTERN_DLL_EXPORT std::string __cdecl GetValueType(std::string value);
+    Variable(const std::string& value, VariableType type)
+    {
+        null = false;
+        std::istringstream iss(value);
+        switch (type) {
+        case VariableType::BYTE:
+        {
+            int temp;
+            iss >> std::hex >> temp;
+            data = static_cast<byte>(temp);
+        }
+        break;
+        case VariableType::BOOL:
+            data = (value == "true" || value == "1" || value == "0x1");
+            break;
+        case VariableType::INT32:
+            iss >> std::hex >> std::get<int>(data);
+            break;
+        case VariableType::INT64:
+            iss >> std::hex >> std::get<long long>(data);
+            break;
+        case VariableType::FLOAT:
+            iss >> std::get<float>(data);
+            break;
+        case VariableType::DOUBLE:
+            iss >> std::get<double>(data);
+            break;
+        case VariableType::STRING:
+            data = value;
+            break;
+        default: throw std::invalid_argument("Unknown type");
+        }
+    }
 
-EXTERN_DLL_EXPORT void __cdecl SetVariable(Variable* variable, std::string value);
+    template<typename T>
+    void setValue(T value) {
+        null = false;
+        data = value;
+    }
 
-EXTERN_DLL_EXPORT std::string __cdecl GetVariableString(Variable* variable);
-EXTERN_DLL_EXPORT bool __cdecl GetVariableBool(Variable* variable);
-EXTERN_DLL_EXPORT BYTE __cdecl GetVariableByte(Variable* variable);
-EXTERN_DLL_EXPORT int __cdecl GetVariableInt32(Variable* variable);
-EXTERN_DLL_EXPORT long long __cdecl GetVariableInt64(Variable* variable);
-EXTERN_DLL_EXPORT float __cdecl GetVariableFloat(Variable* variable);
-EXTERN_DLL_EXPORT double __cdecl GetVariableDouble(Variable* variable);
+    VariableData getValue() const
+    {
+        return data;
+    }
 
-EXTERN_DLL_EXPORT std::string __cdecl GetVariableString(std::string value);
-EXTERN_DLL_EXPORT bool __cdecl GetVariableBool(std::string value);
-EXTERN_DLL_EXPORT BYTE __cdecl GetVariableByte(std::string value);
-EXTERN_DLL_EXPORT int __cdecl GetVariableInt32(std::string value);
-EXTERN_DLL_EXPORT long long __cdecl GetVariableInt64(std::string value);
-EXTERN_DLL_EXPORT float __cdecl GetVariableFloat(std::string value);
-EXTERN_DLL_EXPORT double __cdecl GetVariableDouble(std::string value);
+    template<typename T>
+    T getValueAs() const {
+        return std::get<T>(data);
+    }
 
-EXTERN_DLL_EXPORT void __cdecl VariableAdd(Variable* variable, std::string value);
-EXTERN_DLL_EXPORT void __cdecl VariableAdd(Variable* variableDST, Variable* variableSRC);
-EXTERN_DLL_EXPORT void __cdecl VariableSubtract(Variable* variable, std::string value);
-EXTERN_DLL_EXPORT void __cdecl VariableSubtract(Variable* variableDST, Variable* variableSRC);
-EXTERN_DLL_EXPORT void __cdecl VariableMultiply(Variable* variable, std::string value);
-EXTERN_DLL_EXPORT void __cdecl VariableMultiply(Variable* variableDST, Variable* variableSRC);
-EXTERN_DLL_EXPORT void __cdecl VariableDivide(Variable* variable, std::string value);
-EXTERN_DLL_EXPORT void __cdecl VariableDivide(Variable* variableDST, Variable* variableSRC);
+    VariableType getType() const {
+        return type;
+    }
+
+    byte getByte() const
+    {
+        return std::get<byte>(data);
+    }
+
+    bool getBool() const
+    {
+        return std::get<byte>(data);
+    }
+
+    int getInt32() const
+    {
+        return std::get<byte>(data);
+    }
+
+    long long getInt64() const
+    {
+        return std::get<long long>(data);
+    }
+
+    float getFloat() const
+    {
+        return std::get<float>(data);
+    }
+
+    double getDouble() const
+    {
+        return std::get<double>(data);
+    }
+
+    std::string getString() const
+    {
+        return std::get<std::string>(data);
+    }
+
+    void setNull(bool value)
+    {
+        null = value;
+    }
+
+    bool isNull()
+    {
+        return null;
+    }
+
+private:
+    VariableData data;
+    VariableType type;
+    bool null = false;
+
+    template<typename T>
+    void setType() {
+        if constexpr (std::is_same_v<T, byte>) type = VariableType::BYTE;
+        else if constexpr (std::is_same_v<T, bool>) type = VariableType::BOOL;
+        else if constexpr (std::is_same_v<T, int>) type = VariableType::INT32;
+        else if constexpr (std::is_same_v<T, long long>) type = VariableType::INT64;
+        else if constexpr (std::is_same_v<T, float>) type = VariableType::FLOAT;
+        else if constexpr (std::is_same_v<T, double>) type = VariableType::DOUBLE;
+        else if constexpr (std::is_same_v<T, std::string>) type = VariableType::STRING;
+        else type = VariableType::UNKNOWN;
+    }
+};
 
 

@@ -246,6 +246,7 @@ EXTERN_DLL_EXPORT int initDebugger(char* parameterRaw)
         if (GlobalSettings.config_joystickdriver_get == "directinput8") InputDriverJoystickGet = InputDriverz::DIRECT1NPUT8;
         if (GlobalSettings.config_joystickdriver_get == "xinput1_4" || GlobalSettings.config_joystickdriver_get == "xinput1_3") InputDriverJoystickGet = InputDriverz::X1NPUT1_4;
 
+        
 
             // Detect the maximum hooks
         std::vector<std::string> _allHooks;

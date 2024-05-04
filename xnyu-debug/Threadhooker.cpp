@@ -19,7 +19,7 @@ HANDLE ThreadhookerSafeThreadsMutex = CreateMutex(NULL, FALSE, NULL);
 
 // --- SuspendThread Hook ---
 SuspendThreadHook<SuspendThreadT>* SuspendThreadHook<SuspendThreadT>::instance = nullptr;
-DWORD SuspendThreadReal(HANDLE hThread, DWORD ignoreThread)
+EXTERN_DLL_EXPORT DWORD __stdcall SuspendThreadReal(HANDLE hThread, DWORD ignoreThread)
 {
     if (SuspendThreadHook<SuspendThreadT>::instance && SuspendThreadHook<SuspendThreadT>::instance->isActive()) SuspendThreadHook<SuspendThreadT>::instance->setIgnoreThread(ignoreThread);
     return SuspendThread(hThread);
@@ -27,7 +27,7 @@ DWORD SuspendThreadReal(HANDLE hThread, DWORD ignoreThread)
 
 // --- ResumeThread Hook ---
 ResumeThreadHook<ResumeThreadT>* ResumeThreadHook<ResumeThreadT>::instance = nullptr;
-DWORD ResumeThreadReal(HANDLE hThread, DWORD ignoreThread)
+EXTERN_DLL_EXPORT DWORD __stdcall ResumeThreadReal(HANDLE hThread, DWORD ignoreThread)
 {
     if (ResumeThreadHook<ResumeThreadT>::instance && ResumeThreadHook<ResumeThreadT>::instance->isActive()) ResumeThreadHook<ResumeThreadT>::instance->setIgnoreThread(ignoreThread);
     return ResumeThread(hThread);
@@ -35,7 +35,7 @@ DWORD ResumeThreadReal(HANDLE hThread, DWORD ignoreThread)
 
 // --- CreateThread Hook ---
 CreateThreadHook<CreateThreadTT>* CreateThreadHook<CreateThreadTT>::instance = nullptr;
-HANDLE CreateThreadReal(LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId, bool safeThread)
+EXTERN_DLL_EXPORT HANDLE __stdcall CreateThreadReal(LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId, bool safeThread)
 {
     if (CreateThreadHook<CreateThreadTT>::instance && CreateThreadHook<CreateThreadTT>::instance->isActive()) CreateThreadHook<CreateThreadTT>::instance->setSafeThread(safeThread);
     return CreateThread(lpThreadAttributes, dwStackSize, lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
@@ -43,7 +43,7 @@ HANDLE CreateThreadReal(LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStack
 
 // --- CreateRemoteThread Hook ---
 CreateRemoteThreadHook<CreateRemoteThreadT>* CreateRemoteThreadHook<CreateRemoteThreadT>::instance = nullptr;
-HANDLE CreateRemoteThreadReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId, bool safeThread)
+EXTERN_DLL_EXPORT HANDLE __stdcall CreateRemoteThreadReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId, bool safeThread)
 {
     if (CreateRemoteThreadHook<CreateRemoteThreadT>::instance && CreateRemoteThreadHook<CreateRemoteThreadT>::instance->isActive()) CreateRemoteThreadHook<CreateRemoteThreadT>::instance->setSafeThread(safeThread);
     return CreateRemoteThread(hProcess, lpThreadAttributes, dwStackSize, lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
@@ -51,7 +51,7 @@ HANDLE CreateRemoteThreadReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAtt
 
 // --- CreateRemoteThreadEx Hook ---
 CreateRemoteThreadExHook<CreateRemoteThreadExT>* CreateRemoteThreadExHook<CreateRemoteThreadExT>::instance = nullptr;
-HANDLE CreateRemoteThreadExReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList, LPDWORD lpThreadId, bool safeThread)
+EXTERN_DLL_EXPORT HANDLE __stdcall CreateRemoteThreadExReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList, LPDWORD lpThreadId, bool safeThread)
 {
     if (CreateRemoteThreadExHook<CreateRemoteThreadExT>::instance && CreateRemoteThreadExHook<CreateRemoteThreadExT>::instance->isActive()) CreateRemoteThreadHook<CreateRemoteThreadExT>::instance->setSafeThread(safeThread);
     return CreateRemoteThreadEx(hProcess, lpThreadAttributes, dwStackSize, lpStartAddress, lpParameter, dwCreationFlags, lpAttributeList, lpThreadId);
@@ -59,7 +59,7 @@ HANDLE CreateRemoteThreadExReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadA
 
 // --- ExitThread Hook ---
 ExitThreadHook<ExitThreadT>* ExitThreadHook<ExitThreadT>::instance = nullptr;
-void ExitThreadReal(DWORD dwExitCode)
+EXTERN_DLL_EXPORT void __stdcall ExitThreadReal(DWORD dwExitCode)
 {
     if (ExitThreadHook<ExitThreadT>::instance && ExitThreadHook<ExitThreadT>::instance->isActive()) return ExitThreadHook<ExitThreadT>::instance->callTrampoline(dwExitCode);
     else return ExitThread(dwExitCode);
@@ -67,7 +67,7 @@ void ExitThreadReal(DWORD dwExitCode)
 
 // --- TerminateThread Hook ---
 TerminateThreadHook<TerminateThreadT>* TerminateThreadHook<TerminateThreadT>::instance = nullptr;
-BOOL TerminateThreadReal(HANDLE hThread, DWORD dwExitCode)
+EXTERN_DLL_EXPORT BOOL __stdcall TerminateThreadReal(HANDLE hThread, DWORD dwExitCode)
 {
     if (TerminateThreadHook<TerminateThreadT>::instance && TerminateThreadHook<TerminateThreadT>::instance->isActive()) return TerminateThreadHook<TerminateThreadT>::instance->callTrampoline(hThread, dwExitCode);
     else return TerminateThread(hThread, dwExitCode);
@@ -76,7 +76,7 @@ BOOL TerminateThreadReal(HANDLE hThread, DWORD dwExitCode)
 
 
 // --- Functions ---
-int __stdcall ThreadHookerGetSafeThreadCount()
+EXTERN_DLL_EXPORT int __stdcall ThreadHookerGetSafeThreadCount()
 {
     WaitForSingleObject(ThreadhookerSafeThreadsMutex, INFINITE);
     int result = SafeThreads.size();
@@ -84,7 +84,7 @@ int __stdcall ThreadHookerGetSafeThreadCount()
     return result;
 }
 
-int __stdcall ThreadHookerGetThreadCount()
+EXTERN_DLL_EXPORT int __stdcall ThreadHookerGetThreadCount()
 {
     WaitForSingleObject(ThreadhookerCurrentThreadsMutex, INFINITE);
     int result = CurrentThreads.size();
@@ -92,7 +92,7 @@ int __stdcall ThreadHookerGetThreadCount()
     return result;
 }
 
-std::unordered_set<DWORD> __stdcall ThreadHookerGetSafeThreads()
+EXTERN_DLL_EXPORT std::unordered_set<DWORD> __stdcall ThreadHookerGetSafeThreads()
 {
     WaitForSingleObject(ThreadhookerSafeThreadsMutex, INFINITE);
     std::unordered_set<DWORD> safeThreads = SafeThreads;
@@ -100,7 +100,7 @@ std::unordered_set<DWORD> __stdcall ThreadHookerGetSafeThreads()
     return safeThreads;
 }
 
-std::unordered_set<DWORD> __stdcall ThreadHookerGetThreads()
+EXTERN_DLL_EXPORT std::unordered_set<DWORD> __stdcall ThreadHookerGetThreads()
 {
     WaitForSingleObject(ThreadhookerCurrentThreadsMutex, INFINITE);
     std::unordered_set<DWORD> currentThreads = CurrentThreads;
@@ -108,7 +108,7 @@ std::unordered_set<DWORD> __stdcall ThreadHookerGetThreads()
     return currentThreads;
 }
 
-bool __stdcall ThreadHookerSuspendThreads(int sleep = 0) {
+EXTERN_DLL_EXPORT bool __stdcall ThreadHookerSuspendThreads(int sleep = 0) {
     DWORD ignoreThread = GetCurrentThreadId();
     if (ThreadHookerGetThreadCount() > 0)
     {
@@ -124,7 +124,7 @@ bool __stdcall ThreadHookerSuspendThreads(int sleep = 0) {
     return true;
 }
 
-bool __stdcall ThreadHookerResumeThreads(int sleep = 0) {
+EXTERN_DLL_EXPORT bool __stdcall ThreadHookerResumeThreads(int sleep = 0) {
     DWORD ignoreThread = GetCurrentThreadId();
     if (ThreadHookerGetThreadCount() > 0)
     {

@@ -44,7 +44,7 @@ public:
     }
     void setIgnoreThread(DWORD value) { instance->ignoreThread = value };
 };
-DWORD SuspendThreadReal(HANDLE hThread, DWORD ignoreThread = -1);
+EXTERN_DLL_EXPORT DWORD __stdcall SuspendThreadReal(HANDLE hThread, DWORD ignoreThread = -1);
 
 // --- ResumeThread Hook ---
 template <typename FuncT>
@@ -67,7 +67,7 @@ public:
     }
     void setIgnoreThread(DWORD value) { instance->ignoreThread = value };
 };
-DWORD ResumeThreadReal(HANDLE hThread, DWORD ignoreThread = -1);
+EXTERN_DLL_EXPORT DWORD __stdcall ResumeThreadReal(HANDLE hThread, DWORD ignoreThread = -1);
 
 // --- CreateThread Hook ---
 template <typename FuncT>
@@ -95,7 +95,7 @@ public:
     }
     void setSafeThread(bool value) { instance->safeThread = value };
 };
-HANDLE CreateThreadReal(LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId, bool safeThread = false);
+EXTERN_DLL_EXPORT HANDLE __stdcall CreateThreadReal(LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId, bool safeThread = false);
 
 // --- CreateRemoteThread Hook ---
 template <typename FuncT>
@@ -123,7 +123,7 @@ public:
     }
     void setSafeThread(bool value) { instance->safeThread = value };
 };
-HANDLE CreateRemoteThreadReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId, bool safeThread = false);
+EXTERN_DLL_EXPORT HANDLE __stdcall CreateRemoteThreadReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId, bool safeThread = false);
 
 // --- CreateRemoteThreadEx Hook ---
 template <typename FuncT>
@@ -151,7 +151,7 @@ public:
     }
     void setSafeThread(bool value) { instance->safeThread = value };
 };
-HANDLE CreateRemoteThreadExReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList, LPDWORD lpThreadId, bool safeThread = false);
+EXTERN_DLL_EXPORT HANDLE __stdcall CreateRemoteThreadExReal(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags, LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList, LPDWORD lpThreadId, bool safeThread = false);
 
 // --- ExitThread Hook ---
 template <typename FuncT>
@@ -172,7 +172,7 @@ public:
         instance->callTrampoline(dwExitCode);
     }
 };
-void ExitThreadReal(DWORD dwExitCode);
+EXTERN_DLL_EXPORT void __stdcall ExitThreadReal(DWORD dwExitCode);
 
 // --- TerminateThread Hook ---
 template <typename FuncT>
@@ -193,17 +193,17 @@ public:
         return instance->callTrampoline(dwExitCode);
     }
 };
-BOOL TerminateThreadReal(HANDLE hThread, DWORD dwExitCode);
+EXTERN_DLL_EXPORT BOOL TerminateThreadReal(HANDLE hThread, DWORD dwExitCode);
 
 
 
 // --- Functions ---
-int __stdcall ThreadHookerGetSafeThreadCount();
-int __stdcall ThreadHookerGetThreadCount();
-std::unordered_set<DWORD> __stdcall ThreadHookerGetSafeThreads();
-std::unordered_set<DWORD> __stdcall ThreadHookerGetThreads();
-bool __stdcall ThreadHookerSuspendThreads(int sleep = 0);
-bool __stdcall ThreadHookerResumeThreads(int sleep = 0);
+EXTERN_DLL_EXPORT int __stdcall ThreadHookerGetSafeThreadCount();
+EXTERN_DLL_EXPORT int __stdcall ThreadHookerGetThreadCount();
+EXTERN_DLL_EXPORT std::unordered_set<DWORD> __stdcall ThreadHookerGetSafeThreads();
+EXTERN_DLL_EXPORT std::unordered_set<DWORD> __stdcall ThreadHookerGetThreads();
+EXTERN_DLL_EXPORT bool __stdcall ThreadHookerSuspendThreads(int sleep = 0);
+EXTERN_DLL_EXPORT bool __stdcall ThreadHookerResumeThreads(int sleep = 0);
 void InitThreadhookerHooks();
 bool InitThreadhooker();
 void UninitThreadhooker();

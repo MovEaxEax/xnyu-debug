@@ -52,8 +52,8 @@ extern HANDLE MemoryMutex;
 
 
 // --- Functions ---
-bool IsValidMemoryAddress(uintptr_t address, uintptr_t* srcMemory, uintptr_t* dstMemory, int memoryCounter);
-void DbgResolveBasePointerUnsafe();
-void DbgResolveBasePointerSafe();
+bool MemoryIsValidAddress(uintptr_t address, uintptr_t* srcMemory, uintptr_t* dstMemory, int memoryCounter);
+void MemoryResolveBasePointerUnsafe();
+void MemoryResolveBasePointerSafe();
 
 

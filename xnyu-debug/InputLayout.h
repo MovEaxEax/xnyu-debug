@@ -233,5 +233,6 @@ struct GameInputLayout
 // --- Functions ---
 void MergeGameInputs(GameInput* DST, GameInput* MOUSE, GameInput* KEYBOARD, GameInput* JOYSTICK);
 void LoadGameInputLayout(GameInputLayout* DST, std::string fileName);
-
+std::string GameInputToFrame(GameInput& SRC, GameInputLayout& layout);
+void GameInputSetFrame(GameInput& SRC, GameInputLayout& layout, std::vector<std::string>& parameter);
 

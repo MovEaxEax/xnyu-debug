@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "BasePointer.h"
+#include "Variable.h"
 #include "WriteMemory.h"
 
 
@@ -12,7 +13,7 @@ void _DbgWriteFloatBS()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -44,7 +45,7 @@ void _DbgWriteFloatBV()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -71,7 +72,7 @@ void _DbgWriteFloatAV()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteFloat(BasePointer address, void* src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteFloat(BasePointer address, void* src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -84,7 +85,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteFloat(BasePointer address, void* src, boo
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteFloat(void* address, void* src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteFloat(void* address, void* src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -95,7 +96,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteFloat(void* address, void* src)
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteFloat(BasePointer address, float src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteFloat(BasePointer address, float src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -108,7 +109,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteFloat(BasePointer address, float src, boo
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteFloat(void* address, float src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteFloat(void* address, float src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._float_value = src;
@@ -125,7 +126,7 @@ void _DbgWriteDoubleBS()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -157,7 +158,7 @@ void _DbgWriteDoubleBV()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -184,7 +185,7 @@ void _DbgWriteDoubleAV()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteDouble(BasePointer address, void* src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteDouble(BasePointer address, void* src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -196,7 +197,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteDouble(BasePointer address, void* src, bo
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteDouble(void* address, void* src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteDouble(void* address, void* src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -207,7 +208,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteDouble(void* address, void* src)
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteDouble(BasePointer address, double src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteDouble(BasePointer address, double src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -220,7 +221,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteDouble(BasePointer address, double src, b
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteDouble(void* address, double src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteDouble(void* address, double src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -237,7 +238,7 @@ void _DbgWriteInt32BS()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -269,7 +270,7 @@ void _DbgWriteInt32BV()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -296,7 +297,7 @@ void _DbgWriteInt32AV()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt32(BasePointer address, void* src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteInt32(BasePointer address, void* src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -309,7 +310,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt32(BasePointer address, void* src, boo
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt32(void* address, void* src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteInt32(void* address, void* src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -320,7 +321,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt32(void* address, void* src)
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt32(BasePointer address, int src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteInt32(BasePointer address, int src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -333,7 +334,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt32(BasePointer address, int src, bool 
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt32(void* address, int src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteInt32(void* address, int src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -350,7 +351,7 @@ void _DbgWriteInt64BS()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -382,7 +383,7 @@ void _DbgWriteInt64BV()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -409,7 +410,7 @@ void _DbgWriteInt64AV()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt64(BasePointer address, void* src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteInt64(BasePointer address, void* src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -422,7 +423,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt64(BasePointer address, void* src, boo
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt64(void* address, void* src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteInt64(void* address, void* src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -433,7 +434,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt64(void* address, void* src)
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt64(BasePointer address, long long src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteInt64(BasePointer address, long long src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -446,7 +447,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt64(BasePointer address, long long src,
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteInt64(void* address, long long src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteInt64(void* address, long long src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -463,7 +464,7 @@ void _DbgWriteStringBS()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -499,7 +500,7 @@ void _DbgWriteStringBV()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -526,7 +527,7 @@ void _DbgWriteStringAV()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteString(BasePointer address, void* src, int size, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteString(BasePointer address, void* src, int size, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -540,7 +541,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteString(BasePointer address, void* src, in
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteString(void* address, void* src, int size)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteString(void* address, void* src, int size)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -552,7 +553,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteString(void* address, void* src, int size
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteString(BasePointer address, std::string src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteString(BasePointer address, std::string src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -565,7 +566,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteString(BasePointer address, std::string s
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteString(void* address, std::string src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteString(void* address, std::string src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -582,7 +583,7 @@ void _DbgWriteBoolBS()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -614,7 +615,7 @@ void _DbgWriteBoolBV()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -641,7 +642,7 @@ void _DbgWriteBoolAV()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteBool(BasePointer address, void* src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteBool(BasePointer address, void* src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -654,7 +655,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteBool(BasePointer address, void* src, bool
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteBool(void* address, void* src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteBool(void* address, void* src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -665,7 +666,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteBool(void* address, void* src)
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteBool(BasePointer address, bool src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteBool(BasePointer address, bool src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -678,7 +679,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteBool(BasePointer address, bool src, bool 
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteBool(void* address, bool src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteBool(void* address, bool src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -695,7 +696,7 @@ void _DbgWriteByteBS()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -727,7 +728,7 @@ void _DbgWriteByteBV()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -754,7 +755,7 @@ void _DbgWriteByteAV()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteByte(BasePointer address, void* src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteByte(BasePointer address, void* src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -767,7 +768,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteByte(BasePointer address, void* src, bool
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteByte(void* address, void* src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteByte(void* address, void* src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -778,7 +779,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteByte(void* address, void* src)
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteByte(BasePointer address, BYTE src, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteByte(BasePointer address, BYTE src, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -791,7 +792,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteByte(BasePointer address, BYTE src, bool 
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteByte(void* address, BYTE src)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteByte(void* address, BYTE src)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -808,7 +809,7 @@ void _DbgWriteBytesBS()
 	__try
 	{
 		ret._success = false;
-		if (par._use_safe) DbgResolveBasePointerSafe(); else DbgResolveBasePointerUnsafe();
+		if (par._use_safe) MemoryResolveBasePointerSafe(); else MemoryResolveBasePointerUnsafe();
 		if (ret._void_ptr != nullptr)
 		{
 			void* finalAddress = ret._void_ptr;
@@ -835,7 +836,7 @@ void _DbgWriteBytesAS()
 	}
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteBytes(BasePointer address, void* src, int amount, bool safe)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteBytes(BasePointer address, void* src, int amount, bool safe)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._use_safe = safe;
@@ -849,7 +850,7 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteBytes(BasePointer address, void* src, int
 	return result;
 }
 
-EXTERN_DLL_EXPORT bool __cdecl DbgWriteBytes(void* address, void* src, int amount)
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteBytes(void* address, void* src, int amount)
 {
 	WaitForSingleObject(MemoryMutex, INFINITE);
 	par._address = address;
@@ -857,6 +858,78 @@ EXTERN_DLL_EXPORT bool __cdecl DbgWriteBytes(void* address, void* src, int amoun
 	par._amount = amount;
 	_DbgWriteBytesAS();
 	bool result = ret._success;
+	ReleaseMutex(MemoryMutex);
+	return result;
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteVariable(BasePointer address, Variable& src, bool safe)
+{
+	if (src.isNull()) return false;
+	WaitForSingleObject(MemoryMutex, INFINITE);
+	bool result = false;
+	switch (src.getType())
+	{
+		case VariableType::BOOL:
+			result = MemoryWriteBool(address, src.getBool());
+			break;
+		case VariableType::BYTE:
+			result = MemoryWriteByte(address, src.getByte());
+			break;
+		case VariableType::INT32:
+			result = MemoryWriteInt32(address, src.getInt32());
+			break;
+		case VariableType::INT64:
+			result = MemoryWriteInt64(address, src.getInt64());
+			break;
+		case VariableType::FLOAT:
+			result = MemoryWriteFloat(address, src.getFloat());
+			break;
+		case VariableType::DOUBLE:
+			result = MemoryWriteDouble(address, src.getDouble());
+			break;
+		case VariableType::STRING:
+			result = MemoryWriteString(address, src.getString());
+			break;
+		default:
+			result = false;
+			break;
+	}
+	ReleaseMutex(MemoryMutex);
+	return result;
+}
+
+EXTERN_DLL_EXPORT bool __stdcall MemoryWriteVariable(void* address, Variable& src)
+{
+	if (src.isNull()) return false;
+	WaitForSingleObject(MemoryMutex, INFINITE);
+	bool result = false;
+	switch (src.getType())
+	{
+	case VariableType::BOOL:
+		result = MemoryWriteBool(address, src.getBool());
+		break;
+	case VariableType::BYTE:
+		result = MemoryWriteByte(address, src.getByte());
+		break;
+	case VariableType::INT32:
+		result = MemoryWriteInt32(address, src.getInt32());
+		break;
+	case VariableType::INT64:
+		result = MemoryWriteInt64(address, src.getInt64());
+		break;
+	case VariableType::FLOAT:
+		result = MemoryWriteFloat(address, src.getFloat());
+		break;
+	case VariableType::DOUBLE:
+		result = MemoryWriteDouble(address, src.getDouble());
+		break;
+	case VariableType::STRING:
+		result = MemoryWriteString(address, src.getString());
+		break;
+	default:
+		result = false;
+		break;
+	}
 	ReleaseMutex(MemoryMutex);
 	return result;
 }

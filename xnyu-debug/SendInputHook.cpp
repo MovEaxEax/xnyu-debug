@@ -86,7 +86,7 @@ bool SendInputIsSetKeyboardDone()
     return result;
 }
 
-void SendInputSetMouse(GameInput input, GameInput inputLast)
+void SendInputSetMouse(GameInput& input, GameInput& inputLast)
 {
     WaitForSingleObject(SendInputAllMutex, INFINITE);
 
@@ -170,7 +170,7 @@ void SendInputSetMouse(GameInput input, GameInput inputLast)
     ReleaseMutex(SendInputAllMutex);
 }
 
-void SendInputSetKeyboard(GameInput input, GameInput inputLast)
+void SendInputSetKeyboard(GameInput& input, GameInput& inputLast)
 {
     WaitForSingleObject(SendInputAllMutex, INFINITE);
 

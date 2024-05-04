@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Variable.h"
 #include "Logging.h"
 #include "GlobalSettings.h"
 #include "DrawingEssentials.h"

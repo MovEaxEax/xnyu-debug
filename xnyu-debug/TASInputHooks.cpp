@@ -42,7 +42,7 @@ bool SetTASInputEnabled(bool value)
     return true;
 }
 
-bool GetTASInput(GameInput* input)
+bool GetTASInput(GameInput& input)
 {
     try
     {
@@ -68,7 +68,7 @@ bool GetTASInput(GameInput* input)
     return true;
 }
 
-bool SetTASInput(GameInput input, GameInput inputLast)
+bool SetTASInput(GameInput& input, GameInput& inputLast)
 {
     try
     {
@@ -78,11 +78,11 @@ bool SetTASInput(GameInput input, GameInput inputLast)
 
         if (mouseSet == "rawinput") { if (IsRawInputDataHookActive()) GetRawInputDataHook<GetRawInputDataT>::instance->SetMouse(input, inputLast); }
         else if (mouseSet == "directinput8") { if (IsDirectInput8HookActive()) DirectInput8GetDeviceStateHook<DirectInput8GetDeviceStateT>::instance->SetMouse(input, inputLast); }
-        else if (mouseSet == "sendinput") { if (IsSendInputHookActive()) DirectInput8GetDeviceStateHook<DirectInput8GetDeviceStateT>::instance->SetMouse(input, inputLast); }
+        else if (mouseSet == "sendinput") { if (IsSendInputHookActive()) SendInputSetMouse(input, inputLast); }
 
         if (keyboardSet == "rawinput") { if (IsRawInputDataHookActive()) GetRawInputDataHook<GetRawInputDataT>::instance->SetKeyboard(input, inputLast); }
         else if (keyboardSet == "directinput8") { if (IsDirectInput8HookActive()) DirectInput8GetDeviceStateHook<DirectInput8GetDeviceStateT>::instance->SetKeyboard(input, inputLast); }
-        else if (keyboardSet == "sendinput") { if (IsSendInputHookActive()) DirectInput8GetDeviceStateHook<DirectInput8GetDeviceStateT>::instance->SetKeyboard(input, inputLast); }
+        else if (keyboardSet == "sendinput") { if (IsSendInputHookActive()) SendInputSetKeyboard(input, inputLast); }
 
         if (joystickSet == "directinput8") { if (IsDirectInput8HookActive()) DirectInput8GetDeviceStateHook<DirectInput8GetDeviceStateT>::instance->SetJoystick(input, inputLast); }
         else if (joystickSet == "xinput") { if (IsXInputHookActive()) XInputGetStateHook<XInputGetStateT>::instance->SetJoystick(input, inputLast); }

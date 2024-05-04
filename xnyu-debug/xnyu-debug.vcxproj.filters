@@ -22,9 +22,6 @@
     <Filter Include="Headerdateien\libraries">
       <UniqueIdentifier>{dd5504de-535b-40ed-94e1-66e380e5f4db}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Headerdateien\technical">
-      <UniqueIdentifier>{4119d41f-15a8-487f-875d-c3666216de26}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Headerdateien\debug mods">
       <UniqueIdentifier>{73f316e9-d918-46bb-9595-fda82c40cf9d}</UniqueIdentifier>
     </Filter>
@@ -66,14 +63,8 @@
     <ClInclude Include="header\input hooks\XInputHook.h">
       <Filter>Headerdateien\input hooks</Filter>
     </ClInclude>
-    <ClInclude Include="header\technical\Exceptions.hpp">
-      <Filter>Headerdateien\technical</Filter>
-    </ClInclude>
     <ClInclude Include="header\components\DebugMenu.h">
       <Filter>Headerdateien\components</Filter>
-    </ClInclude>
-    <ClInclude Include="Window.h">
-      <Filter>Headerdateien\technical</Filter>
     </ClInclude>
     <ClInclude Include="DrawingEssentials.h">
       <Filter>Headerdateien\libraries</Filter>
@@ -165,14 +156,11 @@
     <ClInclude Include="pch.h">
       <Filter>Quelldateien</Filter>
     </ClInclude>
-    <ClInclude Include="xNyuTASLanguageCompiler.h">
+    <ClInclude Include="PythonTASConnecter.h">
       <Filter>Headerdateien\components</Filter>
     </ClInclude>
-    <ClInclude Include="xNyuTASLanguageCreateInstructions.h">
-      <Filter>Headerdateien\components</Filter>
-    </ClInclude>
-    <ClInclude Include="xNyuTASLanguageDatatypes.h">
-      <Filter>Headerdateien\components</Filter>
+    <ClInclude Include="InternalModule.h">
+      <Filter>Headerdateien\debug mods</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -296,17 +284,11 @@
     <ClCompile Include="WriteMemory.cpp">
       <Filter>Headerdateien\memory</Filter>
     </ClCompile>
-    <ClCompile Include="Exceptions.cpp">
-      <Filter>Headerdateien\technical</Filter>
-    </ClCompile>
-    <ClCompile Include="Window.cpp">
-      <Filter>Headerdateien\technical</Filter>
-    </ClCompile>
-    <ClCompile Include="xNyuTASLanguageCompiler.cpp">
+    <ClCompile Include="PythonTASConnecter.cpp">
       <Filter>Headerdateien\components</Filter>
     </ClCompile>
-    <ClCompile Include="xNyuTASLanguageCreateInstructions.cpp">
-      <Filter>Headerdateien\components</Filter>
+    <ClCompile Include="InternalModule.cpp">
+      <Filter>Headerdateien\debug mods</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -11,7 +11,25 @@ int MemoryRegionsCounter = 0;
 
 
 // --- Functions ---
-long long GetMemoryRegionsSize() {
+EXTERN_DLL_EXPORT uintptr_t __stdcall MemoryGetSectionAddress(HMODULE moduleHandle, std::string sectionName)
+{
+    PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)moduleHandle;
+    PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((BYTE*)moduleHandle + dosHeader->e_lfanew);
+
+    PIMAGE_SECTION_HEADER sectionHeader = IMAGE_FIRST_SECTION(ntHeaders);
+    for (UINT i = 0; i < ntHeaders->FileHeader.NumberOfSections; ++i, ++sectionHeader)
+    {
+        if (memcmp(sectionHeader->Name, sectionName.c_str(), 5) == 0)
+        {
+            return (uintptr_t)((DWORD)moduleHandle + sectionHeader->VirtualAddress);
+        }
+    }
+
+    return 0;
+}
+
+long long __stdcall MemoryGetRegionsSize()
+{
     WaitForSingleObject(MemoryMutex, INFINITE);
 
     if (MemoryRegionsCounter <= 0) return -1;
@@ -23,7 +41,8 @@ long long GetMemoryRegionsSize() {
     return size;
 }
 
-void UpdateMemoryRegions() {
+void __stdcall MemoryUpdateRegions()
+{
     WaitForSingleObject(MemoryMutex, INFINITE);
     HANDLE processHandle = GetCurrentProcess();
     SYSTEM_INFO systemInfo;
